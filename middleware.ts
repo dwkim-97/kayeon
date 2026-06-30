@@ -24,13 +24,10 @@ export async function middleware(request: NextRequest) {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet, headers) {
-        cookiesToSet.forEach(({name, value, options}) => {
+      setAll(cookiesToSet) {
+        for (const {name, value, options} of cookiesToSet) {
           response.cookies.set(name, value, options);
-        });
-        Object.entries(headers).forEach(([key, value]) => {
-          response.headers.set(key, value);
-        });
+        }
       },
     },
   });
@@ -43,12 +40,9 @@ export async function middleware(request: NextRequest) {
     return redirectToLogin(request);
   }
 
-  const {data: appUser} = await supabase.from('app_users').select('id').eq('id', user.id).maybeSingle();
-
-  if (!appUser) {
-    await supabase.auth.signOut();
-    return redirectToLogin(request);
-  }
+  // Revoked users are banned via `ban_duration` in removeManagedUser, so
+  // getUser() already returns null for them. A separate app_users DB round-trip
+  // on every request is unnecessary.
 
   response.headers.set('Cache-Control', 'private, no-store');
   return response;

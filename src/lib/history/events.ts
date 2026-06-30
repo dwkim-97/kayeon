@@ -1,4 +1,17 @@
-import type {HistoryEvent, HistoryEventType} from '@/types/history';
+import type {HistoryEventType, ProfileEventType} from '@/types/history';
+
+export function recordHistory(params: {
+  type: HistoryEventType;
+  actorName: string;
+  targetLabel: string;
+  description: string;
+}) {
+  fetch('/api/history', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(params),
+  }).catch(console.error);
+}
 
 export const historyEventLabels: Record<HistoryEventType, string> = {
   profile_created: '매물 추가',
@@ -10,7 +23,7 @@ export const historyEventLabels: Record<HistoryEventType, string> = {
   admin_removed: '관리자 제거',
 };
 
-export const historyEventDescriptions: Partial<Record<HistoryEventType, string>> = {
+export const historyEventDescriptions: Record<ProfileEventType, string> = {
   profile_created: '매물 정보를 추가했습니다.',
   profile_updated: '매물 정보를 수정했습니다.',
   profile_deleted: '매물 정보를 삭제했습니다.',
@@ -18,22 +31,3 @@ export const historyEventDescriptions: Partial<Record<HistoryEventType, string>>
   profile_activated: '매물 정보를 active 상태로 변경했습니다.',
 };
 
-export type CreateHistoryEventInput = {
-  id: string;
-  type: HistoryEventType;
-  actorName: string;
-  targetLabel: string;
-  description: string;
-  createdAt: string;
-};
-
-export function createHistoryEvent(input: CreateHistoryEventInput): HistoryEvent {
-  return {
-    id: input.id,
-    type: input.type,
-    actorName: input.actorName.trim(),
-    targetLabel: input.targetLabel.trim(),
-    description: input.description.trim(),
-    createdAt: input.createdAt,
-  };
-}

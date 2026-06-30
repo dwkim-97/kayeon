@@ -1,4 +1,4 @@
-import type {Profile, ProfileFilters} from '@/types/profile';
+import type {NumericComparison, Profile, ProfileFilters} from '@/types/profile';
 
 const normalize = (value: string) => value.trim().toLowerCase();
 const toFilterNumber = (value: string) => {
@@ -6,6 +6,9 @@ const toFilterNumber = (value: string) => {
 
   return value.trim() && Number.isFinite(numberValue) ? numberValue : null;
 };
+
+const failsNumericFilter = (profileValue: number, filterValue: number | null, comparison: NumericComparison) =>
+  filterValue !== null && (comparison === 'gte' ? profileValue < filterValue : profileValue > filterValue);
 
 const profileSearchText = (profile: Profile) =>
   [
@@ -42,19 +45,11 @@ export function filterProfiles(profiles: Profile[], filters: ProfileFilters) {
       return false;
     }
 
-    if (birthYearValue !== null && filters.birthYearComparison === 'gte' && profile.birthYear < birthYearValue) {
+    if (failsNumericFilter(profile.birthYear, birthYearValue, filters.birthYearComparison)) {
       return false;
     }
 
-    if (birthYearValue !== null && filters.birthYearComparison === 'lte' && profile.birthYear > birthYearValue) {
-      return false;
-    }
-
-    if (heightValue !== null && filters.heightComparison === 'gte' && profile.height < heightValue) {
-      return false;
-    }
-
-    if (heightValue !== null && filters.heightComparison === 'lte' && profile.height > heightValue) {
+    if (failsNumericFilter(profile.height, heightValue, filters.heightComparison)) {
       return false;
     }
 

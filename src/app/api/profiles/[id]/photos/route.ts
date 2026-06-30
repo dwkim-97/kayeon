@@ -1,6 +1,6 @@
 import {NextResponse} from 'next/server';
 
-import {createSupabaseServerClient, getStoragePublicBase} from '@/lib/supabase/server';
+import {createSupabaseServerClient, getStoragePublicBase, PROFILE_PHOTOS_BUCKET} from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
 
@@ -13,6 +13,8 @@ type UploadPhotoInput = {
   order: number;
 };
 
+type PhotoDbRow = {id: string; profile_id: string; storage_path: string; alt: string; order: number};
+
 export async function PUT(request: Request, {params}: RouteParams) {
   const {id: profileId} = await params;
   const supabase = await createSupabaseServerClient();
@@ -22,7 +24,7 @@ export async function PUT(request: Request, {params}: RouteParams) {
 
   const {data: existingPhotos, error: fetchError} = await supabase
     .from('profile_photos')
-    .select('*')
+    .select('id, storage_path')
     .eq('profile_id', profileId);
 
   if (fetchError) {
@@ -32,17 +34,21 @@ export async function PUT(request: Request, {params}: RouteParams) {
   const photosToDelete = (existingPhotos ?? []).filter(photo => !retainedPhotoIds.includes(photo.id));
 
   if (photosToDelete.length > 0) {
-    await supabase.storage
-      .from('profile-photos')
+    // Storage must be deleted before the DB row to avoid orphaned files: if
+    // storage fails we abort before touching the DB; if DB fails the storage
+    // objects are already gone (benign — they were unreachable anyway).
+    const {error: storageError} = await supabase.storage
+      .from(PROFILE_PHOTOS_BUCKET)
       .remove(photosToDelete.map(photo => photo.storage_path));
+
+    if (storageError) {
+      return NextResponse.json({message: storageError.message}, {status: 500});
+    }
 
     const {error: deleteError} = await supabase
       .from('profile_photos')
       .delete()
-      .in(
-        'id',
-        photosToDelete.map(p => p.id),
-      );
+      .in('id', photosToDelete.map(p => p.id));
 
     if (deleteError) {
       return NextResponse.json({message: deleteError.message}, {status: 500});
@@ -51,14 +57,18 @@ export async function PUT(request: Request, {params}: RouteParams) {
 
   const uploadResults = await Promise.all(
     newPhotos.map(async photo => {
-      const base64Data = photo.dataUrl.split(',')[1];
-      const mimeMatch = photo.dataUrl.match(/data:([^;]+);base64,/);
-      const mimeType = mimeMatch?.[1] ?? 'image/jpeg';
+      const dataUrlMatch = photo.dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+      if (!dataUrlMatch) {
+        throw new Error(`Invalid data URL for photo (tempId: ${photo.tempId})`);
+      }
+      const mimeType = dataUrlMatch[1];
+      const base64Data = dataUrlMatch[2];
       const ext = mimeType.split('/')[1] ?? 'jpg';
-      const storagePath = `${profileId}/${crypto.randomUUID()}.${ext}`;
+      const id = crypto.randomUUID();
+      const storagePath = `${profileId}/${id}.${ext}`;
       const buffer = Buffer.from(base64Data, 'base64');
 
-      const {error: uploadError} = await supabase.storage.from('profile-photos').upload(storagePath, buffer, {
+      const {error: uploadError} = await supabase.storage.from(PROFILE_PHOTOS_BUCKET).upload(storagePath, buffer, {
         contentType: mimeType,
         upsert: false,
       });
@@ -67,32 +77,23 @@ export async function PUT(request: Request, {params}: RouteParams) {
         throw new Error(uploadError.message);
       }
 
-      return {tempId: photo.tempId, storagePath, alt: photo.alt, order: photo.order};
+      const row: PhotoDbRow = {id, profile_id: profileId, storage_path: storagePath, alt: photo.alt, order: photo.order};
+      return {tempId: photo.tempId, row};
     }),
   );
 
   if (uploadResults.length > 0) {
-    const insertRows = uploadResults.map(result => ({
-      id: crypto.randomUUID(),
-      profile_id: profileId,
-      storage_path: result.storagePath,
-      alt: result.alt,
-      order: result.order,
-    }));
-
-    const {error: insertError} = await supabase.from('profile_photos').insert(insertRows);
+    const rows = uploadResults.map(r => r.row);
+    const {error: insertError} = await supabase.from('profile_photos').insert(rows);
 
     if (insertError) {
-      await supabase.storage
-        .from('profile-photos')
-        .remove(uploadResults.map(r => r.storagePath));
-
+      await supabase.storage.from(PROFILE_PHOTOS_BUCKET).remove(rows.map(r => r.storage_path));
       return NextResponse.json({message: insertError.message}, {status: 500});
     }
 
     const publicBase = getStoragePublicBase();
-    const uploadedPhotoIds = insertRows.map((row, i) => ({
-      tempId: uploadResults[i].tempId,
+    const uploadedPhotoIds = uploadResults.map(({tempId, row}) => ({
+      tempId,
       id: row.id,
       url: `${publicBase}/${row.storage_path}`,
     }));

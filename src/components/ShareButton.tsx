@@ -5,6 +5,7 @@ import Script from 'next/script';
 import {useState} from 'react';
 
 import {formatBirthYearLabel} from '@/lib/profiles/age';
+import {genderLabels} from '@/lib/profiles/options';
 import {getProfileInformationRows, type ProfileInformationRow} from '@/lib/profiles/information';
 import type {Profile} from '@/types/profile';
 
@@ -196,7 +197,7 @@ async function drawProfileCard(
 
   const textX = imageX + imageWidth + informationGap;
   const textY = y + imageInset;
-  drawInformationRows(context, getShareProfileInformationRows(profile), textX, textY, informationWidth);
+  drawInformationRows(context, getProfileInformationRows(profile), textX, textY, informationWidth);
 }
 
 async function drawImage(context: CanvasRenderingContext2D, src: string, x: number, y: number, width: number, height: number) {
@@ -265,7 +266,7 @@ function drawInformationRows(
   const verticalPadding = 11;
   let currentY = y;
 
-  rows.forEach(([label, value]) => {
+  for (const [label, value] of rows) {
     const valueX = x + labelWidth + 16;
     const valueWidth = width - labelWidth - 32;
     const valueLines = wrapTextByWidth(value, valueWidth, text => context.measureText(text).width);
@@ -284,12 +285,12 @@ function drawInformationRows(
 
     context.fillStyle = '#334155';
     context.font = '500 20px Arial';
-    valueLines.forEach((line, lineIndex) => {
+    for (const [lineIndex, line] of valueLines.entries()) {
       context.fillText(line, valueX, currentY + verticalPadding + 18 + lineIndex * lineHeight);
-    });
+    }
 
     currentY += rowHeight + rowGap;
-  });
+  }
 }
 
 type TextMeasure = (value: string) => number;
@@ -304,9 +305,9 @@ export function wrapTextByWidth(text: string, maxWidth: number, measureText: Tex
   const lines: string[] = [];
   let currentLine = '';
 
-  Array.from(normalizedText).forEach(character => {
+  for (const character of normalizedText) {
     if (character === ' ' && currentLine.length === 0) {
-      return;
+      continue;
     }
 
     const nextLine = `${currentLine}${character}`;
@@ -314,11 +315,11 @@ export function wrapTextByWidth(text: string, maxWidth: number, measureText: Tex
     if (currentLine && measureText(nextLine) > maxWidth) {
       lines.push(currentLine.trimEnd());
       currentLine = character.trimStart();
-      return;
+      continue;
     }
 
     currentLine = nextLine;
-  });
+  }
 
   if (currentLine) {
     lines.push(currentLine.trimEnd());
@@ -350,9 +351,6 @@ export function getShareImageLayout(profileCount: number) {
 }
 
 export function getShareProfileLabel(profile: Profile) {
-  return `${profile.gender === 'female' ? '여성' : '남성'} ${formatBirthYearLabel(profile.birthYear)}`;
+  return `${genderLabels[profile.gender]} ${formatBirthYearLabel(profile.birthYear)}`;
 }
 
-export function getShareProfileInformationRows(profile: Profile) {
-  return getProfileInformationRows(profile);
-}

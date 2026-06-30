@@ -2,6 +2,9 @@ import {buildInternalAuthEmail, invalidLoginIdMessage, normalizeLoginId} from '@
 import {createSupabaseAdminClient} from '@/lib/supabase/admin';
 import type {ManagedUser} from '@/types/user';
 
+// Supabase requires a duration string rather than "permanent"; 876000h ≈ 100 years.
+const PERMANENT_BAN_DURATION = '876000h';
+
 export type CreateManagedUserInput = {
   name: string;
   loginId: string;
@@ -72,7 +75,7 @@ export function prepareManagedUserCreateInput(input: CreateManagedUserInput): Pr
   let loginId: string;
 
   try {
-    loginId = normalizeLoginId(input.loginId);
+    loginId = normalizeLoginId(loginIdInput);
   } catch (error) {
     return {
       success: false,
@@ -161,9 +164,10 @@ export async function createManagedUser(input: CreateManagedUserInput): Promise<
   });
 
   if (authError) {
+    const isDuplicate = authError.code === 'email_exists' || authError.code === 'user_already_exists';
     return {
       success: false,
-      message: authError.message.includes('already') ? '이미 사용 중인 아이디입니다.' : authError.message,
+      message: isDuplicate ? '이미 사용 중인 아이디입니다.' : authError.message,
     };
   }
 
@@ -206,33 +210,38 @@ export async function createManagedUser(input: CreateManagedUserInput): Promise<
 
 export async function removeManagedUser(userId: string): Promise<UserMutationResult> {
   const supabase = createSupabaseAdminClient();
-  const {data, error} = await supabase
-    .from('app_users')
-    .select('id, login_id, auth_email, name, recommender_name, phone_number, created_at')
-    .is('removed_at', null);
 
-  if (error) {
-    return {
-      success: false,
-      message: error.message,
-    };
+  const [userResult, countResult] = await Promise.all([
+    supabase
+      .from('app_users')
+      .select('id, login_id, auth_email, name, recommender_name, phone_number, created_at')
+      .eq('id', userId)
+      .is('removed_at', null)
+      .maybeSingle(),
+    supabase.from('app_users').select('id', {count: 'exact', head: true}).is('removed_at', null),
+  ]);
+
+  if (userResult.error) {
+    return {success: false, message: userResult.error.message};
   }
 
-  const users = (data ?? []) as AppUserRow[];
-
-  if (users.length <= 1) {
-    return {
-      success: false,
-      message: '마지막 관리자는 제거할 수 없습니다.',
-    };
+  if (countResult.error) {
+    return {success: false, message: countResult.error.message};
   }
 
-  const user = users.find(currentUser => currentUser.id === userId);
+  const user = userResult.data as AppUserRow | null;
 
   if (!user) {
     return {
       success: false,
       message: '관리자를 찾을 수 없습니다.',
+    };
+  }
+
+  if ((countResult.count ?? 0) <= 1) {
+    return {
+      success: false,
+      message: '마지막 관리자는 제거할 수 없습니다.',
     };
   }
 
@@ -249,7 +258,14 @@ export async function removeManagedUser(userId: string): Promise<UserMutationRes
     };
   }
 
-  await supabase.auth.admin.updateUserById(userId, {ban_duration: '876000h'});
+  const {error: banError} = await supabase.auth.admin.updateUserById(userId, {ban_duration: PERMANENT_BAN_DURATION});
+
+  if (banError) {
+    // Roll back the soft-delete so the user remains accessible and the auth
+    // session stays consistent (middleware relies solely on getUser() now).
+    await supabase.from('app_users').update({removed_at: null}).eq('id', userId);
+    return {success: false, message: banError.message};
+  }
 
   return {
     success: true,

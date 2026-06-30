@@ -4,25 +4,10 @@ import {cookies} from 'next/headers';
 import type {Database} from './types';
 import {getSupabasePublishableKey, getSupabaseUrl} from './env';
 
+export const PROFILE_PHOTOS_BUCKET = 'profile-photos';
+
 export function getStoragePublicBase() {
-  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/profile-photos`;
-}
-
-export async function createSupabaseRouteClient() {
-  const cookieStore = await cookies();
-
-  return createServerClient(getSupabaseUrl(), getSupabasePublishableKey(), {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({name, value, options}) => {
-          cookieStore.set(name, value, options);
-        });
-      },
-    },
-  });
+  return `${getSupabaseUrl()}/storage/v1/object/public/${PROFILE_PHOTOS_BUCKET}`;
 }
 
 export async function createSupabaseServerClient() {

@@ -7,13 +7,14 @@ import {ChangeEvent, DragEvent, FormEvent, useState} from 'react';
 
 import {closedAlertState, CustomAlert, type CustomAlertState} from '@/components/CustomAlert';
 import {
+  birthYearBounds,
   emptyProfileFormValues,
   normalizeProfileFormValues,
   profileToFormValues,
   validateProfileFormValues,
   type ProfileFormValues,
 } from '@/lib/profiles/form';
-import {drinkingLabels, religionLabels, smokingLabels} from '@/lib/profiles/options';
+import {drinkingLabels, genderLabels, religionLabels, smokingLabels} from '@/lib/profiles/options';
 import type {Drinking, Gender, Profile, ProfilePhoto, Religion, Smoking} from '@/types/profile';
 
 type ModalMode =
@@ -33,12 +34,11 @@ type ProfileFormModalProps = {
   onUpdate: (profile: Profile) => void;
 };
 
+const genderOptions: [Gender, string][] = (['female', 'male'] as Gender[]).map(value => [value, genderLabels[value]]);
 const religionOptions: Religion[] = ['christian', 'buddhist', 'catholic', 'none'];
 const smokingOptions: Smoking[] = ['smoker', 'non_smoker'];
 const drinkingOptions: Drinking[] = ['drinker', 'non_drinker'];
-const currentYear = new Date().getFullYear();
-const oldestBirthYear = currentYear - 80 + 1;
-const youngestBirthYear = currentYear - 19 + 1;
+const {oldestBirthYear, youngestBirthYear} = birthYearBounds;
 const birthYearOptions = Array.from({length: youngestBirthYear - oldestBirthYear + 1}, (_, index) => {
   const year = youngestBirthYear - index;
 
@@ -253,10 +253,7 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
                 label="성별"
                 required={true}
                 value={values.gender}
-                options={[
-                  ['female', '여성'],
-                  ['male', '남성'],
-                ]}
+                options={genderOptions}
                 onChange={value => updateField('gender', value)}
               />
               <TextField
