@@ -9,10 +9,8 @@ import {recordHistory} from '@/lib/history/events';
 import type {ManagedUser} from '@/types/user';
 
 type UserFormValues = {
-  name: string;
   loginId: string;
   password: string;
-  recommenderName: string;
   phoneNumber: string;
 };
 
@@ -68,7 +66,7 @@ export function AdminPageClient({authorName}: AdminPageClientProps) {
     const response = await fetch('/api/admin/users', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(values),
+      body: JSON.stringify({...values, recommenderName: authorName}),
     });
     const data = (await response.json()) as {user: ManagedUser; message: string};
 
@@ -83,7 +81,7 @@ export function AdminPageClient({authorName}: AdminPageClientProps) {
     recordHistory({
       type: 'admin_created',
       actorName: authorName,
-      targetLabel: data.user.name,
+      targetLabel: data.user.loginId,
       description: `${data.user.loginId} 관리자 계정을 추가했습니다.`,
     });
 
@@ -110,7 +108,7 @@ export function AdminPageClient({authorName}: AdminPageClientProps) {
     recordHistory({
       type: 'admin_removed',
       actorName: authorName,
-      targetLabel: data.user.name,
+      targetLabel: data.user.loginId,
       description: `${data.user.loginId} 관리자 계정을 제거했습니다.`,
     });
   };
@@ -119,7 +117,7 @@ export function AdminPageClient({authorName}: AdminPageClientProps) {
     setAlertState({
       kind: 'confirm',
       title: '관리자를 제거하시겠습니까?',
-      message: `${user.name} (${user.loginId}) 계정은 더 이상 서비스에 로그인할 수 없습니다.`,
+      message: `${user.loginId} 계정은 더 이상 서비스에 로그인할 수 없습니다.`,
       confirmLabel: '예',
       confirmVariant: 'danger',
       onConfirm: () => {
@@ -160,7 +158,6 @@ export function AdminPageClient({authorName}: AdminPageClientProps) {
           <table className="w-full min-w-[800px] border-collapse text-left">
             <thead className="bg-[var(--violet-50)] text-sm text-[var(--violet-900)]">
               <tr>
-                <th className="px-4 py-3">이름</th>
                 <th className="px-4 py-3">아이디</th>
                 <th className="px-4 py-3">추천인</th>
                 <th className="px-4 py-3">전화번호</th>
@@ -171,8 +168,7 @@ export function AdminPageClient({authorName}: AdminPageClientProps) {
             <tbody className="divide-y divide-[var(--border)] text-sm">
               {users.map(user => (
                 <tr key={user.id}>
-                  <td className="px-4 py-3 font-bold text-[var(--violet-950)]">{user.name}</td>
-                  <td className="px-4 py-3 text-slate-700">{user.loginId}</td>
+                  <td className="px-4 py-3 font-bold text-[var(--violet-950)]">{user.loginId}</td>
                   <td className="px-4 py-3 text-slate-600">{user.recommenderName}</td>
                   <td className="px-4 py-3 text-slate-600">{user.phoneNumber}</td>
                   <td className="px-4 py-3 text-slate-500">{new Date(user.createdAt).toLocaleDateString('ko-KR')}</td>
@@ -181,7 +177,7 @@ export function AdminPageClient({authorName}: AdminPageClientProps) {
                       className="inline-grid h-9 w-9 place-items-center rounded-[8px] border border-red-100 text-[var(--danger)] hover:bg-red-50"
                       type="button"
                       onClick={() => requestRemove(user)}
-                      aria-label={`${user.name} 관리자 제거`}
+                      aria-label={`${user.loginId} 관리자 제거`}
                     >
                       <Trash2 size={17} aria-hidden />
                     </button>
@@ -197,14 +193,13 @@ export function AdminPageClient({authorName}: AdminPageClientProps) {
             <article className="rounded-[8px] border border-[var(--border)] bg-white p-4 shadow-sm" key={user.id}>
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-extrabold text-[var(--violet-950)]">{user.name}</h2>
-                  <p className="mt-1 text-sm font-semibold text-[var(--violet-800)]">{user.loginId}</p>
+                  <h2 className="text-lg font-extrabold text-[var(--violet-950)]">{user.loginId}</h2>
                 </div>
                 <button
                   className="grid h-9 w-9 shrink-0 place-items-center rounded-[8px] border border-red-100 text-[var(--danger)] hover:bg-red-50"
                   type="button"
                   onClick={() => requestRemove(user)}
-                  aria-label={`${user.name} 관리자 제거`}
+                  aria-label={`${user.loginId} 관리자 제거`}
                 >
                   <Trash2 size={17} aria-hidden />
                 </button>
@@ -258,10 +253,8 @@ function UserCreateModal({
   onCreate: (values: UserFormValues) => Promise<UserCreateResult>;
 }) {
   const [values, setValues] = useState<UserFormValues>({
-    name: '',
     loginId: '',
     password: '',
-    recommenderName: authorName,
     phoneNumber: '',
   });
   const [error, setError] = useState('');
@@ -271,7 +264,7 @@ function UserCreateModal({
     event.preventDefault();
     setError('');
 
-    if (!values.name.trim() || !values.loginId.trim() || !values.password.trim() || !values.phoneNumber.trim()) {
+    if (!values.loginId.trim() || !values.password.trim() || !values.phoneNumber.trim()) {
       setError('필수 값을 모두 입력해 주세요.');
       return;
     }
@@ -309,15 +302,6 @@ function UserCreateModal({
             서비스 안전을 위해 항상 확실한 분들만 추가 부탁드립니다.
           </p>
           <AdminTextField
-            label="이름"
-            required={true}
-            type="text"
-            placeholder="김가연"
-            value={values.name}
-            disabled={false}
-            onChange={value => setValues(current => ({...current, name: value}))}
-          />
-          <AdminTextField
             label="아이디"
             required={true}
             type="text"
@@ -335,15 +319,10 @@ function UserCreateModal({
             disabled={false}
             onChange={value => setValues(current => ({...current, password: value}))}
           />
-          <AdminTextField
-            label="추천인"
-            required={true}
-            type="text"
-            placeholder="Aiden"
-            value={values.recommenderName}
-            disabled={true}
-            onChange={value => setValues(current => ({...current, recommenderName: value}))}
-          />
+          <label className="block">
+            <span className="mb-2 block text-sm font-bold text-slate-700">추천인</span>
+            <p className="flex h-10 items-center rounded-[8px] border border-[var(--border)] bg-slate-50 px-3 text-sm text-slate-500">{authorName}</p>
+          </label>
           <AdminTextField
             label="전화번호"
             required={true}

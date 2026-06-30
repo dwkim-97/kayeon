@@ -5,16 +5,32 @@ import type {Profile} from '@/types/profile';
 export type ProfileInformationRow = [label: string, value: string];
 
 export function getProfileInformationRows(profile: Profile): ProfileInformationRow[] {
-  return [
+  const rows: ProfileInformationRow[] = [
     ['나이', formatBirthYearLabel(profile.birthYear)],
     ['키', `${profile.height}cm`],
     ['사는 곳', profile.residence],
     ['회사', profile.job],
     ['종교', religionLabels[profile.religion]],
-    ['MBTI', profile.mbti || '미입력'],
-    ['취미', profile.hobbies || '미입력'],
-    ['흡연/음주', `${smokingLabels[profile.smoking]} / ${drinkingLabels[profile.drinking]}`],
-    ['이상형', profile.idealType || '미입력'],
-    ['코멘트', profile.matchmakerComment || '미입력'],
   ];
+
+  if (profile.mbti) rows.push(['MBTI', profile.mbti]);
+  if (profile.hobbies) rows.push(['취미', profile.hobbies]);
+
+  const hasSmokingInfo = profile.smoking !== 'not_selected';
+  const hasDrinkingInfo = profile.drinking !== 'not_selected';
+  if (hasSmokingInfo || hasDrinkingInfo) {
+    const value =
+      hasSmokingInfo && hasDrinkingInfo
+        ? `${smokingLabels[profile.smoking]} / ${drinkingLabels[profile.drinking]}`
+        : hasSmokingInfo
+          ? smokingLabels[profile.smoking]
+          : drinkingLabels[profile.drinking];
+    rows.push(['흡연/음주', value]);
+  }
+
+  if (profile.idealType) rows.push(['이상형', profile.idealType]);
+  if (profile.matchmakerComment) rows.push(['코멘트', profile.matchmakerComment]);
+  if (profile.extra) rows.push(['기타', profile.extra]);
+
+  return rows;
 }
