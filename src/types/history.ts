@@ -1,0 +1,17 @@
+export type HistoryEventType =
+  | 'profile_created'
+  | 'profile_updated'
+  | 'profile_deleted'
+  | 'profile_blocked'
+  | 'profile_activated'
+  | 'admin_created'
+  | 'admin_removed';
+
+export type HistoryEvent = {
+  id: string;
+  type: HistoryEventType;
+  actorName: string;
+  targetLabel: string;
+  description: string;
+  createdAt: string;
+};
