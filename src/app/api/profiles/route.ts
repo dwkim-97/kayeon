@@ -1,5 +1,6 @@
 import {NextResponse} from 'next/server';
 
+import {getSessionUserName} from '@/lib/auth/session';
 import {profileToInsertRow, rowToProfile} from '@/lib/supabase/mappers';
 import {createSupabaseServerClient, getStoragePublicBase} from '@/lib/supabase/server';
 import type {Profile} from '@/types/profile';
@@ -28,11 +29,10 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const supabase = await createSupabaseServerClient();
-  const [{data: {user}}, body] = await Promise.all([
-    supabase.auth.getUser(),
+  const [actorName, body] = await Promise.all([
+    getSessionUserName(),
     request.json() as Promise<Omit<Profile, 'createdAt' | 'updatedAt'>>,
   ]);
-  const actorName = (user?.user_metadata?.name as string | undefined) ?? '';
 
   const insertRow = profileToInsertRow({...body, authorName: actorName});
 

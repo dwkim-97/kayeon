@@ -36,19 +36,74 @@ const defaultFilters = (gender: Gender): ProfileFilters => ({
 type UploadedPhotoId = {tempId: string; id: string; url: string};
 
 async function apiUploadPhotos(profileId: string, photos: Profile['photos']): Promise<UploadedPhotoId[]> {
-  const newPhotos: {tempId: string; dataUrl: string; alt: string; order: number}[] = [];
-  const retainedPhotoIds: string[] = [];
-  for (const p of photos) {
-    if (p.url.startsWith('data:')) newPhotos.push({tempId: p.id, dataUrl: p.url, alt: p.alt, order: p.order});
-    else retainedPhotoIds.push(p.id);
+  const newPhotos = photos.filter(p => p.url.startsWith('data:'));
+  const retainedPhotoIds = photos.filter(p => !p.url.startsWith('data:')).map(p => p.id);
+
+  let uploadedPhotoIds: UploadedPhotoId[] = [];
+
+  if (newPhotos.length > 0) {
+    // Step 1: get presigned upload URLs from server
+    const signRes = await fetch(`/api/profiles/${profileId}/photos`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        photos: newPhotos.map(p => {
+          const mimeMatch = p.url.match(/^data:([^;]+);base64,/);
+          return {tempId: p.id, mimeType: mimeMatch?.[1] ?? 'image/jpeg'};
+        }),
+      }),
+    });
+    const {signed} = (await signRes.json()) as {
+      signed: {tempId: string; uploadUrl: string; storagePath: string; id: string}[];
+    };
+
+    // Step 2: upload each file directly to Supabase Storage
+    await Promise.all(
+      signed.map(async ({uploadUrl, tempId}) => {
+        const photo = newPhotos.find(p => p.id === tempId)!;
+        const base64 = photo.url.split(',')[1];
+        const mimeMatch = photo.url.match(/^data:([^;]+);base64,/);
+        const mimeType = mimeMatch?.[1] ?? 'image/jpeg';
+        const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+        await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: {'Content-Type': mimeType},
+          body: binary,
+        });
+      }),
+    );
+
+    // Step 3: register uploaded paths in DB
+    await fetch(`/api/profiles/${profileId}/photos`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        newPhotos: signed.map(s => {
+          const photo = newPhotos.find(p => p.id === s.tempId)!;
+          return {tempId: s.tempId, id: s.id, storagePath: s.storagePath, alt: photo.alt, order: photo.order};
+        }),
+        retainedPhotoIds,
+      }),
+    });
+
+    uploadedPhotoIds = signed.map(s => {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      return {
+        tempId: s.tempId,
+        id: s.id,
+        url: `${supabaseUrl}/storage/v1/object/public/profile-photos/${s.storagePath}`,
+      };
+    });
+  } else {
+    // No new photos, just update retained list
+    await fetch(`/api/profiles/${profileId}/photos`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({newPhotos: [], retainedPhotoIds}),
+    });
   }
-  const res = await fetch(`/api/profiles/${profileId}/photos`, {
-    method: 'PUT',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({newPhotos, retainedPhotoIds}),
-  });
-  const {uploadedPhotoIds} = (await res.json()) as {uploadedPhotoIds: UploadedPhotoId[]};
-  return uploadedPhotoIds ?? [];
+
+  return uploadedPhotoIds;
 }
 
 function resolvePhotos(photos: Profile['photos'], uploadedPhotoIds: UploadedPhotoId[]): Profile['photos'] {

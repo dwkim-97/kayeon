@@ -6,7 +6,6 @@ import type {ManagedUser} from '@/types/user';
 const PERMANENT_BAN_DURATION = '876000h';
 
 export type CreateManagedUserInput = {
-  name: string;
   loginId: string;
   password: string;
   recommenderName: string;
@@ -30,8 +29,6 @@ export type UserMutationResult =
 type AppUserRow = {
   id: string;
   login_id: string;
-  auth_email: string;
-  name: string;
   recommender_name: string;
   phone_number: string;
   created_at: string;
@@ -50,7 +47,6 @@ export type PrepareManagedUserCreateResult =
 function toManagedUser(user: AppUserRow): ManagedUser {
   return {
     id: user.id,
-    name: user.name,
     loginId: user.login_id,
     recommenderName: user.recommender_name,
     phoneNumber: user.phone_number,
@@ -59,13 +55,12 @@ function toManagedUser(user: AppUserRow): ManagedUser {
 }
 
 export function prepareManagedUserCreateInput(input: CreateManagedUserInput): PrepareManagedUserCreateResult {
-  const name = input.name.trim();
   const loginIdInput = input.loginId.trim();
   const password = input.password.trim();
   const recommenderName = input.recommenderName.trim();
   const phoneNumber = input.phoneNumber.trim();
 
-  if (!name || !loginIdInput || !password || !recommenderName || !phoneNumber) {
+  if (!loginIdInput || !password || !recommenderName || !phoneNumber) {
     return {
       success: false,
       message: '필수 값을 모두 입력해 주세요.',
@@ -93,7 +88,6 @@ export function prepareManagedUserCreateInput(input: CreateManagedUserInput): Pr
   return {
     success: true,
     value: {
-      name,
       loginId,
       authEmail: buildInternalAuthEmail(loginId),
       password,
@@ -107,7 +101,7 @@ export async function listManagedUsers() {
   const supabase = createSupabaseAdminClient();
   const {data, error} = await supabase
     .from('app_users')
-    .select('id, login_id, auth_email, name, recommender_name, phone_number, created_at')
+    .select('id, login_id, recommender_name, phone_number, created_at')
     .is('removed_at', null)
     .order('created_at', {ascending: false});
 
@@ -139,7 +133,7 @@ export async function findAuthEmailForLoginId(loginIdInput: string) {
     throw new Error(error.message);
   }
 
-  return (data as Pick<AppUserRow, 'auth_email'> | null)?.auth_email ?? null;
+  return (data as {auth_email: string} | null)?.auth_email ?? null;
 }
 
 export async function createManagedUser(input: CreateManagedUserInput): Promise<UserMutationResult> {
@@ -155,9 +149,6 @@ export async function createManagedUser(input: CreateManagedUserInput): Promise<
     email: value.authEmail,
     password: value.password,
     email_confirm: true,
-    user_metadata: {
-      name: value.name,
-    },
     app_metadata: {
       login_id: value.loginId,
     },
@@ -186,11 +177,10 @@ export async function createManagedUser(input: CreateManagedUserInput): Promise<
       id: authUser.id,
       login_id: value.loginId,
       auth_email: value.authEmail,
-      name: value.name,
       recommender_name: value.recommenderName,
       phone_number: value.phoneNumber,
     })
-    .select('id, login_id, auth_email, name, recommender_name, phone_number, created_at')
+    .select('id, login_id, recommender_name, phone_number, created_at')
     .single();
 
   if (error) {
@@ -214,7 +204,7 @@ export async function removeManagedUser(userId: string): Promise<UserMutationRes
   const [userResult, countResult] = await Promise.all([
     supabase
       .from('app_users')
-      .select('id, login_id, auth_email, name, recommender_name, phone_number, created_at')
+      .select('id, login_id, recommender_name, phone_number, created_at')
       .eq('id', userId)
       .is('removed_at', null)
       .maybeSingle(),
