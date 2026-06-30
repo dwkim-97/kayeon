@@ -9,12 +9,12 @@ type HistoryEventRow = Database['public']['Tables']['history_events']['Row'];
 
 export function rowToProfile(row: ProfileRow, photoRows: ProfilePhotoRow[], publicUrlBase: string): Profile {
   const photos: ProfilePhoto[] = [...photoRows]
-    .sort((a, b) => a.order - b.order)
+    .sort((a, b) => a.sort_order - b.sort_order)
     .map(photo => ({
       id: photo.id,
       url: `${publicUrlBase}/${photo.storage_path}`,
       alt: photo.alt,
-      order: photo.order,
+      order: photo.sort_order,
     }));
 
   return {

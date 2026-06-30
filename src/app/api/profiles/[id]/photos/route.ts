@@ -83,7 +83,7 @@ export async function PUT(request: Request, {params}: RouteParams) {
       profile_id: profileId,
       storage_path: photo.storagePath,
       alt: photo.alt,
-      order: photo.order,
+      sort_order: photo.order,
     }));
 
     const {error: insertError} = await supabase.from('profile_photos').insert(rows);
