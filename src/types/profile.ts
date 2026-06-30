@@ -42,7 +42,7 @@ export type ProfileFilters = {
   heightValue: string;
   heightComparison: NumericComparison;
   activeOnly: boolean;
-  religions: Religion[];
-  smoking: Smoking[];
+  religion: Religion | '';
+  smoking: Smoking | '';
   query: string;
 };
