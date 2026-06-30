@@ -79,7 +79,7 @@ export type Database = {
           profile_id: string;
           storage_path: string;
           alt: string;
-          order: number;
+          sort_order: number;
           created_at: string;
         };
         Insert: {
@@ -87,7 +87,7 @@ export type Database = {
           profile_id: string;
           storage_path: string;
           alt: string;
-          order: number;
+          sort_order: number;
           created_at?: string;
         };
         Update: {
@@ -95,7 +95,7 @@ export type Database = {
           profile_id?: string;
           storage_path?: string;
           alt?: string;
-          order?: number;
+          sort_order?: number;
           created_at?: string;
         };
         Relationships: [
@@ -112,6 +112,7 @@ export type Database = {
           id: string;
           type: HistoryEventType;
           actor_name: string;
+          actor_id: string | null;
           target_label: string;
           description: string;
           created_at: string;
@@ -120,6 +121,7 @@ export type Database = {
           id?: string;
           type: HistoryEventType;
           actor_name: string;
+          actor_id?: string | null;
           target_label: string;
           description: string;
           created_at?: string;
@@ -128,6 +130,7 @@ export type Database = {
           id?: string;
           type?: HistoryEventType;
           actor_name?: string;
+          actor_id?: string | null;
           target_label?: string;
           description?: string;
           created_at?: string;
