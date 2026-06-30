@@ -1,6 +1,12 @@
 import {describe, expect, it} from 'vitest';
 
-import {getShareImageLayout, getShareProfileInformationRows, getShareProfileLabel} from './ShareButton';
+import {
+  getShareImageLayout,
+  getShareProfileCardLayout,
+  getShareProfileInformationRows,
+  getShareProfileLabel,
+  wrapTextByWidth,
+} from './ShareButton';
 import type {Profile} from '@/types/profile';
 
 const profile: Profile = {
@@ -30,11 +36,30 @@ describe('share image helpers', () => {
   it('starts share cards without reserving a header area', () => {
     expect(getShareImageLayout(2)).toEqual({
       width: 1080,
-      cardHeight: 700,
+      cardHeight: 760,
       gap: 34,
       padding: 56,
-      height: 1546,
+      height: 1666,
     });
+  });
+
+  it('uses a larger image area and a narrower information area', () => {
+    expect(getShareProfileCardLayout(968)).toEqual({
+      imageHeight: 640,
+      imageInset: 28,
+      imageWidth: 500,
+      informationGap: 28,
+      informationRightPadding: 28,
+      informationWidth: 384,
+    });
+  });
+
+  it('wraps long information values instead of clipping them', () => {
+    const lines = wrapTextByWidth('다정한 사람과 대화가 잘 통하는 사람', 50, value => Array.from(value).length * 10);
+
+    expect(lines.length).toBeGreaterThan(1);
+    expect(lines.join('')).toBe('다정한 사람과 대화가 잘 통하는 사람');
+    expect(lines.every(line => Array.from(line).length * 10 <= 50)).toBe(true);
   });
 
   it('uses dashboard-style profile information rows without author text', () => {

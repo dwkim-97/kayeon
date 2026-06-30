@@ -48,9 +48,16 @@ type ShareButtonProps = {
 const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY || '';
 const shareImageLayoutBase = {
   width: 1080,
-  cardHeight: 700,
+  cardHeight: 760,
   gap: 34,
   padding: 56,
+};
+const shareProfileCardLayout = {
+  imageHeight: 640,
+  imageInset: 28,
+  imageWidth: 500,
+  informationGap: 28,
+  informationRightPadding: 28,
 };
 
 export function ShareButton({profiles}: ShareButtonProps) {
@@ -174,10 +181,9 @@ async function drawProfileCard(
   height: number,
 ) {
   roundedRect(context, x, y, width, height, 28, '#FFFFFF');
-  const imageWidth = 420;
-  const imageHeight = 560;
-  const imageX = x + 28;
-  const imageY = y + 28;
+  const {imageHeight, imageInset, imageWidth, informationGap, informationWidth} = getShareProfileCardLayout(width);
+  const imageX = x + imageInset;
+  const imageY = y + imageInset;
   const photos = profile.photos.slice(0, 4);
 
   for (const [index, photo] of photos.entries()) {
@@ -188,9 +194,9 @@ async function drawProfileCard(
     await drawImage(context, photo.url, cellX, cellY, cellWidth, cellHeight);
   }
 
-  const textX = imageX + imageWidth + 36;
-  const textWidth = x + width - textX - 28;
-  drawInformationRows(context, getShareProfileInformationRows(profile), textX, y + 46, textWidth);
+  const textX = imageX + imageWidth + informationGap;
+  const textY = y + imageInset;
+  drawInformationRows(context, getShareProfileInformationRows(profile), textX, textY, informationWidth);
 }
 
 async function drawImage(context: CanvasRenderingContext2D, src: string, x: number, y: number, width: number, height: number) {
@@ -252,27 +258,85 @@ function drawInformationRows(
   y: number,
   width: number,
 ) {
-  const rowHeight = 52;
-  const labelWidth = 124;
+  const minimumRowHeight = 46;
+  const rowGap = 6;
+  const labelWidth = 112;
+  const lineHeight = 24;
+  const verticalPadding = 11;
+  let currentY = y;
 
-  rows.forEach(([label, value], index) => {
-    const rowY = y + index * rowHeight;
+  rows.forEach(([label, value]) => {
+    const valueX = x + labelWidth + 16;
+    const valueWidth = width - labelWidth - 32;
+    const valueLines = wrapTextByWidth(value, valueWidth, text => context.measureText(text).width);
+    const rowHeight = Math.max(minimumRowHeight, valueLines.length * lineHeight + verticalPadding * 2);
 
-    roundedRect(context, x, rowY, width, rowHeight - 6, 10, '#FFFFFF');
+    roundedRect(context, x, currentY, width, rowHeight, 10, '#FFFFFF');
     context.strokeStyle = '#DDD6FF';
     context.lineWidth = 2;
-    context.strokeRect(x, rowY, width, rowHeight - 6);
+    context.strokeRect(x, currentY, width, rowHeight);
 
     context.fillStyle = '#F5F3FF';
-    context.fillRect(x, rowY, labelWidth, rowHeight - 6);
+    context.fillRect(x, currentY, labelWidth, rowHeight);
     context.fillStyle = '#4D179A';
-    context.font = '700 22px Arial';
-    context.fillText(label, x + 16, rowY + 31);
+    context.font = '700 20px Arial';
+    context.fillText(label, x + 14, currentY + verticalPadding + 18);
 
     context.fillStyle = '#334155';
-    context.font = '500 22px Arial';
-    context.fillText(value.slice(0, 18), x + labelWidth + 18, rowY + 31);
+    context.font = '500 20px Arial';
+    valueLines.forEach((line, lineIndex) => {
+      context.fillText(line, valueX, currentY + verticalPadding + 18 + lineIndex * lineHeight);
+    });
+
+    currentY += rowHeight + rowGap;
   });
+}
+
+type TextMeasure = (value: string) => number;
+
+export function wrapTextByWidth(text: string, maxWidth: number, measureText: TextMeasure) {
+  const normalizedText = text.trim();
+
+  if (!normalizedText) {
+    return [''];
+  }
+
+  const lines: string[] = [];
+  let currentLine = '';
+
+  Array.from(normalizedText).forEach(character => {
+    if (character === ' ' && currentLine.length === 0) {
+      return;
+    }
+
+    const nextLine = `${currentLine}${character}`;
+
+    if (currentLine && measureText(nextLine) > maxWidth) {
+      lines.push(currentLine.trimEnd());
+      currentLine = character.trimStart();
+      return;
+    }
+
+    currentLine = nextLine;
+  });
+
+  if (currentLine) {
+    lines.push(currentLine.trimEnd());
+  }
+
+  return lines;
+}
+
+export function getShareProfileCardLayout(cardWidth: number) {
+  return {
+    ...shareProfileCardLayout,
+    informationWidth:
+      cardWidth -
+      shareProfileCardLayout.imageInset -
+      shareProfileCardLayout.imageWidth -
+      shareProfileCardLayout.informationGap -
+      shareProfileCardLayout.informationRightPadding,
+  };
 }
 
 export function getShareImageLayout(profileCount: number) {
