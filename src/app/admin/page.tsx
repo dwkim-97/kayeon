@@ -238,10 +238,9 @@ export default function AdminPage() {
 
             if (result.success) {
               setIsModalOpen(false);
-              return true;
             }
 
-            return false;
+            return result;
           }}
         />
       ) : null}
@@ -255,7 +254,7 @@ function UserCreateModal({
   onCreate,
 }: {
   onClose: () => void;
-  onCreate: (values: UserFormValues) => Promise<boolean>;
+  onCreate: (values: UserFormValues) => Promise<UserCreateResult>;
 }) {
   const [values, setValues] = useState<UserFormValues>({
     name: '',
@@ -282,11 +281,11 @@ function UserCreateModal({
     }
 
     setIsSubmitting(true);
-    const success = await onCreate(values);
+    const result = await onCreate(values);
     setIsSubmitting(false);
 
-    if (!success) {
-      setError('관리자를 추가하지 못했습니다.');
+    if (!result.success) {
+      setError(result.message);
     }
   };
 

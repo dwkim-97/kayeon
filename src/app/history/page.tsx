@@ -2,14 +2,24 @@
 
 import {ArrowLeft, ShieldCheck} from 'lucide-react';
 import Link from 'next/link';
-import {useSyncExternalStore} from 'react';
+import {useEffect, useState} from 'react';
 
 import {historyEventLabels} from '@/lib/history/events';
 import {loadHistoryEvents} from '@/lib/storage/history';
 import type {HistoryEvent} from '@/types/history';
 
 export default function HistoryPage() {
-  const events = useSyncExternalStore(subscribeHistoryEvents, loadHistoryEvents, getServerHistorySnapshot);
+  const [events, setEvents] = useState<HistoryEvent[]>([]);
+
+  useEffect(() => {
+    const frameId = window.requestAnimationFrame(() => {
+      setEvents(loadHistoryEvents());
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, []);
 
   return (
     <main className="min-h-screen bg-[var(--background)] px-4 py-6">
@@ -61,16 +71,4 @@ export default function HistoryPage() {
       </div>
     </main>
   );
-}
-
-function subscribeHistoryEvents(onStoreChange: () => void) {
-  window.addEventListener('storage', onStoreChange);
-
-  return () => {
-    window.removeEventListener('storage', onStoreChange);
-  };
-}
-
-function getServerHistorySnapshot() {
-  return [] as HistoryEvent[];
 }
