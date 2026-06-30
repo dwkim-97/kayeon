@@ -37,7 +37,6 @@ export function ProfileCard({
   const [dragOffset, setDragOffset] = useState(0);
   const dragStartXRef = useRef<number | null>(null);
   const animationResetTimerRef = useRef<number | null>(null);
-  const photo = profile.photos[photoIndex] || profile.photos[0];
   const hasMultiplePhotos = profile.photos.length > 1;
   const isBlocked = !profile.isActivated;
   const birthYearLabel = formatBirthYearLabel(profile.birthYear);
@@ -166,14 +165,21 @@ export function ProfileCard({
           onPointerUp={event => finishPhotoDrag(event.clientX)}
           onPointerCancel={cancelPhotoDrag}
         >
-          {photo ? (
-            <img
-              className={`h-full w-full select-none object-cover ${photoAnimationClass}`}
-              src={photo.url}
-              alt={photo.alt}
-              draggable={false}
-              style={{transform: dragOffset ? `translateX(${dragOffset}px)` : undefined}}
-            />
+          {profile.photos.length > 0 ? (
+            profile.photos.map((p, i) => (
+              <img
+                key={p.id}
+                className={`absolute inset-0 h-full w-full select-none object-cover ${i === photoIndex ? photoAnimationClass : ''}`}
+                src={p.url}
+                alt={p.alt}
+                draggable={false}
+                style={{
+                  opacity: i === photoIndex ? 1 : 0,
+                  transform: i === photoIndex && dragOffset ? `translateX(${dragOffset}px)` : undefined,
+                  pointerEvents: i === photoIndex ? 'auto' : 'none',
+                }}
+              />
+            ))
           ) : (
             <div className="grid h-full place-items-center text-sm text-slate-500">사진 없음</div>
           )}

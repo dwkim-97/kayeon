@@ -14,6 +14,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const body = (await request.json()) as {
+    name: string;
     loginId: string;
     password: string;
     recommenderName: string;

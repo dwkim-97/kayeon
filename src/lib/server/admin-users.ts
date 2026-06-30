@@ -6,6 +6,7 @@ import type {ManagedUser} from '@/types/user';
 const PERMANENT_BAN_DURATION = '876000h';
 
 export type CreateManagedUserInput = {
+  name: string;
   loginId: string;
   password: string;
   recommenderName: string;
@@ -55,12 +56,13 @@ function toManagedUser(user: AppUserRow): ManagedUser {
 }
 
 export function prepareManagedUserCreateInput(input: CreateManagedUserInput): PrepareManagedUserCreateResult {
+  const name = input.name.trim();
   const loginIdInput = input.loginId.trim();
   const password = input.password.trim();
   const recommenderName = input.recommenderName.trim();
   const phoneNumber = input.phoneNumber.trim();
 
-  if (!loginIdInput || !password || !recommenderName || !phoneNumber) {
+  if (!name || !loginIdInput || !password || !recommenderName || !phoneNumber) {
     return {
       success: false,
       message: '필수 값을 모두 입력해 주세요.',
@@ -88,6 +90,7 @@ export function prepareManagedUserCreateInput(input: CreateManagedUserInput): Pr
   return {
     success: true,
     value: {
+      name,
       loginId,
       authEmail: buildInternalAuthEmail(loginId),
       password,
@@ -149,6 +152,9 @@ export async function createManagedUser(input: CreateManagedUserInput): Promise<
     email: value.authEmail,
     password: value.password,
     email_confirm: true,
+    user_metadata: {
+      name: value.name,
+    },
     app_metadata: {
       login_id: value.loginId,
     },

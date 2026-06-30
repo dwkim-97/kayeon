@@ -5,6 +5,7 @@ import {prepareManagedUserCreateInput} from './admin-users';
 describe('prepareManagedUserCreateInput', () => {
   it('keeps the user-facing id separate from the internal Supabase Auth email', () => {
     const result = prepareManagedUserCreateInput({
+      name: '홍길동',
       loginId: ' AIDEN_97 ',
       password: 'strong-password',
       recommenderName: ' 초기 관리자 ',
@@ -14,6 +15,7 @@ describe('prepareManagedUserCreateInput', () => {
     expect(result).toEqual({
       success: true,
       value: {
+        name: '홍길동',
         loginId: 'aiden_97',
         authEmail: 'aiden_97@kayeon.internal',
         password: 'strong-password',
@@ -26,6 +28,7 @@ describe('prepareManagedUserCreateInput', () => {
   it('returns a Korean validation message for invalid admin input', () => {
     expect(
       prepareManagedUserCreateInput({
+        name: '홍길동',
         loginId: 'ai',
         password: 'strong-password',
         recommenderName: '초기 관리자',
