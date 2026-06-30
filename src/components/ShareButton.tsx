@@ -121,7 +121,7 @@ export function ShareButton({profiles}: ShareButtonProps) {
         onClick={handleShare}
       >
         <Share2 size={17} aria-hidden />
-        {isSharing ? '공유 준비 중' : `카카오톡 공유 (${profiles.length})`}
+        {isSharing ? '공유 준비 중' : `공유 이미지 생성 (${profiles.length})`}
       </button>
     </>
   );
