@@ -3,10 +3,10 @@ import {describe, expect, it} from 'vitest';
 import {
   getShareImageLayout,
   getShareProfileCardLayout,
-  getShareProfileInformationRows,
   getShareProfileLabel,
   wrapTextByWidth,
 } from './ShareButton';
+import {getProfileInformationRows} from '@/lib/profiles/information';
 import type {Profile} from '@/types/profile';
 
 const profile: Profile = {
@@ -64,7 +64,7 @@ describe('share image helpers', () => {
 
   it('uses dashboard-style profile information rows without author text', () => {
     expect(getShareProfileLabel(profile)).toBe('여성 98년생');
-    expect(getShareProfileInformationRows(profile)).toEqual([
+    expect(getProfileInformationRows(profile)).toEqual([
       ['나이', '98년생'],
       ['키', '164cm'],
       ['사는 곳', '서울 강남구'],

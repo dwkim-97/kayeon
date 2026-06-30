@@ -3,6 +3,8 @@ import {birthYearFromAge} from '@/lib/profiles/age';
 import type {Drinking, Gender, Profile, ProfilePhoto, ProfileStatus, Religion, Smoking} from '@/types/profile';
 
 const STORAGE_KEY = 'kayeon_profiles_v1';
+const genderValues: Gender[] = ['female', 'male'];
+const statusValues: ProfileStatus[] = ['active', 'blocked'];
 const religionValues: Religion[] = ['christian', 'buddhist', 'catholic', 'none', 'not_selected'];
 const smokingValues: Smoking[] = ['smoker', 'non_smoker', 'not_selected'];
 const drinkingValues: Drinking[] = ['drinker', 'non_drinker', 'not_selected'];
@@ -43,7 +45,7 @@ function normalizeStoredProfile(profile: Record<string, unknown>, index: number)
 
   return {
     id: stringField(profile, 'id', `profile-${index}`),
-    gender: genderField(profile, 'gender', 'female'),
+    gender: enumField(profile, 'gender', genderValues, 'female'),
     status: isActivated ? 'active' : 'blocked',
     isActivated,
     authorName: stringField(profile, 'authorName', '미입력'),
@@ -72,7 +74,7 @@ function isActivatedField(profile: Record<string, unknown>) {
     return value;
   }
 
-  return statusField(profile, 'status', 'active') === 'active';
+  return enumField(profile, 'status', statusValues, 'active') === 'active';
 }
 
 function birthYearField(profile: Record<string, unknown>) {
@@ -137,18 +139,6 @@ function numberField(record: Record<string, unknown>, key: string, fallback: num
   const numberValue = typeof value === 'number' ? value : Number(value);
 
   return Number.isFinite(numberValue) ? numberValue : fallback;
-}
-
-function genderField(record: Record<string, unknown>, key: string, fallback: Gender) {
-  const value = record[key];
-
-  return value === 'male' || value === 'female' ? value : fallback;
-}
-
-function statusField(record: Record<string, unknown>, key: string, fallback: ProfileStatus) {
-  const value = record[key];
-
-  return value === 'blocked' || value === 'active' ? value : fallback;
 }
 
 function enumField<TValue extends string>(

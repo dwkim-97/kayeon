@@ -31,21 +31,16 @@ export async function POST(request: Request) {
     description: string;
   };
 
-  const {data, error} = await supabase
-    .from('history_events')
-    .insert({
-      id: crypto.randomUUID(),
-      type: body.type,
-      actor_name: body.actorName,
-      target_label: body.targetLabel,
-      description: body.description,
-    })
-    .select()
-    .single();
+  const {error} = await supabase.from('history_events').insert({
+    type: body.type,
+    actor_name: body.actorName,
+    target_label: body.targetLabel,
+    description: body.description,
+  });
 
   if (error) {
     return NextResponse.json({message: error.message}, {status: 500});
   }
 
-  return NextResponse.json({event: rowToHistoryEvent(data)}, {status: 201});
+  return NextResponse.json({ok: true}, {status: 201});
 }

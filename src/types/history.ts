@@ -1,11 +1,11 @@
-export type HistoryEventType =
+export type ProfileEventType =
   | 'profile_created'
   | 'profile_updated'
   | 'profile_deleted'
   | 'profile_blocked'
-  | 'profile_activated'
-  | 'admin_created'
-  | 'admin_removed';
+  | 'profile_activated';
+
+export type HistoryEventType = ProfileEventType | 'admin_created' | 'admin_removed';
 
 export type HistoryEvent = {
   id: string;

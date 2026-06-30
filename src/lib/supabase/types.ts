@@ -1,18 +1,7 @@
-export type Json = string | number | boolean | null | {[key: string]: Json | undefined} | Json[];
+import type {HistoryEventType} from '@/types/history';
+import type {Drinking, Gender, Religion, Smoking, ProfileStatus} from '@/types/profile';
 
-type ProfileGender = 'male' | 'female';
-type ProfileStatus = 'active' | 'blocked';
-type ProfileReligion = 'christian' | 'buddhist' | 'catholic' | 'none' | 'not_selected';
-type ProfileSmoking = 'smoker' | 'non_smoker' | 'not_selected';
-type ProfileDrinking = 'drinker' | 'non_drinker' | 'not_selected';
-type HistoryEventType =
-  | 'profile_created'
-  | 'profile_updated'
-  | 'profile_deleted'
-  | 'profile_blocked'
-  | 'profile_activated'
-  | 'admin_created'
-  | 'admin_removed';
+export type Json = string | number | boolean | null | {[key: string]: Json | undefined} | Json[];
 
 export type Database = {
   public: {
@@ -24,18 +13,18 @@ export type Database = {
       profiles: {
         Row: {
           id: string;
-          gender: ProfileGender;
+          gender: Gender;
           status: ProfileStatus;
           author_name: string;
           residence: string;
           birth_year: number;
           height: number;
           job: string;
-          religion: ProfileReligion;
+          religion: Religion;
           mbti: string;
           hobbies: string;
-          smoking: ProfileSmoking;
-          drinking: ProfileDrinking;
+          smoking: Smoking;
+          drinking: Drinking;
           ideal_type: string;
           matchmaker_comment: string;
           extra: string;
@@ -44,18 +33,18 @@ export type Database = {
         };
         Insert: {
           id: string;
-          gender: ProfileGender;
+          gender: Gender;
           status: ProfileStatus;
           author_name: string;
           residence: string;
           birth_year: number;
           height: number;
           job: string;
-          religion: ProfileReligion;
+          religion: Religion;
           mbti: string;
           hobbies: string;
-          smoking: ProfileSmoking;
-          drinking: ProfileDrinking;
+          smoking: Smoking;
+          drinking: Drinking;
           ideal_type: string;
           matchmaker_comment: string;
           extra: string;
@@ -64,18 +53,18 @@ export type Database = {
         };
         Update: {
           id?: string;
-          gender?: ProfileGender;
+          gender?: Gender;
           status?: ProfileStatus;
           author_name?: string;
           residence?: string;
           birth_year?: number;
           height?: number;
           job?: string;
-          religion?: ProfileReligion;
+          religion?: Religion;
           mbti?: string;
           hobbies?: string;
-          smoking?: ProfileSmoking;
-          drinking?: ProfileDrinking;
+          smoking?: Smoking;
+          drinking?: Drinking;
           ideal_type?: string;
           matchmaker_comment?: string;
           extra?: string;
@@ -109,7 +98,14 @@ export type Database = {
           order?: number;
           created_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'profile_photos_profile_id_fkey';
+            columns: ['profile_id'];
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       history_events: {
         Row: {
@@ -121,7 +117,7 @@ export type Database = {
           created_at: string;
         };
         Insert: {
-          id: string;
+          id?: string;
           type: HistoryEventType;
           actor_name: string;
           target_label: string;

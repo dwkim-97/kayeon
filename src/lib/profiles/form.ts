@@ -41,6 +41,18 @@ const requiredTextFields: Array<[keyof ProfileFormValues, string]> = [
 
 export const defaultBirthYear = 1995;
 
+function getBirthYearBounds() {
+  const currentYear = new Date().getFullYear();
+
+  return {
+    oldestBirthYear: currentYear - 80 + 1,
+    youngestBirthYear: currentYear - 19 + 1,
+  };
+}
+
+// Computed once at module load — stable for the lifetime of the process.
+export const birthYearBounds = getBirthYearBounds();
+
 export const emptyProfileFormValues: ProfileFormValues = {
   gender: 'female',
   residence: '',
@@ -110,9 +122,7 @@ export function validateProfileFormValues(values: ProfileFormValues): ProfileFor
   }
 
   const birthYear = Number(values.birthYear);
-  const currentYear = new Date().getFullYear();
-  const oldestBirthYear = currentYear - 80 + 1;
-  const youngestBirthYear = currentYear - 19 + 1;
+  const {oldestBirthYear, youngestBirthYear} = birthYearBounds;
   if (!Number.isInteger(birthYear) || birthYear < oldestBirthYear || birthYear > youngestBirthYear) {
     errors.push(`년생은 ${oldestBirthYear}년부터 ${youngestBirthYear}년 사이에서 선택해 주세요.`);
   }

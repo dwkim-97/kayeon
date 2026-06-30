@@ -94,7 +94,7 @@ describe('ProfileCard', () => {
   it('uses activation data to disable deactivated profile selection', () => {
     render(
       <ProfileCard
-        profile={{...profile, isActivated: false, status: 'active'}}
+        profile={{...profile, isActivated: false, status: 'blocked'}}
         isSelected={false}
         onSelectChange={vi.fn()}
         onEdit={vi.fn()}

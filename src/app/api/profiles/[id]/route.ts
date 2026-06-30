@@ -1,8 +1,7 @@
 import {NextResponse} from 'next/server';
 
-import {profileToUpdateRow, rowToProfile} from '@/lib/supabase/mappers';
-import {createSupabaseServerClient, getStoragePublicBase} from '@/lib/supabase/server';
-import type {Profile} from '@/types/profile';
+import {profileToUpdateRow, rowToProfile, type UpdatableProfile} from '@/lib/supabase/mappers';
+import {createSupabaseServerClient, getStoragePublicBase, PROFILE_PHOTOS_BUCKET} from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
 
@@ -11,16 +10,22 @@ type RouteParams = {params: Promise<{id: string}>};
 export async function PATCH(request: Request, {params}: RouteParams) {
   const {id} = await params;
   const supabase = await createSupabaseServerClient();
-  const body = (await request.json()) as Partial<Profile>;
+  const body = (await request.json()) as UpdatableProfile;
   const updateRow = profileToUpdateRow(body);
 
-  const {data: profileRow, error} = await supabase.from('profiles').update(updateRow).eq('id', id).select().single();
+  const {data: profileRow, error} = await supabase
+    .from('profiles')
+    .update(updateRow)
+    .eq('id', id)
+    .select('*, profile_photos(*)')
+    .single();
 
   if (error) {
     return NextResponse.json({message: error.message}, {status: 500});
   }
 
-  const profile = rowToProfile(profileRow, [], getStoragePublicBase());
+  const {profile_photos: photoRows, ...row} = profileRow;
+  const profile = rowToProfile(row, photoRows ?? [], getStoragePublicBase());
 
   return NextResponse.json({profile});
 }
@@ -29,12 +34,14 @@ export async function DELETE(_request: Request, {params}: RouteParams) {
   const {id} = await params;
   const supabase = await createSupabaseServerClient();
 
+  // Fetch storage paths before deleting the profile so we can clean up storage.
+  // Photo rows are removed automatically by the profile_photos ON DELETE CASCADE FK.
   const {data: photoRows} = await supabase.from('profile_photos').select('storage_path').eq('profile_id', id);
 
-  if (photoRows && photoRows.length > 0) {
-    await supabase.storage
-      .from('profile-photos')
-      .remove(photoRows.map(photo => photo.storage_path));
+  const storagePaths = (photoRows ?? []).map(photo => photo.storage_path);
+
+  if (storagePaths.length > 0) {
+    await supabase.storage.from(PROFILE_PHOTOS_BUCKET).remove(storagePaths);
   }
 
   const {error} = await supabase.from('profiles').delete().eq('id', id);

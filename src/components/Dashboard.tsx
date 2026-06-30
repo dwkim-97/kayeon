@@ -2,18 +2,19 @@
 
 import {History, LogOut, Plus, ShieldCheck, Users} from 'lucide-react';
 import Link from 'next/link';
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {closedAlertState, CustomAlert, type CustomAlertState} from '@/components/CustomAlert';
 import {FilterBar} from '@/components/FilterBar';
 import {ProfileCard} from '@/components/ProfileCard';
 import {ProfileFormModal} from '@/components/ProfileFormModal';
 import {ShareButton} from '@/components/ShareButton';
-import {historyEventDescriptions} from '@/lib/history/events';
+import {historyEventDescriptions, recordHistory} from '@/lib/history/events';
 import {formatBirthYearLabel} from '@/lib/profiles/age';
 import {filterProfiles} from '@/lib/profiles/filter';
+import {genderLabels} from '@/lib/profiles/options';
 import type {Gender, Profile, ProfileFilters, ProfileStatus} from '@/types/profile';
-import type {HistoryEventType} from '@/types/history';
+import type {ProfileEventType} from '@/types/history';
 
 type ModalState =
   | {kind: 'closed'}
@@ -32,23 +33,34 @@ const defaultFilters = (gender: Gender): ProfileFilters => ({
   query: '',
 });
 
-async function apiRecordHistory(params: {
-  type: HistoryEventType;
-  actorName: string;
-  targetLabel: string;
-  description: string;
-}) {
-  await fetch('/api/history', {
-    method: 'POST',
+type UploadedPhotoId = {tempId: string; id: string; url: string};
+
+async function apiUploadPhotos(profileId: string, photos: Profile['photos']): Promise<UploadedPhotoId[]> {
+  const newPhotos: {tempId: string; dataUrl: string; alt: string; order: number}[] = [];
+  const retainedPhotoIds: string[] = [];
+  for (const p of photos) {
+    if (p.url.startsWith('data:')) newPhotos.push({tempId: p.id, dataUrl: p.url, alt: p.alt, order: p.order});
+    else retainedPhotoIds.push(p.id);
+  }
+  const res = await fetch(`/api/profiles/${profileId}/photos`, {
+    method: 'PUT',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(params),
+    body: JSON.stringify({newPhotos, retainedPhotoIds}),
+  });
+  const {uploadedPhotoIds} = (await res.json()) as {uploadedPhotoIds: UploadedPhotoId[]};
+  return uploadedPhotoIds ?? [];
+}
+
+function resolvePhotos(photos: Profile['photos'], uploadedPhotoIds: UploadedPhotoId[]): Profile['photos'] {
+  const byTempId = new Map(uploadedPhotoIds.map(u => [u.tempId, u]));
+  return photos.map(p => {
+    const resolved = byTempId.get(p.id);
+    return resolved ? {...p, id: resolved.id, url: resolved.url} : p;
   });
 }
 
-
 function getProfileLabel(profile: Profile) {
-  const genderLabel = profile.gender === 'female' ? '여성' : '남성';
-  return `${genderLabel} ${formatBirthYearLabel(profile.birthYear)} · ${profile.residence}`;
+  return `${genderLabels[profile.gender]} ${formatBirthYearLabel(profile.birthYear)} · ${profile.residence}`;
 }
 
 type DashboardProps = {
@@ -63,33 +75,26 @@ export function Dashboard({authorName}: DashboardProps) {
   const [modal, setModal] = useState<ModalState>({kind: 'closed'});
   const [alertState, setAlertState] = useState<CustomAlertState>(closedAlertState);
 
-  const loadProfiles = useCallback(async () => {
-    setIsLoading(true);
-
-    try {
-      const res = await fetch('/api/profiles');
-      const {profiles: loaded} = await res.json();
-      setProfiles(loaded ?? []);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    loadProfiles();
-  }, [loadProfiles]);
+    fetch('/api/profiles')
+      .then(res => res.json())
+      .then(({profiles: loaded}) => setProfiles(loaded ?? []))
+      .catch(() => setProfiles([]))
+      .finally(() => setIsLoading(false));
+  }, []);
 
   const visibleProfiles = useMemo(() => filterProfiles(profiles, filters), [profiles, filters]);
   const activeVisibleProfiles = useMemo(
     () => visibleProfiles.filter(profile => profile.isActivated),
     [visibleProfiles],
   );
+  const selectedIdsSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const selectedProfiles = useMemo(
-    () => profiles.filter(profile => selectedIds.includes(profile.id) && profile.isActivated),
-    [profiles, selectedIds],
+    () => profiles.filter(profile => selectedIdsSet.has(profile.id) && profile.isActivated),
+    [profiles, selectedIdsSet],
   );
   const allVisibleSelected =
-    activeVisibleProfiles.length > 0 && activeVisibleProfiles.every(profile => selectedIds.includes(profile.id));
+    activeVisibleProfiles.length > 0 && activeVisibleProfiles.every(profile => selectedIdsSet.has(profile.id));
 
   const switchGender = (gender: Gender) => {
     setFilters(current => ({...defaultFilters(gender), query: current.query}));
@@ -112,15 +117,12 @@ export function Dashboard({authorName}: DashboardProps) {
     setSelectedIds(current => (selected ? [...new Set([...current, ...visibleIds])] : current.filter(id => !visibleIds.includes(id))));
   };
 
-  const writeHistory = (
-    profile: Profile,
-    type: 'profile_created' | 'profile_updated' | 'profile_deleted' | 'profile_blocked' | 'profile_activated',
-  ) => {
-    apiRecordHistory({
+  const writeHistory = (profile: Profile, type: ProfileEventType) => {
+    recordHistory({
       type,
       actorName: authorName,
       targetLabel: getProfileLabel(profile),
-      description: historyEventDescriptions[type] ?? '',
+      description: historyEventDescriptions[type],
     });
   };
 
@@ -137,20 +139,9 @@ export function Dashboard({authorName}: DashboardProps) {
 
     const {profile: created} = await res.json();
 
-    const newPhotos = photos.filter(p => p.url.startsWith('data:'));
-    if (newPhotos.length > 0) {
-      await fetch(`/api/profiles/${created.id}/photos`, {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          newPhotos: newPhotos.map(p => ({tempId: p.id, dataUrl: p.url, alt: p.alt, order: p.order})),
-          retainedPhotoIds: [],
-        }),
-      });
-    }
-
-    await loadProfiles();
-    writeHistory({...created, photos}, 'profile_created');
+    const uploadedPhotoIds = await apiUploadPhotos(created.id, photos);
+    setProfiles(current => [{...created, photos: resolvePhotos(photos, uploadedPhotoIds)}, ...current]);
+    writeHistory(created, 'profile_created');
     setModal({kind: 'closed'});
   };
 
@@ -165,26 +156,15 @@ export function Dashboard({authorName}: DashboardProps) {
 
     if (!res.ok) return;
 
-    const retainedPhotoIds = photos.filter(p => !p.url.startsWith('data:')).map(p => p.id);
-    const newPhotos = photos.filter(p => p.url.startsWith('data:'));
-
-    await fetch(`/api/profiles/${updatedProfile.id}/photos`, {
-      method: 'PUT',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        newPhotos: newPhotos.map(p => ({tempId: p.id, dataUrl: p.url, alt: p.alt, order: p.order})),
-        retainedPhotoIds,
-      }),
-    });
-
-    await loadProfiles();
-    writeHistory(updatedProfile, 'profile_updated');
+    const uploadedPhotoIds = await apiUploadPhotos(updatedProfile.id, photos);
+    const profileWithPhotos = {...updatedProfile, photos: resolvePhotos(photos, uploadedPhotoIds)};
+    setProfiles(current => current.map(p => (p.id === updatedProfile.id ? profileWithPhotos : p)));
+    writeHistory(profileWithPhotos, 'profile_updated');
     setModal({kind: 'closed'});
   };
 
   const handleStatusChange = async (profileId: string, status: ProfileStatus) => {
-    const target = profiles.find(p => p.id === profileId);
-    if (!target) return;
+    if (!profiles.some(p => p.id === profileId)) return;
 
     const res = await fetch(`/api/profiles/${profileId}`, {
       method: 'PATCH',
@@ -194,11 +174,12 @@ export function Dashboard({authorName}: DashboardProps) {
 
     if (!res.ok) return;
 
+    const {profile: updatedProfile} = await res.json();
+
     if (status === 'blocked') {
       setSelectedIds(current => current.filter(id => id !== profileId));
     }
 
-    const updatedProfile = {...target, status, isActivated: status === 'active'};
     setProfiles(current => current.map(p => (p.id === profileId ? updatedProfile : p)));
     writeHistory(updatedProfile, status === 'blocked' ? 'profile_blocked' : 'profile_activated');
   };
@@ -272,7 +253,7 @@ export function Dashboard({authorName}: DashboardProps) {
                 type="button"
                 onClick={() => switchGender(gender)}
               >
-                {gender === 'female' ? '여성' : '남성'}
+                {genderLabels[gender]}
               </button>
             ))}
           </div>
@@ -318,7 +299,7 @@ export function Dashboard({authorName}: DashboardProps) {
                 <ProfileCard
                   key={profile.id}
                   profile={profile}
-                  isSelected={selectedIds.includes(profile.id)}
+                  isSelected={selectedIdsSet.has(profile.id)}
                   onSelectChange={handleSelectChange}
                   onEdit={selectedProfile => setModal({kind: 'edit', profile: selectedProfile})}
                   onDelete={requestDelete}
