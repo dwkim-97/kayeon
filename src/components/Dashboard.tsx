@@ -125,6 +125,7 @@ type DashboardProps = {
 export function Dashboard({authorName}: DashboardProps) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMutating, setIsMutating] = useState(false);
   const [filters, setFilters] = useState<ProfileFilters>(defaultFilters('female'));
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [modal, setModal] = useState<ModalState>({kind: 'closed'});
@@ -183,60 +184,71 @@ export function Dashboard({authorName}: DashboardProps) {
 
   const handleCreate = async (newProfile: Profile) => {
     const {photos, ...rest} = newProfile;
+    setIsMutating(true);
+    try {
+      const res = await fetch('/api/profiles', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(rest),
+      });
 
-    const res = await fetch('/api/profiles', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(rest),
-    });
+      if (!res.ok) return;
 
-    if (!res.ok) return;
-
-    const {profile: created} = await res.json();
-
-    const uploadedPhotoIds = await apiUploadPhotos(created.id, photos);
-    setProfiles(current => [{...created, photos: resolvePhotos(photos, uploadedPhotoIds)}, ...current]);
-    writeHistory(created, 'profile_created');
-    setModal({kind: 'closed'});
+      const {profile: created} = await res.json();
+      const uploadedPhotoIds = await apiUploadPhotos(created.id, photos);
+      setProfiles(current => [{...created, photos: resolvePhotos(photos, uploadedPhotoIds)}, ...current]);
+      writeHistory(created, 'profile_created');
+      setModal({kind: 'closed'});
+    } finally {
+      setIsMutating(false);
+    }
   };
 
   const handleUpdate = async (updatedProfile: Profile) => {
     const {photos, ...rest} = updatedProfile;
+    setIsMutating(true);
+    try {
+      const res = await fetch(`/api/profiles/${updatedProfile.id}`, {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(rest),
+      });
 
-    const res = await fetch(`/api/profiles/${updatedProfile.id}`, {
-      method: 'PATCH',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(rest),
-    });
+      if (!res.ok) return;
 
-    if (!res.ok) return;
-
-    const uploadedPhotoIds = await apiUploadPhotos(updatedProfile.id, photos);
-    const profileWithPhotos = {...updatedProfile, photos: resolvePhotos(photos, uploadedPhotoIds)};
-    setProfiles(current => current.map(p => (p.id === updatedProfile.id ? profileWithPhotos : p)));
-    writeHistory(profileWithPhotos, 'profile_updated');
-    setModal({kind: 'closed'});
+      const uploadedPhotoIds = await apiUploadPhotos(updatedProfile.id, photos);
+      const profileWithPhotos = {...updatedProfile, photos: resolvePhotos(photos, uploadedPhotoIds)};
+      setProfiles(current => current.map(p => (p.id === updatedProfile.id ? profileWithPhotos : p)));
+      writeHistory(profileWithPhotos, 'profile_updated');
+      setModal({kind: 'closed'});
+    } finally {
+      setIsMutating(false);
+    }
   };
 
   const handleStatusChange = async (profileId: string, status: ProfileStatus) => {
     if (!profiles.some(p => p.id === profileId)) return;
+    setIsMutating(true);
+    try {
+      const res = await fetch(`/api/profiles/${profileId}`, {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({status}),
+      });
 
-    const res = await fetch(`/api/profiles/${profileId}`, {
-      method: 'PATCH',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({status}),
-    });
+      if (!res.ok) return;
 
-    if (!res.ok) return;
+      const {profile: updatedProfile} = await res.json();
 
-    const {profile: updatedProfile} = await res.json();
+      if (status === 'blocked') {
+        setSelectedIds(current => current.filter(id => id !== profileId));
+      }
 
-    if (status === 'blocked') {
-      setSelectedIds(current => current.filter(id => id !== profileId));
+      setProfiles(current => current.map(p => (p.id === profileId ? updatedProfile : p)));
+      writeHistory(updatedProfile, status === 'blocked' ? 'profile_blocked' : 'profile_activated');
+    } finally {
+      setIsMutating(false);
     }
-
-    setProfiles(current => current.map(p => (p.id === profileId ? updatedProfile : p)));
-    writeHistory(updatedProfile, status === 'blocked' ? 'profile_blocked' : 'profile_activated');
   };
 
   const requestDelete = (profile: Profile) => {
@@ -247,11 +259,16 @@ export function Dashboard({authorName}: DashboardProps) {
       confirmLabel: '예',
       confirmVariant: 'danger',
       onConfirm: async () => {
-        const res = await fetch(`/api/profiles/${profile.id}`, {method: 'DELETE'});
-        if (!res.ok) return;
-        setProfiles(current => current.filter(p => p.id !== profile.id));
-        setSelectedIds(current => current.filter(id => id !== profile.id));
-        writeHistory(profile, 'profile_deleted');
+        setIsMutating(true);
+        try {
+          const res = await fetch(`/api/profiles/${profile.id}`, {method: 'DELETE'});
+          if (!res.ok) return;
+          setProfiles(current => current.filter(p => p.id !== profile.id));
+          setSelectedIds(current => current.filter(id => id !== profile.id));
+          writeHistory(profile, 'profile_deleted');
+        } finally {
+          setIsMutating(false);
+        }
       },
     });
   };
@@ -263,6 +280,14 @@ export function Dashboard({authorName}: DashboardProps) {
 
   return (
     <main className="min-h-screen bg-[var(--background)]">
+      {isMutating ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" aria-label="처리 중">
+          <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-8 py-6 shadow-xl">
+            <div className="h-9 w-9 animate-spin rounded-full border-4 border-[var(--violet-200)] border-t-[var(--violet-600)]" />
+            <p className="text-sm font-bold text-[var(--violet-950)]">처리 중...</p>
+          </div>
+        </div>
+      ) : null}
       <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-white/92 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div>
