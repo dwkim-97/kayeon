@@ -5,7 +5,7 @@ import type {Drinking, Gender, Profile, ProfilePhoto, ProfileStatus, Religion, S
 const STORAGE_KEY = 'kayeon_profiles_v1';
 const genderValues: Gender[] = ['female', 'male'];
 const statusValues: ProfileStatus[] = ['active', 'blocked'];
-const religionValues: Religion[] = ['christian', 'buddhist', 'catholic', 'none', 'not_selected'];
+const religionValues: Religion[] = ['christian', 'buddhist', 'catholic', 'not_selected', 'not_selected'];
 const smokingValues: Smoking[] = ['smoker', 'non_smoker', 'not_selected'];
 const drinkingValues: Drinking[] = ['drinker', 'non_drinker', 'not_selected'];
 

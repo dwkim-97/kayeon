@@ -9,7 +9,7 @@ const validValues: ProfileFormValues = {
   birthYear: '1998',
   height: '164',
   job: 'ibk / 을지로 / 금융',
-  religion: 'none',
+  religion: 'not_selected',
   mbti: 'enfj',
   hobbies: '독서',
   smoking: 'non_smoker',

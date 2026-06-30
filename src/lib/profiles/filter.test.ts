@@ -13,7 +13,7 @@ const baseProfile: Profile = {
   birthYear: 1998,
   height: 164,
   job: 'ibk / 을지로 / 금융',
-  religion: 'none',
+  religion: 'not_selected',
   mbti: 'ENFJ',
   hobbies: '독서 운동',
   smoking: 'non_smoker',
@@ -57,7 +57,7 @@ describe('filterProfiles', () => {
       heightValue: '170',
       heightComparison: 'lte',
       activeOnly: true,
-      religions: ['none'],
+      religions: ['not_selected'],
       smoking: ['non_smoker'],
       query: 'ibk enfj 강남',
     });

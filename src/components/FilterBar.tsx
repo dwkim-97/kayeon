@@ -11,7 +11,7 @@ type FilterBarProps = {
   onReset: () => void;
 };
 
-const religionOptions: Religion[] = ['christian', 'buddhist', 'catholic', 'none'];
+const religionOptions: Religion[] = ['christian', 'buddhist', 'catholic', 'not_selected'];
 const smokingOptions: Smoking[] = ['smoker', 'non_smoker'];
 const numericComparisonOptions: Array<[NumericComparison, string]> = [
   ['gte', '이상'],
