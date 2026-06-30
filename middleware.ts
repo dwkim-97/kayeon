@@ -1,26 +1,57 @@
+import {createServerClient} from '@supabase/ssr';
 import {NextResponse, type NextRequest} from 'next/server';
 
 import {isPublicPath} from '@/lib/auth/routes';
+import {getSupabasePublishableKey, getSupabaseUrl} from '@/lib/supabase/env';
 
-const AUTH_COOKIE = 'kayeon_auth';
+function redirectToLogin(request: NextRequest) {
+  const loginUrl = request.nextUrl.clone();
+  loginUrl.pathname = '/login';
+  loginUrl.searchParams.set('next', `${request.nextUrl.pathname}${request.nextUrl.search}`);
+  return NextResponse.redirect(loginUrl);
+}
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
-  const isAuthenticated = request.cookies.get(AUTH_COOKIE)?.value === '1';
+  const response = NextResponse.next({request});
+  const supabase = createServerClient(getSupabaseUrl(), getSupabasePublishableKey(), {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet, headers) {
+        cookiesToSet.forEach(({name, value, options}) => {
+          response.cookies.set(name, value, options);
+        });
+        Object.entries(headers).forEach(([key, value]) => {
+          response.headers.set(key, value);
+        });
+      },
+    },
+  });
 
-  if (!isAuthenticated) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = '/login';
-    loginUrl.searchParams.set('next', pathname);
-    return NextResponse.redirect(loginUrl);
+  const {
+    data: {user},
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return redirectToLogin(request);
   }
 
-  return NextResponse.next();
+  const {data: appUser} = await supabase.from('app_users').select('id').eq('id', user.id).maybeSingle();
+
+  if (!appUser) {
+    await supabase.auth.signOut();
+    return redirectToLogin(request);
+  }
+
+  response.headers.set('Cache-Control', 'private, no-store');
+  return response;
 }
 
 export const config = {

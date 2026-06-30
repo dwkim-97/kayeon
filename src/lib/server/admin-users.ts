@@ -1,10 +1,6 @@
-import {createHash, timingSafeEqual} from 'node:crypto';
-
+import {buildInternalAuthEmail, invalidLoginIdMessage, normalizeLoginId} from '@/lib/auth/internal-email';
+import {createSupabaseAdminClient} from '@/lib/supabase/admin';
 import type {ManagedUser} from '@/types/user';
-
-type StoredManagedUser = ManagedUser & {
-  passwordHash: string;
-};
 
 export type CreateManagedUserInput = {
   name: string;
@@ -12,6 +8,10 @@ export type CreateManagedUserInput = {
   password: string;
   recommenderName: string;
   phoneNumber: string;
+};
+
+type PreparedManagedUserCreateInput = CreateManagedUserInput & {
+  authEmail: string;
 };
 
 export type UserMutationResult =
@@ -24,64 +24,59 @@ export type UserMutationResult =
       message: string;
     };
 
-declare global {
-  var kayeonManagedUsers: StoredManagedUser[] | undefined;
-}
+type AppUserRow = {
+  id: string;
+  login_id: string;
+  auth_email: string;
+  name: string;
+  recommender_name: string;
+  phone_number: string;
+  created_at: string;
+};
 
-const timestamp = '2026-06-30T06:00:00.000Z';
+export type PrepareManagedUserCreateResult =
+  | {
+      success: true;
+      value: PreparedManagedUserCreateInput;
+    }
+  | {
+      success: false;
+      message: string;
+    };
 
-function hashPassword(password: string) {
-  return createHash('sha256').update(password).digest('hex');
-}
-
-function getInitialPassword() {
-  return process.env.KAYEON_ADMIN_PASSWORD || process.env.KAYEON_ACCESS_PASSWORD || 'kayeon-dev';
-}
-
-function getStore() {
-  if (!globalThis.kayeonManagedUsers) {
-    globalThis.kayeonManagedUsers = [
-      {
-        id: 'user-aiden',
-        name: 'Aiden',
-        loginId: 'aiden',
-        recommenderName: '초기 관리자',
-        phoneNumber: '010-0000-0000',
-        passwordHash: hashPassword(getInitialPassword()),
-        createdAt: timestamp,
-      },
-    ];
-  }
-
-  return globalThis.kayeonManagedUsers;
-}
-
-function toManagedUser(user: StoredManagedUser): ManagedUser {
+function toManagedUser(user: AppUserRow): ManagedUser {
   return {
     id: user.id,
     name: user.name,
-    loginId: user.loginId,
-    recommenderName: user.recommenderName,
-    phoneNumber: user.phoneNumber,
-    createdAt: user.createdAt,
+    loginId: user.login_id,
+    recommenderName: user.recommender_name,
+    phoneNumber: user.phone_number,
+    createdAt: user.created_at,
   };
 }
 
-export function listManagedUsers() {
-  return getStore().map(toManagedUser);
-}
-
-export function createManagedUser(input: CreateManagedUserInput): UserMutationResult {
+export function prepareManagedUserCreateInput(input: CreateManagedUserInput): PrepareManagedUserCreateResult {
   const name = input.name.trim();
-  const loginId = input.loginId.trim();
+  const loginIdInput = input.loginId.trim();
   const password = input.password.trim();
   const recommenderName = input.recommenderName.trim();
   const phoneNumber = input.phoneNumber.trim();
 
-  if (!name || !loginId || !password || !recommenderName || !phoneNumber) {
+  if (!name || !loginIdInput || !password || !recommenderName || !phoneNumber) {
     return {
       success: false,
       message: '필수 값을 모두 입력해 주세요.',
+    };
+  }
+
+  let loginId: string;
+
+  try {
+    loginId = normalizeLoginId(input.loginId);
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : invalidLoginIdMessage,
     };
   }
 
@@ -92,75 +87,172 @@ export function createManagedUser(input: CreateManagedUserInput): UserMutationRe
     };
   }
 
-  const store = getStore();
-  const hasSameLoginId = store.some(user => user.loginId.toLowerCase() === loginId.toLowerCase());
-
-  if (hasSameLoginId) {
-    return {
-      success: false,
-      message: '이미 사용 중인 아이디입니다.',
-    };
-  }
-
-  const user: StoredManagedUser = {
-    id: crypto.randomUUID(),
-    name,
-    loginId,
-    recommenderName,
-    phoneNumber,
-    passwordHash: hashPassword(password),
-    createdAt: new Date().toISOString(),
-  };
-
-  store.unshift(user);
-
   return {
     success: true,
-    user: toManagedUser(user),
+    value: {
+      name,
+      loginId,
+      authEmail: buildInternalAuthEmail(loginId),
+      password,
+      recommenderName,
+      phoneNumber,
+    },
   };
 }
 
-export function removeManagedUser(userId: string): UserMutationResult {
-  const store = getStore();
+export async function listManagedUsers() {
+  const supabase = createSupabaseAdminClient();
+  const {data, error} = await supabase
+    .from('app_users')
+    .select('id, login_id, auth_email, name, recommender_name, phone_number, created_at')
+    .is('removed_at', null)
+    .order('created_at', {ascending: false});
 
-  if (store.length <= 1) {
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return ((data ?? []) as AppUserRow[]).map(toManagedUser);
+}
+
+export async function findAuthEmailForLoginId(loginIdInput: string) {
+  let loginId: string;
+
+  try {
+    loginId = normalizeLoginId(loginIdInput);
+  } catch {
+    return null;
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const {data, error} = await supabase
+    .from('app_users')
+    .select('auth_email')
+    .eq('login_id', loginId)
+    .is('removed_at', null)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data as Pick<AppUserRow, 'auth_email'> | null)?.auth_email ?? null;
+}
+
+export async function createManagedUser(input: CreateManagedUserInput): Promise<UserMutationResult> {
+  const prepared = prepareManagedUserCreateInput(input);
+
+  if (!prepared.success) {
+    return prepared;
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const {value} = prepared;
+  const {data: authData, error: authError} = await supabase.auth.admin.createUser({
+    email: value.authEmail,
+    password: value.password,
+    email_confirm: true,
+    user_metadata: {
+      name: value.name,
+    },
+    app_metadata: {
+      login_id: value.loginId,
+    },
+  });
+
+  if (authError) {
+    return {
+      success: false,
+      message: authError.message.includes('already') ? '이미 사용 중인 아이디입니다.' : authError.message,
+    };
+  }
+
+  const authUser = authData.user;
+
+  if (!authUser) {
+    return {
+      success: false,
+      message: '관리자 계정을 생성하지 못했습니다.',
+    };
+  }
+
+  const {data, error} = await supabase
+    .from('app_users')
+    .insert({
+      id: authUser.id,
+      login_id: value.loginId,
+      auth_email: value.authEmail,
+      name: value.name,
+      recommender_name: value.recommenderName,
+      phone_number: value.phoneNumber,
+    })
+    .select('id, login_id, auth_email, name, recommender_name, phone_number, created_at')
+    .single();
+
+  if (error) {
+    await supabase.auth.admin.deleteUser(authUser.id);
+
+    return {
+      success: false,
+      message: error.code === '23505' ? '이미 사용 중인 아이디입니다.' : error.message,
+    };
+  }
+
+  return {
+    success: true,
+    user: toManagedUser(data as AppUserRow),
+  };
+}
+
+export async function removeManagedUser(userId: string): Promise<UserMutationResult> {
+  const supabase = createSupabaseAdminClient();
+  const {data, error} = await supabase
+    .from('app_users')
+    .select('id, login_id, auth_email, name, recommender_name, phone_number, created_at')
+    .is('removed_at', null);
+
+  if (error) {
+    return {
+      success: false,
+      message: error.message,
+    };
+  }
+
+  const users = (data ?? []) as AppUserRow[];
+
+  if (users.length <= 1) {
     return {
       success: false,
       message: '마지막 관리자는 제거할 수 없습니다.',
     };
   }
 
-  const userIndex = store.findIndex(user => user.id === userId);
+  const user = users.find(currentUser => currentUser.id === userId);
 
-  if (userIndex < 0) {
+  if (!user) {
     return {
       success: false,
       message: '관리자를 찾을 수 없습니다.',
     };
   }
 
-  const [removedUser] = store.splice(userIndex, 1);
+  const {error: updateError} = await supabase
+    .from('app_users')
+    .update({removed_at: new Date().toISOString()})
+    .eq('id', userId)
+    .is('removed_at', null);
+
+  if (updateError) {
+    return {
+      success: false,
+      message: updateError.message,
+    };
+  }
+
+  await supabase.auth.admin.updateUserById(userId, {ban_duration: '876000h'});
 
   return {
     success: true,
-    user: toManagedUser(removedUser),
+    user: toManagedUser(user),
   };
-}
-
-export function isValidManagedUserCredential(loginId: string, password: string) {
-  const normalizedLoginId = loginId.trim().toLowerCase();
-  const user = getStore().find(currentUser => currentUser.loginId.toLowerCase() === normalizedLoginId);
-
-  if (!user) {
-    return false;
-  }
-
-  const expected = Buffer.from(user.passwordHash);
-  const actual = Buffer.from(hashPassword(password.trim()));
-
-  if (expected.length !== actual.length) {
-    return false;
-  }
-
-  return timingSafeEqual(expected, actual);
 }

@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 
 export async function DELETE(_request: Request, context: {params: Promise<{userId: string}>}) {
   const {userId} = await context.params;
-  const result = removeManagedUser(userId);
+  const result = await removeManagedUser(userId);
 
   if (!result.success) {
     return NextResponse.json({message: result.message}, {status: 400});
