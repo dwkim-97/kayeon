@@ -12,7 +12,7 @@ const filters: ProfileFilters = {
   heightValue: '170',
   heightComparison: 'lte',
   activeOnly: true,
-  religions: ['none'],
+  religions: ['not_selected'],
   smoking: ['non_smoker'],
   query: '강남',
 };

@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import {ChevronLeft, ChevronRight, Pencil, Trash2} from 'lucide-react';
-import {type PointerEvent, useEffect, useRef, useState} from 'react';
+import {useState} from 'react';
 
 import {formatBirthYearLabel} from '@/lib/profiles/age';
 import {getProfileInformationRows} from '@/lib/profiles/information';
@@ -18,12 +18,6 @@ type ProfileCardProps = {
   onStatusChange: (profileId: string, status: Profile['status']) => void;
 };
 
-type PhotoAnimationDirection = 'none' | 'next' | 'previous';
-
-const swipeThreshold = 48;
-const maxDragOffset = 90;
-const photoAnimationResetMs = 240;
-
 export function ProfileCard({
   profile,
   isSelected,
@@ -33,86 +27,13 @@ export function ProfileCard({
   onStatusChange,
 }: ProfileCardProps) {
   const [photoIndex, setPhotoIndex] = useState(0);
-  const [photoAnimationDirection, setPhotoAnimationDirection] = useState<PhotoAnimationDirection>('none');
-  const [dragOffset, setDragOffset] = useState(0);
-  const dragStartXRef = useRef<number | null>(null);
-  const animationResetTimerRef = useRef<number | null>(null);
   const hasMultiplePhotos = profile.photos.length > 1;
   const isBlocked = !profile.isActivated;
   const birthYearLabel = formatBirthYearLabel(profile.birthYear);
-  const photoAnimationClass =
-    photoAnimationDirection === 'next'
-      ? 'profile-photo-animate-next'
-      : photoAnimationDirection === 'previous'
-        ? 'profile-photo-animate-previous'
-        : '';
   const informationRows = getProfileInformationRows(profile);
 
-  useEffect(
-    () => () => {
-      if (animationResetTimerRef.current !== null) {
-        window.clearTimeout(animationResetTimerRef.current);
-      }
-    },
-    [],
-  );
-
   const movePhoto = (direction: -1 | 1) => {
-    if (!hasMultiplePhotos) {
-      return;
-    }
-
-    if (animationResetTimerRef.current !== null) {
-      window.clearTimeout(animationResetTimerRef.current);
-    }
-
-    setPhotoAnimationDirection(direction === 1 ? 'next' : 'previous');
     setPhotoIndex(current => (current + direction + profile.photos.length) % profile.photos.length);
-    animationResetTimerRef.current = window.setTimeout(() => setPhotoAnimationDirection('none'), photoAnimationResetMs);
-  };
-
-  const handlePhotoPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (!hasMultiplePhotos) {
-      return;
-    }
-
-    dragStartXRef.current = event.clientX;
-    setDragOffset(0);
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-  };
-
-  const handlePhotoPointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    const dragStartX = dragStartXRef.current;
-
-    if (dragStartX === null) {
-      return;
-    }
-
-    const nextOffset = event.clientX - dragStartX;
-    setDragOffset(Math.max(-maxDragOffset, Math.min(maxDragOffset, nextOffset)));
-  };
-
-  const finishPhotoDrag = (clientX: number) => {
-    const dragStartX = dragStartXRef.current;
-
-    if (dragStartX === null) {
-      return;
-    }
-
-    const deltaX = clientX - dragStartX;
-    dragStartXRef.current = null;
-    setDragOffset(0);
-
-    if (Math.abs(deltaX) < swipeThreshold) {
-      return;
-    }
-
-    movePhoto(deltaX < 0 ? 1 : -1);
-  };
-
-  const cancelPhotoDrag = () => {
-    dragStartXRef.current = null;
-    setDragOffset(0);
   };
 
   return (
@@ -158,26 +79,16 @@ export function ProfileCard({
           />
         </button>
 
-        <div
-          className="relative aspect-[4/5] touch-pan-y bg-[var(--violet-100)]"
-          onPointerDown={handlePhotoPointerDown}
-          onPointerMove={handlePhotoPointerMove}
-          onPointerUp={event => finishPhotoDrag(event.clientX)}
-          onPointerCancel={cancelPhotoDrag}
-        >
+        <div className="relative aspect-[4/5] bg-[var(--violet-100)]">
           {profile.photos.length > 0 ? (
             profile.photos.map((p, i) => (
               <img
                 key={p.id}
-                className={`absolute inset-0 h-full w-full select-none object-cover ${i === photoIndex ? photoAnimationClass : ''}`}
+                className="absolute inset-0 h-full w-full select-none object-cover"
                 src={p.url}
                 alt={p.alt}
                 draggable={false}
-                style={{
-                  opacity: i === photoIndex ? 1 : 0,
-                  transform: i === photoIndex && dragOffset ? `translateX(${dragOffset}px)` : undefined,
-                  pointerEvents: i === photoIndex ? 'auto' : 'none',
-                }}
+                style={{opacity: i === photoIndex ? 1 : 0}}
               />
             ))
           ) : (
@@ -187,7 +98,7 @@ export function ProfileCard({
           {hasMultiplePhotos ? (
             <>
               <button
-                className="absolute left-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-white/85 text-[var(--violet-900)]"
+                className="absolute left-2 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-white/85 text-[var(--violet-900)]"
                 type="button"
                 onClick={() => movePhoto(-1)}
                 aria-label="이전 사진"
@@ -195,14 +106,14 @@ export function ProfileCard({
                 <ChevronLeft size={18} aria-hidden />
               </button>
               <button
-                className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-white/85 text-[var(--violet-900)]"
+                className="absolute right-2 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-white/85 text-[var(--violet-900)]"
                 type="button"
                 onClick={() => movePhoto(1)}
                 aria-label="다음 사진"
               >
                 <ChevronRight size={18} aria-hidden />
               </button>
-              <div className="absolute bottom-3 right-3 rounded-full bg-black/55 px-2 py-1 text-xs font-bold text-white">
+              <div className="absolute bottom-3 right-3 z-10 rounded-full bg-black/55 px-2 py-1 text-xs font-bold text-white">
                 {photoIndex + 1}/{profile.photos.length}
               </div>
             </>

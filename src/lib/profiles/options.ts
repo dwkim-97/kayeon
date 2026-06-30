@@ -9,7 +9,6 @@ export const religionLabels: Record<Religion, string> = {
   christian: '기독교',
   buddhist: '불교',
   catholic: '천주교',
-  none: '무교',
   not_selected: '미선택',
 };
 

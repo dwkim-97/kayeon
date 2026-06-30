@@ -144,10 +144,12 @@ function createUploadFiles(file: File) {
 
 async function renderShareImage(profiles: Profile[]) {
   const {width, cardHeight, gap, padding, height} = getShareImageLayout(profiles.length);
+  const dpr = 2;
   const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
   const context = canvas.getContext('2d');
+  if (context) context.scale(dpr, dpr);
 
   if (!context) {
     throw new Error('Canvas is not available.');
@@ -204,12 +206,22 @@ async function drawImage(context: CanvasRenderingContext2D, src: string, x: numb
   try {
     const image = await loadImage(src);
     roundedRect(context, x, y, width, height, 18, '#EDE9FE');
-    const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight);
+
+    // object-fit: cover — scale to fill, clip overflow
+    const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
     const renderedWidth = image.naturalWidth * scale;
     const renderedHeight = image.naturalHeight * scale;
-    const renderedX = x + (width - renderedWidth) / 2;
-    const renderedY = y + (height - renderedHeight) / 2;
-    context.drawImage(image, renderedX, renderedY, renderedWidth, renderedHeight);
+    const srcX = (renderedWidth - width) / 2 / scale;
+    const srcY = (renderedHeight - height) / 2 / scale;
+    const srcW = width / scale;
+    const srcH = height / scale;
+
+    context.save();
+    context.beginPath();
+    context.roundRect(x, y, width, height, 18);
+    context.clip();
+    context.drawImage(image, srcX, srcY, srcW, srcH, x, y, width, height);
+    context.restore();
   } catch {
     roundedRect(context, x, y, width, height, 18, '#EDE9FE');
     context.fillStyle = '#5D0EC0';

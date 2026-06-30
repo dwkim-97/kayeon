@@ -1,6 +1,6 @@
 export type Gender = 'male' | 'female';
 export type ProfileStatus = 'active' | 'blocked';
-export type Religion = 'christian' | 'buddhist' | 'catholic' | 'none' | 'not_selected';
+export type Religion = 'christian' | 'buddhist' | 'catholic' | 'not_selected';
 export type Smoking = 'smoker' | 'non_smoker' | 'not_selected';
 export type Drinking = 'drinker' | 'non_drinker' | 'not_selected';
 export type NumericComparison = 'gte' | 'lte';

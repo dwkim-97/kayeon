@@ -35,7 +35,7 @@ type ProfileFormModalProps = {
 };
 
 const genderOptions: [Gender, string][] = (['female', 'male'] as Gender[]).map(value => [value, genderLabels[value]]);
-const religionOptions: Religion[] = ['christian', 'buddhist', 'catholic', 'none'];
+const religionOptions: Religion[] = ['christian', 'buddhist', 'catholic', 'not_selected'];
 const smokingOptions: Smoking[] = ['smoker', 'non_smoker'];
 const drinkingOptions: Drinking[] = ['drinker', 'non_drinker'];
 const {oldestBirthYear, youngestBirthYear} = birthYearBounds;

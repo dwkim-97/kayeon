@@ -13,7 +13,7 @@ export const sampleProfiles: Profile[] = [
     birthYear: 1998,
     height: 164,
     job: 'IBK / 을지로 / 금융',
-    religion: 'none',
+    religion: 'not_selected',
     mbti: 'ENFJ',
     hobbies: '독서, 러닝',
     smoking: 'non_smoker',
