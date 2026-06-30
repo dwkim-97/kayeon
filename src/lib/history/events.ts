@@ -10,6 +10,14 @@ export const historyEventLabels: Record<HistoryEventType, string> = {
   admin_removed: '관리자 제거',
 };
 
+export const historyEventDescriptions: Partial<Record<HistoryEventType, string>> = {
+  profile_created: '매물 정보를 추가했습니다.',
+  profile_updated: '매물 정보를 수정했습니다.',
+  profile_deleted: '매물 정보를 삭제했습니다.',
+  profile_blocked: '매물 정보를 blocked 상태로 변경했습니다.',
+  profile_activated: '매물 정보를 active 상태로 변경했습니다.',
+};
+
 export type CreateHistoryEventInput = {
   id: string;
   type: HistoryEventType;

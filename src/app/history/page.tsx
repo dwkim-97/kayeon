@@ -5,20 +5,17 @@ import Link from 'next/link';
 import {useEffect, useState} from 'react';
 
 import {historyEventLabels} from '@/lib/history/events';
-import {loadHistoryEvents} from '@/lib/storage/history';
 import type {HistoryEvent} from '@/types/history';
 
 export default function HistoryPage() {
   const [events, setEvents] = useState<HistoryEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const frameId = window.requestAnimationFrame(() => {
-      setEvents(loadHistoryEvents());
-    });
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-    };
+    fetch('/api/history')
+      .then(res => res.json())
+      .then(({events: loaded}) => setEvents(loaded ?? []))
+      .finally(() => setIsLoading(false));
   }, []);
 
   return (
@@ -40,12 +37,14 @@ export default function HistoryPage() {
             <p className="mt-1 text-sm text-slate-500">서비스 내 주요 변경 이벤트를 시간순으로 확인합니다.</p>
           </div>
           <div className="rounded-full bg-[var(--violet-50)] px-3 py-1.5 text-sm font-bold text-[var(--violet-900)]">
-            {events.length}건
+            {isLoading ? '...' : `${events.length}건`}
           </div>
         </header>
 
         <section className="overflow-hidden rounded-[8px] border border-[var(--border)] bg-white shadow-sm">
-          {events.length > 0 ? (
+          {isLoading ? (
+            <div className="p-8 text-center text-sm font-semibold text-slate-400">불러오는 중...</div>
+          ) : events.length > 0 ? (
             <ol className="divide-y divide-[var(--border)]">
               {events.map(event => (
                 <li className="grid gap-2 p-4 sm:grid-cols-[136px_1fr_156px] sm:items-center" key={event.id}>

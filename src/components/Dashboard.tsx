@@ -2,31 +2,23 @@
 
 import {History, LogOut, Plus, ShieldCheck, Users} from 'lucide-react';
 import Link from 'next/link';
-import {useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {closedAlertState, CustomAlert, type CustomAlertState} from '@/components/CustomAlert';
 import {FilterBar} from '@/components/FilterBar';
 import {ProfileCard} from '@/components/ProfileCard';
 import {ProfileFormModal} from '@/components/ProfileFormModal';
 import {ShareButton} from '@/components/ShareButton';
+import {historyEventDescriptions} from '@/lib/history/events';
 import {formatBirthYearLabel} from '@/lib/profiles/age';
 import {filterProfiles} from '@/lib/profiles/filter';
-import {sampleProfiles} from '@/lib/profiles/sample-data';
-import {recordHistoryEvent} from '@/lib/storage/history';
-import {loadProfiles, saveProfiles} from '@/lib/storage/profiles';
-import type {Gender, Profile, ProfileFilters} from '@/types/profile';
+import type {Gender, Profile, ProfileFilters, ProfileStatus} from '@/types/profile';
+import type {HistoryEventType} from '@/types/history';
 
 type ModalState =
-  | {
-      kind: 'closed';
-    }
-  | {
-      kind: 'create';
-    }
-  | {
-      kind: 'edit';
-      profile: Profile;
-    };
+  | {kind: 'closed'}
+  | {kind: 'create'}
+  | {kind: 'edit'; profile: Profile};
 
 const defaultFilters = (gender: Gender): ProfileFilters => ({
   gender,
@@ -40,30 +32,52 @@ const defaultFilters = (gender: Gender): ProfileFilters => ({
   query: '',
 });
 
-export function Dashboard() {
-  const [profiles, setProfiles] = useState<Profile[]>(sampleProfiles);
+async function apiRecordHistory(params: {
+  type: HistoryEventType;
+  actorName: string;
+  targetLabel: string;
+  description: string;
+}) {
+  await fetch('/api/history', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(params),
+  });
+}
+
+
+function getProfileLabel(profile: Profile) {
+  const genderLabel = profile.gender === 'female' ? '여성' : '남성';
+  return `${genderLabel} ${formatBirthYearLabel(profile.birthYear)} · ${profile.residence}`;
+}
+
+type DashboardProps = {
+  authorName: string;
+};
+
+export function Dashboard({authorName}: DashboardProps) {
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<ProfileFilters>(defaultFilters('female'));
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [modal, setModal] = useState<ModalState>({kind: 'closed'});
   const [alertState, setAlertState] = useState<CustomAlertState>(closedAlertState);
-  const [hasLoadedProfiles, setHasLoadedProfiles] = useState(false);
 
-  useEffect(() => {
-    const loadTimer = window.setTimeout(() => {
-      setProfiles(loadProfiles());
-      setHasLoadedProfiles(true);
-    }, 0);
+  const loadProfiles = useCallback(async () => {
+    setIsLoading(true);
 
-    return () => window.clearTimeout(loadTimer);
+    try {
+      const res = await fetch('/api/profiles');
+      const {profiles: loaded} = await res.json();
+      setProfiles(loaded ?? []);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    if (!hasLoadedProfiles) {
-      return;
-    }
-
-    saveProfiles(profiles);
-  }, [hasLoadedProfiles, profiles]);
+    loadProfiles();
+  }, [loadProfiles]);
 
   const visibleProfiles = useMemo(() => filterProfiles(profiles, filters), [profiles, filters]);
   const activeVisibleProfiles = useMemo(
@@ -87,42 +101,106 @@ export function Dashboard() {
     setSelectedIds([]);
   };
 
-  const updateProfiles = (nextProfiles: Profile[]) => {
-    setProfiles(nextProfiles);
-  };
-
   const handleSelectChange = (profileId: string, selected: boolean) => {
-    const targetProfile = profiles.find(profile => profile.id === profileId);
-
-    if (!targetProfile || !targetProfile.isActivated) {
-      return;
-    }
-
+    const target = profiles.find(p => p.id === profileId);
+    if (!target?.isActivated) return;
     setSelectedIds(current => (selected ? [...new Set([...current, profileId])] : current.filter(id => id !== profileId)));
   };
 
   const handleSelectAll = (selected: boolean) => {
-    const visibleIds = activeVisibleProfiles.map(profile => profile.id);
+    const visibleIds = activeVisibleProfiles.map(p => p.id);
     setSelectedIds(current => (selected ? [...new Set([...current, ...visibleIds])] : current.filter(id => !visibleIds.includes(id))));
   };
 
-  const writeHistory = (profile: Profile, type: 'profile_created' | 'profile_updated' | 'profile_deleted' | 'profile_blocked' | 'profile_activated') => {
-    const descriptionByType: Record<typeof type, string> = {
-      profile_created: '매물 정보를 추가했습니다.',
-      profile_updated: '매물 정보를 수정했습니다.',
-      profile_deleted: '매물 정보를 삭제했습니다.',
-      profile_blocked: '매물 정보를 blocked 상태로 변경했습니다.',
-      profile_activated: '매물 정보를 active 상태로 변경했습니다.',
-    };
-
-    recordHistoryEvent({
-      id: crypto.randomUUID(),
+  const writeHistory = (
+    profile: Profile,
+    type: 'profile_created' | 'profile_updated' | 'profile_deleted' | 'profile_blocked' | 'profile_activated',
+  ) => {
+    apiRecordHistory({
       type,
-      actorName: 'Aiden',
+      actorName: authorName,
       targetLabel: getProfileLabel(profile),
-      description: descriptionByType[type],
-      createdAt: new Date().toISOString(),
+      description: historyEventDescriptions[type] ?? '',
     });
+  };
+
+  const handleCreate = async (newProfile: Profile) => {
+    const {photos, ...rest} = newProfile;
+
+    const res = await fetch('/api/profiles', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(rest),
+    });
+
+    if (!res.ok) return;
+
+    const {profile: created} = await res.json();
+
+    const newPhotos = photos.filter(p => p.url.startsWith('data:'));
+    if (newPhotos.length > 0) {
+      await fetch(`/api/profiles/${created.id}/photos`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          newPhotos: newPhotos.map(p => ({tempId: p.id, dataUrl: p.url, alt: p.alt, order: p.order})),
+          retainedPhotoIds: [],
+        }),
+      });
+    }
+
+    await loadProfiles();
+    writeHistory({...created, photos}, 'profile_created');
+    setModal({kind: 'closed'});
+  };
+
+  const handleUpdate = async (updatedProfile: Profile) => {
+    const {photos, ...rest} = updatedProfile;
+
+    const res = await fetch(`/api/profiles/${updatedProfile.id}`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(rest),
+    });
+
+    if (!res.ok) return;
+
+    const retainedPhotoIds = photos.filter(p => !p.url.startsWith('data:')).map(p => p.id);
+    const newPhotos = photos.filter(p => p.url.startsWith('data:'));
+
+    await fetch(`/api/profiles/${updatedProfile.id}/photos`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        newPhotos: newPhotos.map(p => ({tempId: p.id, dataUrl: p.url, alt: p.alt, order: p.order})),
+        retainedPhotoIds,
+      }),
+    });
+
+    await loadProfiles();
+    writeHistory(updatedProfile, 'profile_updated');
+    setModal({kind: 'closed'});
+  };
+
+  const handleStatusChange = async (profileId: string, status: ProfileStatus) => {
+    const target = profiles.find(p => p.id === profileId);
+    if (!target) return;
+
+    const res = await fetch(`/api/profiles/${profileId}`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({status}),
+    });
+
+    if (!res.ok) return;
+
+    if (status === 'blocked') {
+      setSelectedIds(current => current.filter(id => id !== profileId));
+    }
+
+    const updatedProfile = {...target, status, isActivated: status === 'active'};
+    setProfiles(current => current.map(p => (p.id === profileId ? updatedProfile : p)));
+    writeHistory(updatedProfile, status === 'blocked' ? 'profile_blocked' : 'profile_activated');
   };
 
   const requestDelete = (profile: Profile) => {
@@ -132,8 +210,10 @@ export function Dashboard() {
       message: `${getProfileLabel(profile)} 정보를 삭제합니다. 삭제 후에는 대시보드에서 복구할 수 없습니다.`,
       confirmLabel: '예',
       confirmVariant: 'danger',
-      onConfirm: () => {
-        updateProfiles(profiles.filter(currentProfile => currentProfile.id !== profile.id));
+      onConfirm: async () => {
+        const res = await fetch(`/api/profiles/${profile.id}`, {method: 'DELETE'});
+        if (!res.ok) return;
+        setProfiles(current => current.filter(p => p.id !== profile.id));
         setSelectedIds(current => current.filter(id => id !== profile.id));
         writeHistory(profile, 'profile_deleted');
       },
@@ -226,45 +306,27 @@ export function Dashboard() {
             </label>
             <div className="inline-flex items-center gap-2 rounded-full bg-[var(--violet-50)] px-3 py-1.5 text-sm font-bold text-[var(--violet-900)]">
               <Users size={16} aria-hidden />
-              {visibleProfiles.length}명 표시 · {selectedProfiles.length}명 공유 선택
+              {isLoading ? '로딩 중...' : `${visibleProfiles.length}명 표시 · ${selectedProfiles.length}명 공유 선택`}
             </div>
           </div>
 
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-5">
-            {visibleProfiles.map(profile => (
-              <ProfileCard
-                key={profile.id}
-                profile={profile}
-                isSelected={selectedIds.includes(profile.id)}
-                onSelectChange={handleSelectChange}
-                onEdit={selectedProfile => setModal({kind: 'edit', profile: selectedProfile})}
-                onDelete={requestDelete}
-                onStatusChange={(profileId, status) => {
-                  const targetProfile = profiles.find(profile => profile.id === profileId);
-
-                  if (!targetProfile) {
-                    return;
-                  }
-
-                  const updatedProfile = {
-                    ...targetProfile,
-                    status,
-                    isActivated: status === 'active',
-                    updatedAt: new Date().toISOString(),
-                  };
-                  updateProfiles(profiles.map(profile => (profile.id === profileId ? updatedProfile : profile)));
-
-                  if (status === 'blocked') {
-                    setSelectedIds(current => current.filter(id => id !== profileId));
-                    writeHistory(updatedProfile, 'profile_blocked');
-                    return;
-                  }
-
-                  writeHistory(updatedProfile, 'profile_activated');
-                }}
-              />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="py-12 text-center text-sm font-semibold text-slate-400">프로필을 불러오는 중...</div>
+          ) : (
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-5">
+              {visibleProfiles.map(profile => (
+                <ProfileCard
+                  key={profile.id}
+                  profile={profile}
+                  isSelected={selectedIds.includes(profile.id)}
+                  onSelectChange={handleSelectChange}
+                  onEdit={selectedProfile => setModal({kind: 'edit', profile: selectedProfile})}
+                  onDelete={requestDelete}
+                  onStatusChange={handleStatusChange}
+                />
+              ))}
+            </div>
+          )}
         </section>
       </div>
 
@@ -272,26 +334,13 @@ export function Dashboard() {
         <ProfileFormModal
           key={modal.kind === 'edit' ? modal.profile.id : 'create'}
           mode={modal}
-          authorName="Aiden"
+          authorName={authorName}
           onClose={() => setModal({kind: 'closed'})}
-          onCreate={profile => {
-            updateProfiles([profile, ...profiles]);
-            writeHistory(profile, 'profile_created');
-            setModal({kind: 'closed'});
-          }}
-          onUpdate={updatedProfile => {
-            updateProfiles(profiles.map(profile => (profile.id === updatedProfile.id ? updatedProfile : profile)));
-            writeHistory(updatedProfile, 'profile_updated');
-            setModal({kind: 'closed'});
-          }}
+          onCreate={handleCreate}
+          onUpdate={handleUpdate}
         />
       ) : null}
       <CustomAlert state={alertState} onClose={() => setAlertState(closedAlertState)} />
     </main>
   );
-}
-
-function getProfileLabel(profile: Profile) {
-  const genderLabel = profile.gender === 'female' ? '여성' : '남성';
-  return `${genderLabel} ${formatBirthYearLabel(profile.birthYear)} · ${profile.residence}`;
 }
