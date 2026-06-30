@@ -11,6 +11,7 @@ import {ProfileFormModal} from '@/components/ProfileFormModal';
 import {ShareButton} from '@/components/ShareButton';
 import {formatBirthYearLabel} from '@/lib/profiles/age';
 import {filterProfiles} from '@/lib/profiles/filter';
+import {sampleProfiles} from '@/lib/profiles/sample-data';
 import {recordHistoryEvent} from '@/lib/storage/history';
 import {loadProfiles, saveProfiles} from '@/lib/storage/profiles';
 import type {Gender, Profile, ProfileFilters} from '@/types/profile';
@@ -40,15 +41,29 @@ const defaultFilters = (gender: Gender): ProfileFilters => ({
 });
 
 export function Dashboard() {
-  const [profiles, setProfiles] = useState<Profile[]>(() => loadProfiles());
+  const [profiles, setProfiles] = useState<Profile[]>(sampleProfiles);
   const [filters, setFilters] = useState<ProfileFilters>(defaultFilters('female'));
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [modal, setModal] = useState<ModalState>({kind: 'closed'});
   const [alertState, setAlertState] = useState<CustomAlertState>(closedAlertState);
+  const [hasLoadedProfiles, setHasLoadedProfiles] = useState(false);
 
   useEffect(() => {
+    const loadTimer = window.setTimeout(() => {
+      setProfiles(loadProfiles());
+      setHasLoadedProfiles(true);
+    }, 0);
+
+    return () => window.clearTimeout(loadTimer);
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedProfiles) {
+      return;
+    }
+
     saveProfiles(profiles);
-  }, [profiles]);
+  }, [hasLoadedProfiles, profiles]);
 
   const visibleProfiles = useMemo(() => filterProfiles(profiles, filters), [profiles, filters]);
   const activeVisibleProfiles = useMemo(
