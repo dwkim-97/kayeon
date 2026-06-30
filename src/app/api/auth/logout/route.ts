@@ -1,11 +1,10 @@
-import {cookies} from 'next/headers';
 import {NextResponse} from 'next/server';
 
-import {AUTH_COOKIE} from '@/lib/auth/session';
+import {createSupabaseRouteClient} from '@/lib/supabase/server';
 
 export async function POST() {
-  const cookieStore = await cookies();
-  cookieStore.delete(AUTH_COOKIE);
+  const supabase = await createSupabaseRouteClient();
+  await supabase.auth.signOut();
 
   return NextResponse.json({ok: true});
 }
