@@ -9,6 +9,7 @@ import {recordHistory} from '@/lib/history/events';
 import type {ManagedUser} from '@/types/user';
 
 type UserFormValues = {
+  name: string;
   loginId: string;
   password: string;
   phoneNumber: string;
@@ -253,6 +254,7 @@ function UserCreateModal({
   onCreate: (values: UserFormValues) => Promise<UserCreateResult>;
 }) {
   const [values, setValues] = useState<UserFormValues>({
+    name: '',
     loginId: '',
     password: '',
     phoneNumber: '',
@@ -264,7 +266,7 @@ function UserCreateModal({
     event.preventDefault();
     setError('');
 
-    if (!values.loginId.trim() || !values.password.trim() || !values.phoneNumber.trim()) {
+    if (!values.name.trim() || !values.loginId.trim() || !values.password.trim() || !values.phoneNumber.trim()) {
       setError('필수 값을 모두 입력해 주세요.');
       return;
     }
@@ -301,6 +303,15 @@ function UserCreateModal({
           <p className="rounded-[8px] bg-[var(--violet-50)] p-3 text-sm font-semibold text-[var(--violet-900)]">
             서비스 안전을 위해 항상 확실한 분들만 추가 부탁드립니다.
           </p>
+          <AdminTextField
+            label="이름"
+            required={true}
+            type="text"
+            placeholder="홍길동"
+            value={values.name}
+            disabled={false}
+            onChange={value => setValues(current => ({...current, name: value}))}
+          />
           <AdminTextField
             label="아이디"
             required={true}

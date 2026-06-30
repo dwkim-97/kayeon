@@ -10,8 +10,9 @@ export function getProfileInformationRows(profile: Profile): ProfileInformationR
     ['키', `${profile.height}cm`],
     ['사는 곳', profile.residence],
     ['회사', profile.job],
-    ['종교', religionLabels[profile.religion]],
   ];
+
+  if (profile.religion !== 'not_selected') rows.push(['종교', religionLabels[profile.religion]]);
 
   if (profile.mbti) rows.push(['MBTI', profile.mbti]);
   if (profile.hobbies) rows.push(['취미', profile.hobbies]);
