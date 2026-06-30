@@ -6,7 +6,7 @@ import type {ProfileFormValues} from './form';
 const validValues: ProfileFormValues = {
   gender: 'female',
   residence: '서울 강남구',
-  age: '29',
+  birthYear: '1998',
   height: '164',
   job: 'ibk / 을지로 / 금융',
   religion: 'none',
@@ -32,7 +32,7 @@ describe('profile form helpers', () => {
     const normalized = normalizeProfileFormValues(validValues);
 
     expect(normalized.mbti).toBe('ENFJ');
-    expect(normalized.age).toBe(29);
+    expect(normalized.birthYear).toBe(1998);
     expect(normalized.height).toBe(164);
     expect(normalized.job).toBe('ibk / 을지로 / 금융');
   });

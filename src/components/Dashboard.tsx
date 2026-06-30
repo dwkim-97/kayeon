@@ -9,6 +9,7 @@ import {FilterBar} from '@/components/FilterBar';
 import {ProfileCard} from '@/components/ProfileCard';
 import {ProfileFormModal} from '@/components/ProfileFormModal';
 import {ShareButton} from '@/components/ShareButton';
+import {formatBirthYearLabel} from '@/lib/profiles/age';
 import {filterProfiles} from '@/lib/profiles/filter';
 import {recordHistoryEvent} from '@/lib/storage/history';
 import {loadProfiles, saveProfiles} from '@/lib/storage/profiles';
@@ -28,10 +29,11 @@ type ModalState =
 
 const defaultFilters = (gender: Gender): ProfileFilters => ({
   gender,
-  minAge: 19,
-  maxAge: 80,
-  minHeight: 120,
-  maxHeight: 230,
+  birthYearValue: '',
+  birthYearComparison: 'gte',
+  heightValue: '',
+  heightComparison: 'gte',
+  activeOnly: true,
   religions: [],
   smoking: [],
   query: '',
@@ -50,11 +52,11 @@ export function Dashboard() {
 
   const visibleProfiles = useMemo(() => filterProfiles(profiles, filters), [profiles, filters]);
   const activeVisibleProfiles = useMemo(
-    () => visibleProfiles.filter(profile => profile.status === 'active'),
+    () => visibleProfiles.filter(profile => profile.isActivated),
     [visibleProfiles],
   );
   const selectedProfiles = useMemo(
-    () => profiles.filter(profile => selectedIds.includes(profile.id) && profile.status === 'active'),
+    () => profiles.filter(profile => selectedIds.includes(profile.id) && profile.isActivated),
     [profiles, selectedIds],
   );
   const allVisibleSelected =
@@ -65,6 +67,11 @@ export function Dashboard() {
     setSelectedIds([]);
   };
 
+  const resetFilters = () => {
+    setFilters(defaultFilters(filters.gender));
+    setSelectedIds([]);
+  };
+
   const updateProfiles = (nextProfiles: Profile[]) => {
     setProfiles(nextProfiles);
   };
@@ -72,7 +79,7 @@ export function Dashboard() {
   const handleSelectChange = (profileId: string, selected: boolean) => {
     const targetProfile = profiles.find(profile => profile.id === profileId);
 
-    if (!targetProfile || targetProfile.status === 'blocked') {
+    if (!targetProfile || !targetProfile.isActivated) {
       return;
     }
 
@@ -86,11 +93,11 @@ export function Dashboard() {
 
   const writeHistory = (profile: Profile, type: 'profile_created' | 'profile_updated' | 'profile_deleted' | 'profile_blocked' | 'profile_activated') => {
     const descriptionByType: Record<typeof type, string> = {
-      profile_created: '인물 정보를 추가했습니다.',
-      profile_updated: '인물 정보를 수정했습니다.',
-      profile_deleted: '인물 정보를 삭제했습니다.',
-      profile_blocked: '인물 정보를 blocked 상태로 변경했습니다.',
-      profile_activated: '인물 정보를 active 상태로 변경했습니다.',
+      profile_created: '매물 정보를 추가했습니다.',
+      profile_updated: '매물 정보를 수정했습니다.',
+      profile_deleted: '매물 정보를 삭제했습니다.',
+      profile_blocked: '매물 정보를 blocked 상태로 변경했습니다.',
+      profile_activated: '매물 정보를 active 상태로 변경했습니다.',
     };
 
     recordHistoryEvent({
@@ -183,12 +190,12 @@ export function Dashboard() {
               onClick={() => setModal({kind: 'create'})}
             >
               <Plus size={18} aria-hidden />
-              인물 추가
+              매물 추가
             </button>
           </div>
         </section>
 
-        <FilterBar filters={filters} onChange={setFilters} />
+        <FilterBar filters={filters} onChange={setFilters} onReset={resetFilters} />
 
         <section className="mt-5 rounded-[8px] border border-[var(--border)] bg-white p-4">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
@@ -200,7 +207,7 @@ export function Dashboard() {
                 disabled={activeVisibleProfiles.length === 0}
                 onChange={event => handleSelectAll(event.target.checked)}
               />
-              현재 grid active 전체 선택
+              전체 선택
             </label>
             <div className="inline-flex items-center gap-2 rounded-full bg-[var(--violet-50)] px-3 py-1.5 text-sm font-bold text-[var(--violet-900)]">
               <Users size={16} aria-hidden />
@@ -224,7 +231,12 @@ export function Dashboard() {
                     return;
                   }
 
-                  const updatedProfile = {...targetProfile, status, updatedAt: new Date().toISOString()};
+                  const updatedProfile = {
+                    ...targetProfile,
+                    status,
+                    isActivated: status === 'active',
+                    updatedAt: new Date().toISOString(),
+                  };
                   updateProfiles(profiles.map(profile => (profile.id === profileId ? updatedProfile : profile)));
 
                   if (status === 'blocked') {
@@ -266,5 +278,5 @@ export function Dashboard() {
 
 function getProfileLabel(profile: Profile) {
   const genderLabel = profile.gender === 'female' ? '여성' : '남성';
-  return `${genderLabel} ${profile.age}세 · ${profile.residence}`;
+  return `${genderLabel} ${formatBirthYearLabel(profile.birthYear)} · ${profile.residence}`;
 }

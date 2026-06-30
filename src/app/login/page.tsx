@@ -61,7 +61,6 @@ function LoginForm() {
             className="h-12 w-full rounded-[8px] border border-[var(--border)] px-4 text-base outline-none transition focus:border-[var(--violet-500)] focus:ring-4 focus:ring-[var(--violet-100)]"
             type="text"
             value={loginId}
-            placeholder="aiden"
             onChange={event => setLoginId(event.target.value)}
             autoComplete="username"
             autoFocus
@@ -74,7 +73,6 @@ function LoginForm() {
             className="h-12 w-full rounded-[8px] border border-[var(--border)] px-4 text-base outline-none transition focus:border-[var(--violet-500)] focus:ring-4 focus:ring-[var(--violet-100)]"
             type="password"
             value={password}
-            placeholder="kayeon-dev"
             onChange={event => setPassword(event.target.value)}
             autoComplete="current-password"
           />

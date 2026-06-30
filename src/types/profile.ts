@@ -3,6 +3,7 @@ export type ProfileStatus = 'active' | 'blocked';
 export type Religion = 'christian' | 'buddhist' | 'catholic' | 'none' | 'not_selected';
 export type Smoking = 'smoker' | 'non_smoker' | 'not_selected';
 export type Drinking = 'drinker' | 'non_drinker' | 'not_selected';
+export type NumericComparison = 'gte' | 'lte';
 
 export type ProfilePhoto = {
   id: string;
@@ -15,9 +16,10 @@ export type Profile = {
   id: string;
   gender: Gender;
   status: ProfileStatus;
+  isActivated: boolean;
   authorName: string;
   residence: string;
-  age: number;
+  birthYear: number;
   height: number;
   job: string;
   religion: Religion;
@@ -35,10 +37,11 @@ export type Profile = {
 
 export type ProfileFilters = {
   gender: Gender;
-  minAge: number;
-  maxAge: number;
-  minHeight: number;
-  maxHeight: number;
+  birthYearValue: string;
+  birthYearComparison: NumericComparison;
+  heightValue: string;
+  heightComparison: NumericComparison;
+  activeOnly: boolean;
   religions: Religion[];
   smoking: Smoking[];
   query: string;

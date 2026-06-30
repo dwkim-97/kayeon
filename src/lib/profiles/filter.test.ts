@@ -7,9 +7,10 @@ const baseProfile: Profile = {
   id: 'profile-1',
   gender: 'female',
   status: 'active',
+  isActivated: true,
   authorName: 'Aiden',
   residence: '서울 강남구',
-  age: 29,
+  birthYear: 1998,
   height: 164,
   job: 'ibk / 을지로 / 금융',
   religion: 'none',
@@ -33,7 +34,7 @@ const baseProfile: Profile = {
 };
 
 describe('filterProfiles', () => {
-  it('combines gender, numeric filters, select filters, and value search', () => {
+  it('combines gender, single-value numeric filters, select filters, and value search', () => {
     const profiles: Profile[] = [
       baseProfile,
       {
@@ -41,7 +42,7 @@ describe('filterProfiles', () => {
         id: 'profile-2',
         gender: 'male',
         residence: '서울 마포구',
-        age: 33,
+        birthYear: 1994,
         height: 178,
         religion: 'christian',
         smoking: 'smoker',
@@ -51,15 +52,98 @@ describe('filterProfiles', () => {
 
     const result = filterProfiles(profiles, {
       gender: 'female',
-      minAge: 28,
-      maxAge: 30,
-      minHeight: 160,
-      maxHeight: 170,
+      birthYearValue: '1997',
+      birthYearComparison: 'gte',
+      heightValue: '170',
+      heightComparison: 'lte',
+      activeOnly: true,
       religions: ['none'],
       smoking: ['non_smoker'],
       query: 'ibk enfj 강남',
     });
 
     expect(result.map(profile => profile.id)).toEqual(['profile-1']);
+  });
+
+  it('supports less-than-or-equal birth-year and greater-than-or-equal height filters', () => {
+    const result = filterProfiles([baseProfile], {
+      gender: 'female',
+      birthYearValue: '1998',
+      birthYearComparison: 'lte',
+      heightValue: '164',
+      heightComparison: 'gte',
+      activeOnly: true,
+      religions: [],
+      smoking: [],
+      query: '',
+    });
+
+    expect(result.map(profile => profile.id)).toEqual(['profile-1']);
+  });
+
+  it('excludes profiles that do not match the selected numeric comparison', () => {
+    const result = filterProfiles([baseProfile], {
+      gender: 'female',
+      birthYearValue: '1997',
+      birthYearComparison: 'lte',
+      heightValue: '165',
+      heightComparison: 'gte',
+      activeOnly: true,
+      religions: [],
+      smoking: [],
+      query: '',
+    });
+
+    expect(result).toEqual([]);
+  });
+
+  it('hides deactivated profiles by default when active-only filtering is on', () => {
+    const result = filterProfiles(
+      [
+        baseProfile,
+        {
+          ...baseProfile,
+          id: 'profile-2',
+          isActivated: false,
+          status: 'blocked',
+        },
+      ],
+      {
+        gender: 'female',
+        birthYearValue: '',
+        birthYearComparison: 'gte',
+        heightValue: '',
+        heightComparison: 'gte',
+        activeOnly: true,
+        religions: [],
+        smoking: [],
+        query: '',
+      },
+    );
+
+    expect(result.map(profile => profile.id)).toEqual(['profile-1']);
+  });
+
+  it('places deactivated profiles after active profiles when active-only filtering is off', () => {
+    const deactivatedProfile: Profile = {
+      ...baseProfile,
+      id: 'profile-2',
+      isActivated: false,
+      status: 'blocked',
+    };
+
+    const result = filterProfiles([deactivatedProfile, baseProfile], {
+      gender: 'female',
+      birthYearValue: '',
+      birthYearComparison: 'gte',
+      heightValue: '',
+      heightComparison: 'gte',
+      activeOnly: false,
+      religions: [],
+      smoking: [],
+      query: '',
+    });
+
+    expect(result.map(profile => profile.id)).toEqual(['profile-1', 'profile-2']);
   });
 });

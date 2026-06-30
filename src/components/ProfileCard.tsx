@@ -3,9 +3,10 @@
 /* eslint-disable @next/next/no-img-element */
 
 import {ChevronLeft, ChevronRight, Pencil, Trash2} from 'lucide-react';
-import {useState} from 'react';
+import {type PointerEvent, useEffect, useRef, useState} from 'react';
 
-import {drinkingLabels, religionLabels, smokingLabels} from '@/lib/profiles/options';
+import {formatBirthYearLabel} from '@/lib/profiles/age';
+import {getProfileInformationRows} from '@/lib/profiles/information';
 import type {Profile} from '@/types/profile';
 
 type ProfileCardProps = {
@@ -17,6 +18,12 @@ type ProfileCardProps = {
   onStatusChange: (profileId: string, status: Profile['status']) => void;
 };
 
+type PhotoAnimationDirection = 'none' | 'next' | 'previous';
+
+const swipeThreshold = 48;
+const maxDragOffset = 90;
+const photoAnimationResetMs = 240;
+
 export function ProfileCard({
   profile,
   isSelected,
@@ -26,22 +33,87 @@ export function ProfileCard({
   onStatusChange,
 }: ProfileCardProps) {
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [photoAnimationDirection, setPhotoAnimationDirection] = useState<PhotoAnimationDirection>('none');
+  const [dragOffset, setDragOffset] = useState(0);
+  const dragStartXRef = useRef<number | null>(null);
+  const animationResetTimerRef = useRef<number | null>(null);
   const photo = profile.photos[photoIndex] || profile.photos[0];
-  const isBlocked = profile.status === 'blocked';
-  const genderLabel = profile.gender === 'female' ? '여성' : '남성';
-  const informationRows = [
-    ['회사', profile.job],
-    ['종교', religionLabels[profile.religion]],
-    ['MBTI', profile.mbti || '미입력'],
-    ['취미', profile.hobbies || '미입력'],
-    ['흡연/음주', `${smokingLabels[profile.smoking]} / ${drinkingLabels[profile.drinking]}`],
-    ['이상형', profile.idealType || '미입력'],
-    ['코멘트', profile.matchmakerComment || '미입력'],
-  ];
+  const hasMultiplePhotos = profile.photos.length > 1;
+  const isBlocked = !profile.isActivated;
+  const birthYearLabel = formatBirthYearLabel(profile.birthYear);
+  const photoAnimationClass =
+    photoAnimationDirection === 'next'
+      ? 'profile-photo-animate-next'
+      : photoAnimationDirection === 'previous'
+        ? 'profile-photo-animate-previous'
+        : '';
+  const informationRows = getProfileInformationRows(profile);
+
+  useEffect(
+    () => () => {
+      if (animationResetTimerRef.current !== null) {
+        window.clearTimeout(animationResetTimerRef.current);
+      }
+    },
+    [],
+  );
 
   const movePhoto = (direction: -1 | 1) => {
-    const nextIndex = (photoIndex + direction + profile.photos.length) % profile.photos.length;
-    setPhotoIndex(nextIndex);
+    if (!hasMultiplePhotos) {
+      return;
+    }
+
+    if (animationResetTimerRef.current !== null) {
+      window.clearTimeout(animationResetTimerRef.current);
+    }
+
+    setPhotoAnimationDirection(direction === 1 ? 'next' : 'previous');
+    setPhotoIndex(current => (current + direction + profile.photos.length) % profile.photos.length);
+    animationResetTimerRef.current = window.setTimeout(() => setPhotoAnimationDirection('none'), photoAnimationResetMs);
+  };
+
+  const handlePhotoPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (!hasMultiplePhotos) {
+      return;
+    }
+
+    dragStartXRef.current = event.clientX;
+    setDragOffset(0);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const handlePhotoPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const dragStartX = dragStartXRef.current;
+
+    if (dragStartX === null) {
+      return;
+    }
+
+    const nextOffset = event.clientX - dragStartX;
+    setDragOffset(Math.max(-maxDragOffset, Math.min(maxDragOffset, nextOffset)));
+  };
+
+  const finishPhotoDrag = (clientX: number) => {
+    const dragStartX = dragStartXRef.current;
+
+    if (dragStartX === null) {
+      return;
+    }
+
+    const deltaX = clientX - dragStartX;
+    dragStartXRef.current = null;
+    setDragOffset(0);
+
+    if (Math.abs(deltaX) < swipeThreshold) {
+      return;
+    }
+
+    movePhoto(deltaX < 0 ? 1 : -1);
+  };
+
+  const cancelPhotoDrag = () => {
+    dragStartXRef.current = null;
+    setDragOffset(0);
   };
 
   return (
@@ -57,7 +129,7 @@ export function ProfileCard({
           checked={!isBlocked && isSelected}
           disabled={isBlocked}
           onChange={event => onSelectChange(profile.id, event.target.checked)}
-          aria-label={`${genderLabel} ${profile.age}세 선택`}
+          aria-label={`${birthYearLabel} 매물 선택`}
         />
       </label>
 
@@ -78,7 +150,7 @@ export function ProfileCard({
           }`}
           type="button"
           onClick={() => onStatusChange(profile.id, isBlocked ? 'active' : 'blocked')}
-          aria-label={`${genderLabel} ${profile.age}세 상태 변경`}
+          aria-label={`${birthYearLabel} 매물 상태 변경`}
         >
           <span
             className={`block h-6 w-6 rounded-full bg-white shadow transition ${
@@ -87,14 +159,26 @@ export function ProfileCard({
           />
         </button>
 
-        <div className="relative aspect-[4/5] bg-[var(--violet-100)]">
+        <div
+          className="relative aspect-[4/5] touch-pan-y bg-[var(--violet-100)]"
+          onPointerDown={handlePhotoPointerDown}
+          onPointerMove={handlePhotoPointerMove}
+          onPointerUp={event => finishPhotoDrag(event.clientX)}
+          onPointerCancel={cancelPhotoDrag}
+        >
           {photo ? (
-            <img className="h-full w-full object-cover" src={photo.url} alt={photo.alt} />
+            <img
+              className={`h-full w-full select-none object-cover ${photoAnimationClass}`}
+              src={photo.url}
+              alt={photo.alt}
+              draggable={false}
+              style={{transform: dragOffset ? `translateX(${dragOffset}px)` : undefined}}
+            />
           ) : (
             <div className="grid h-full place-items-center text-sm text-slate-500">사진 없음</div>
           )}
 
-          {profile.photos.length > 1 ? (
+          {hasMultiplePhotos ? (
             <>
               <button
                 className="absolute left-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-white/85 text-[var(--violet-900)]"
@@ -119,16 +203,7 @@ export function ProfileCard({
           ) : null}
         </div>
 
-        <div className="relative z-20 space-y-4 p-4">
-          <div>
-            <h2 className="text-xl font-extrabold text-[var(--violet-950)]">
-              {genderLabel} {profile.age}세
-            </h2>
-            <p className="mt-1 text-sm font-semibold text-slate-500">
-              {profile.height}cm · {profile.residence}
-            </p>
-          </div>
-
+        <div className="relative z-20 p-4">
           <ul className="space-y-1.5 text-sm leading-6 text-slate-700">
             {informationRows.map(([label, value]) => (
               <li className="grid grid-cols-[88px_1fr] overflow-hidden rounded-[6px] border border-[var(--violet-100)]" key={label}>
@@ -145,7 +220,7 @@ export function ProfileCard({
               className="grid h-9 w-9 place-items-center rounded-[8px] border border-[var(--violet-200)] text-[var(--violet-800)] transition hover:bg-[var(--violet-50)]"
               type="button"
               onClick={() => onEdit(profile)}
-              aria-label={`${genderLabel} ${profile.age}세 수정`}
+              aria-label={`${birthYearLabel} 매물 수정`}
             >
               <Pencil size={17} aria-hidden />
             </button>
@@ -153,7 +228,7 @@ export function ProfileCard({
               className="grid h-9 w-9 place-items-center rounded-[8px] border border-red-100 text-[var(--danger)] transition hover:bg-red-50"
               type="button"
               onClick={() => onDelete(profile)}
-              aria-label={`${genderLabel} ${profile.age}세 삭제`}
+              aria-label={`${birthYearLabel} 매물 삭제`}
             >
               <Trash2 size={17} aria-hidden />
             </button>

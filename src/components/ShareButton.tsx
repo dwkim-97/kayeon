@@ -4,7 +4,8 @@ import {Share2} from 'lucide-react';
 import Script from 'next/script';
 import {useState} from 'react';
 
-import {drinkingLabels, religionLabels, smokingLabels} from '@/lib/profiles/options';
+import {formatBirthYearLabel} from '@/lib/profiles/age';
+import {getProfileInformationRows, type ProfileInformationRow} from '@/lib/profiles/information';
 import type {Profile} from '@/types/profile';
 
 type KakaoShareApi = {
@@ -45,6 +46,12 @@ type ShareButtonProps = {
 };
 
 const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY || '';
+const shareImageLayoutBase = {
+  width: 1080,
+  cardHeight: 700,
+  gap: 34,
+  padding: 56,
+};
 
 export function ShareButton({profiles}: ShareButtonProps) {
   const [isSharing, setIsSharing] = useState(false);
@@ -70,7 +77,7 @@ export function ShareButton({profiles}: ShareButtonProps) {
           objectType: 'feed',
           content: {
             title: `소개 프로필 ${profiles.length}명`,
-            description: profiles.map(getProfileLabel).join(', '),
+            description: profiles.map(getShareProfileLabel).join(', '),
             imageUrl: uploaded.infos.original.url,
             link: {
               mobileWebUrl: window.location.origin,
@@ -128,10 +135,7 @@ function createUploadFiles(file: File) {
 }
 
 async function renderShareImage(profiles: Profile[]) {
-  const width = 1080;
-  const cardHeight = 700;
-  const gap = 34;
-  const height = 190 + profiles.length * cardHeight + Math.max(0, profiles.length - 1) * gap + 70;
+  const {width, cardHeight, gap, padding, height} = getShareImageLayout(profiles.length);
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -143,16 +147,10 @@ async function renderShareImage(profiles: Profile[]) {
 
   context.fillStyle = '#F5F3FF';
   context.fillRect(0, 0, width, height);
-  context.fillStyle = '#2F0D68';
-  context.font = '700 48px Arial';
-  context.fillText('Kayeon 소개 프로필', 56, 82);
-  context.font = '500 28px Arial';
-  context.fillStyle = '#5D0EC0';
-  context.fillText(`${profiles.length}명 · 카카오톡 공유용 이미지`, 56, 128);
 
   for (const [index, profile] of profiles.entries()) {
-    const y = 170 + index * (cardHeight + gap);
-    await drawProfileCard(context, profile, 56, y, width - 112, cardHeight);
+    const y = padding + index * (cardHeight + gap);
+    await drawProfileCard(context, profile, padding, y, width - padding * 2, cardHeight);
   }
 
   return new Promise<Blob>((resolve, reject) => {
@@ -191,31 +189,8 @@ async function drawProfileCard(
   }
 
   const textX = imageX + imageWidth + 36;
-  context.fillStyle = '#2F0D68';
-  context.font = '800 44px Arial';
-  context.fillText(getProfileLabel(profile), textX, y + 82);
-  context.fillStyle = '#4D179A';
-  context.font = '700 28px Arial';
-  context.fillText(`${profile.height}cm · ${profile.residence}`, textX, y + 124);
-
-  const lines = [
-    `회사: ${profile.job}`,
-    `종교: ${religionLabels[profile.religion]} · MBTI: ${profile.mbti || '미입력'}`,
-    `흡연/음주: ${smokingLabels[profile.smoking]} / ${drinkingLabels[profile.drinking]}`,
-    `취미: ${profile.hobbies || '미입력'}`,
-    `이상형: ${profile.idealType || '미입력'}`,
-    `코멘트: ${profile.matchmakerComment || '미입력'}`,
-  ];
-
-  context.fillStyle = '#334155';
-  context.font = '500 25px Arial';
-  lines.forEach((line, lineIndex) => {
-    context.fillText(line.slice(0, 34), textX, y + 184 + lineIndex * 48);
-  });
-
-  context.fillStyle = '#8E51FF';
-  context.font = '700 22px Arial';
-  context.fillText(`등록자: ${profile.authorName}`, textX, y + height - 42);
+  const textWidth = x + width - textX - 28;
+  drawInformationRows(context, getShareProfileInformationRows(profile), textX, y + 46, textWidth);
 }
 
 async function drawImage(context: CanvasRenderingContext2D, src: string, x: number, y: number, width: number, height: number) {
@@ -270,6 +245,50 @@ function roundedRect(
   context.fill();
 }
 
-function getProfileLabel(profile: Profile) {
-  return `${profile.gender === 'female' ? '여성' : '남성'} ${profile.age}세`;
+function drawInformationRows(
+  context: CanvasRenderingContext2D,
+  rows: ProfileInformationRow[],
+  x: number,
+  y: number,
+  width: number,
+) {
+  const rowHeight = 52;
+  const labelWidth = 124;
+
+  rows.forEach(([label, value], index) => {
+    const rowY = y + index * rowHeight;
+
+    roundedRect(context, x, rowY, width, rowHeight - 6, 10, '#FFFFFF');
+    context.strokeStyle = '#DDD6FF';
+    context.lineWidth = 2;
+    context.strokeRect(x, rowY, width, rowHeight - 6);
+
+    context.fillStyle = '#F5F3FF';
+    context.fillRect(x, rowY, labelWidth, rowHeight - 6);
+    context.fillStyle = '#4D179A';
+    context.font = '700 22px Arial';
+    context.fillText(label, x + 16, rowY + 31);
+
+    context.fillStyle = '#334155';
+    context.font = '500 22px Arial';
+    context.fillText(value.slice(0, 18), x + labelWidth + 18, rowY + 31);
+  });
+}
+
+export function getShareImageLayout(profileCount: number) {
+  return {
+    ...shareImageLayoutBase,
+    height:
+      shareImageLayoutBase.padding * 2 +
+      profileCount * shareImageLayoutBase.cardHeight +
+      Math.max(0, profileCount - 1) * shareImageLayoutBase.gap,
+  };
+}
+
+export function getShareProfileLabel(profile: Profile) {
+  return `${profile.gender === 'female' ? '여성' : '남성'} ${formatBirthYearLabel(profile.birthYear)}`;
+}
+
+export function getShareProfileInformationRows(profile: Profile) {
+  return getProfileInformationRows(profile);
 }

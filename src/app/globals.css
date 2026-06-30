@@ -45,3 +45,35 @@ button {
 button:disabled {
   cursor: not-allowed;
 }
+
+@keyframes profile-photo-next {
+  from {
+    opacity: 0.76;
+    transform: translateX(12%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes profile-photo-previous {
+  from {
+    opacity: 0.76;
+    transform: translateX(-12%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.profile-photo-animate-next {
+  animation: profile-photo-next 220ms ease-out;
+}
+
+.profile-photo-animate-previous {
+  animation: profile-photo-previous 220ms ease-out;
+}

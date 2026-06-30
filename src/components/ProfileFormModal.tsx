@@ -36,6 +36,14 @@ type ProfileFormModalProps = {
 const religionOptions: Religion[] = ['christian', 'buddhist', 'catholic', 'none'];
 const smokingOptions: Smoking[] = ['smoker', 'non_smoker'];
 const drinkingOptions: Drinking[] = ['drinker', 'non_drinker'];
+const currentYear = new Date().getFullYear();
+const oldestBirthYear = currentYear - 80 + 1;
+const youngestBirthYear = currentYear - 19 + 1;
+const birthYearOptions = Array.from({length: youngestBirthYear - oldestBirthYear + 1}, (_, index) => {
+  const year = youngestBirthYear - index;
+
+  return [year.toString(), `${year}년생`] as [string, string];
+});
 
 function readFileAsDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -153,6 +161,7 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
     onCreate({
       id: crypto.randomUUID(),
       status: 'active',
+      isActivated: true,
       authorName,
       createdAt: now,
       updatedAt: now,
@@ -166,7 +175,7 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
         <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] px-4 py-4 sm:px-5">
           <div>
             <h2 className="text-xl font-extrabold text-[var(--violet-950)]">
-              {isEdit ? '인물 정보 수정' : '인물 정보 추가'}
+              {isEdit ? '매물 정보 수정' : '매물 정보 추가'}
             </h2>
             <p className="mt-1 text-sm text-slate-500">사진은 최대 4장까지 등록할 수 있습니다.</p>
           </div>
@@ -258,13 +267,12 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
                 value={values.residence}
                 onChange={value => updateField('residence', value)}
               />
-              <TextField
-                label="나이"
+              <SelectField
+                label="년생"
                 required={true}
-                type="number"
-                placeholder="29"
-                value={values.age}
-                onChange={value => updateField('age', value)}
+                value={values.birthYear}
+                options={birthYearOptions}
+                onChange={value => updateField('birthYear', value)}
               />
               <TextField
                 label="키"
@@ -383,6 +391,37 @@ function TextField({
         value={value}
         onChange={event => onChange(event.target.value)}
       />
+    </label>
+  );
+}
+
+function SelectField({
+  label,
+  required,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  required: boolean;
+  value: string;
+  options: Array<[string, string]>;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block">
+      <FieldLabel label={label} required={required} />
+      <select
+        className="h-10 w-full rounded-[8px] border border-[var(--border)] px-3 outline-none focus:border-[var(--violet-500)] focus:ring-4 focus:ring-[var(--violet-100)]"
+        value={value}
+        onChange={event => onChange(event.target.value)}
+      >
+        {options.map(([optionValue, optionLabel]) => (
+          <option key={optionValue} value={optionValue}>
+            {optionLabel}
+          </option>
+        ))}
+      </select>
     </label>
   );
 }

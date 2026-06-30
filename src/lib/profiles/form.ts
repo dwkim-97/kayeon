@@ -3,7 +3,7 @@ import type {Drinking, Gender, Profile, ProfilePhoto, Religion, Smoking} from '@
 export type ProfileFormValues = {
   gender: Gender;
   residence: string;
-  age: string;
+  birthYear: string;
   height: string;
   job: string;
   religion: Religion;
@@ -17,8 +17,8 @@ export type ProfileFormValues = {
   photos: ProfilePhoto[];
 };
 
-export type NormalizedProfileFormValues = Omit<ProfileFormValues, 'age' | 'height'> & {
-  age: number;
+export type NormalizedProfileFormValues = Omit<ProfileFormValues, 'birthYear' | 'height'> & {
+  birthYear: number;
   height: number;
 };
 
@@ -34,15 +34,17 @@ export type ProfileFormValidationResult =
 
 const requiredTextFields: Array<[keyof ProfileFormValues, string]> = [
   ['residence', '사는 곳을 입력해 주세요.'],
-  ['age', '나이를 입력해 주세요.'],
+  ['birthYear', '년생을 선택해 주세요.'],
   ['height', '키를 입력해 주세요.'],
   ['job', '회사명/위치/업종을 입력해 주세요.'],
 ];
 
+export const defaultBirthYear = 1995;
+
 export const emptyProfileFormValues: ProfileFormValues = {
   gender: 'female',
   residence: '',
-  age: '',
+  birthYear: defaultBirthYear.toString(),
   height: '',
   job: '',
   religion: 'not_selected',
@@ -60,7 +62,7 @@ export function profileToFormValues(profile: Profile): ProfileFormValues {
   return {
     gender: profile.gender,
     residence: profile.residence,
-    age: profile.age.toString(),
+    birthYear: profile.birthYear.toString(),
     height: profile.height.toString(),
     job: profile.job,
     religion: profile.religion,
@@ -79,7 +81,7 @@ export function normalizeProfileFormValues(values: ProfileFormValues): Normalize
   return {
     ...values,
     residence: values.residence.trim(),
-    age: Number(values.age),
+    birthYear: Number(values.birthYear),
     height: Number(values.height),
     job: values.job.trim(),
     mbti: values.mbti.trim().toUpperCase(),
@@ -107,9 +109,12 @@ export function validateProfileFormValues(values: ProfileFormValues): ProfileFor
     errors.push('사진은 최대 4장까지 등록할 수 있습니다.');
   }
 
-  const age = Number(values.age);
-  if (!Number.isInteger(age) || age < 19 || age > 80) {
-    errors.push('나이는 19세 이상 80세 이하의 숫자로 입력해 주세요.');
+  const birthYear = Number(values.birthYear);
+  const currentYear = new Date().getFullYear();
+  const oldestBirthYear = currentYear - 80 + 1;
+  const youngestBirthYear = currentYear - 19 + 1;
+  if (!Number.isInteger(birthYear) || birthYear < oldestBirthYear || birthYear > youngestBirthYear) {
+    errors.push(`년생은 ${oldestBirthYear}년부터 ${youngestBirthYear}년 사이에서 선택해 주세요.`);
   }
 
   const height = Number(values.height);
