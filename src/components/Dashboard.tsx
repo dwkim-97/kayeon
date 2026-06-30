@@ -28,8 +28,8 @@ const defaultFilters = (gender: Gender): ProfileFilters => ({
   heightValue: '',
   heightComparison: 'gte',
   activeOnly: true,
-  religions: [],
-  smoking: [],
+  religion: '',
+  smoking: '',
   query: '',
 });
 

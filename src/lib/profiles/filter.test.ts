@@ -33,8 +33,19 @@ const baseProfile: Profile = {
   updatedAt: '2026-06-30T00:00:00.000Z',
 };
 
+const noFilter = {
+  birthYearValue: '',
+  birthYearComparison: 'gte' as const,
+  heightValue: '',
+  heightComparison: 'gte' as const,
+  activeOnly: false,
+  religion: '' as const,
+  smoking: '' as const,
+  query: '',
+};
+
 describe('filterProfiles', () => {
-  it('combines gender, single-value numeric filters, select filters, and value search', () => {
+  it('combines gender, numeric filters, select filters, and value search', () => {
     const profiles: Profile[] = [
       baseProfile,
       {
@@ -53,97 +64,61 @@ describe('filterProfiles', () => {
     const result = filterProfiles(profiles, {
       gender: 'female',
       birthYearValue: '1997',
-      birthYearComparison: 'gte',
+      birthYearComparison: 'gte', // 이하 — 1997 이하 출생연도 (더 어린 사람)
       heightValue: '170',
       heightComparison: 'lte',
       activeOnly: true,
-      religions: ['not_selected'],
-      smoking: ['non_smoker'],
+      religion: 'not_selected',
+      smoking: 'non_smoker',
       query: 'ibk enfj 강남',
     });
 
     expect(result.map(profile => profile.id)).toEqual(['profile-1']);
   });
 
-  it('supports less-than-or-equal birth-year and greater-than-or-equal height filters', () => {
-    const result = filterProfiles([baseProfile], {
-      gender: 'female',
-      birthYearValue: '1998',
-      birthYearComparison: 'lte',
-      heightValue: '164',
-      heightComparison: 'gte',
-      activeOnly: true,
-      religions: [],
-      smoking: [],
-      query: '',
-    });
-
-    expect(result.map(profile => profile.id)).toEqual(['profile-1']);
-  });
-
-  it('excludes profiles that do not match the selected numeric comparison', () => {
-    const result = filterProfiles([baseProfile], {
+  it('"이상(lte)" birth-year filter includes profiles born that year or earlier', () => {
+    // 1997년생 이상 → birthYear <= 1997 → 1998은 제외, 1997/1996은 포함
+    const result = filterProfiles([baseProfile], { // birthYear: 1998
+      ...noFilter,
       gender: 'female',
       birthYearValue: '1997',
       birthYearComparison: 'lte',
-      heightValue: '165',
-      heightComparison: 'gte',
-      activeOnly: true,
-      religions: [],
-      smoking: [],
-      query: '',
     });
-
     expect(result).toEqual([]);
   });
 
-  it('hides deactivated profiles by default when active-only filtering is on', () => {
-    const result = filterProfiles(
-      [
-        baseProfile,
-        {
-          ...baseProfile,
-          id: 'profile-2',
-          isActivated: false,
-          status: 'blocked',
-        },
-      ],
-      {
-        gender: 'female',
-        birthYearValue: '',
-        birthYearComparison: 'gte',
-        heightValue: '',
-        heightComparison: 'gte',
-        activeOnly: true,
-        religions: [],
-        smoking: [],
-        query: '',
-      },
-    );
+  it('"이하(gte)" birth-year filter includes profiles born that year or later', () => {
+    // 1997년생 이하 → birthYear >= 1997 → 1998은 포함
+    const result = filterProfiles([baseProfile], { // birthYear: 1998
+      ...noFilter,
+      gender: 'female',
+      birthYearValue: '1997',
+      birthYearComparison: 'gte',
+    });
+    expect(result.map(p => p.id)).toEqual(['profile-1']);
+  });
 
-    expect(result.map(profile => profile.id)).toEqual(['profile-1']);
+  it('height gte filter excludes profiles below threshold', () => {
+    const result = filterProfiles([baseProfile], { // height: 164
+      ...noFilter,
+      gender: 'female',
+      heightValue: '165',
+      heightComparison: 'gte',
+    });
+    expect(result).toEqual([]);
+  });
+
+  it('hides deactivated profiles when active-only filtering is on', () => {
+    const result = filterProfiles(
+      [baseProfile, {...baseProfile, id: 'profile-2', isActivated: false, status: 'blocked'}],
+      {...noFilter, gender: 'female', activeOnly: true},
+    );
+    expect(result.map(p => p.id)).toEqual(['profile-1']);
   });
 
   it('places deactivated profiles after active profiles when active-only filtering is off', () => {
-    const deactivatedProfile: Profile = {
-      ...baseProfile,
-      id: 'profile-2',
-      isActivated: false,
-      status: 'blocked',
-    };
-
-    const result = filterProfiles([deactivatedProfile, baseProfile], {
-      gender: 'female',
-      birthYearValue: '',
-      birthYearComparison: 'gte',
-      heightValue: '',
-      heightComparison: 'gte',
-      activeOnly: false,
-      religions: [],
-      smoking: [],
-      query: '',
-    });
-
-    expect(result.map(profile => profile.id)).toEqual(['profile-1', 'profile-2']);
+    const deactivatedProfile: Profile = {...baseProfile, id: 'profile-2', isActivated: false, status: 'blocked'};
+    const result = filterProfiles([deactivatedProfile, baseProfile], {...noFilter, gender: 'female'});
+    expect(result.map(p => p.id)).toEqual(['profile-1', 'profile-2']);
   });
 });
