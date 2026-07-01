@@ -22,19 +22,27 @@ type KakaoContent = {
   link: KakaoLink;
 };
 
+type KakaoFeedTemplate = {
+  objectType: 'feed';
+  content: KakaoContent;
+  buttons?: Array<{title: string; link: KakaoLink}>;
+};
+
 type KakaoListTemplate = {
   objectType: 'list';
   headerTitle: string;
   headerLink: KakaoLink;
-  contents: KakaoContent[];
+  contents: KakaoContent[]; // 2~3개
   buttons?: Array<{title: string; link: KakaoLink}>;
 };
+
+type KakaoTemplate = KakaoFeedTemplate | KakaoListTemplate;
 
 type KakaoShareApi = {
   isInitialized: () => boolean;
   init: (key: string) => void;
   Share: {
-    sendDefault: (input: KakaoListTemplate) => void;
+    sendDefault: (input: KakaoTemplate) => void;
     uploadImage: (input: {file: FileList | File[]}) => Promise<{infos: {original: {url: string}}}>;
   };
 };
@@ -63,23 +71,36 @@ function buildProfileDescription(profile: Profile): string {
   return parts.join(' · ');
 }
 
-function buildListTemplate(profiles: Profile[], origin: string): KakaoListTemplate {
+function buildTemplate(profiles: Profile[], origin: string): KakaoTemplate {
   const link: KakaoLink = {mobileWebUrl: origin, webUrl: origin};
+  const buttons = [{title: '확인', link}];
+
+  const toContent = (profile: Profile): KakaoContent => {
+    const content: KakaoContent = {
+      title: `${genderLabels[profile.gender]} ${formatBirthYearLabel(profile.birthYear)} · ${profile.residence}`,
+      description: buildProfileDescription(profile),
+      link,
+    };
+    const firstPhoto = profile.photos[0];
+    if (firstPhoto) content.imageUrl = firstPhoto.url;
+    return content;
+  };
+
+  // list 템플릿은 2~3개만 허용 — 1명은 feed로
+  if (profiles.length === 1) {
+    return {
+      objectType: 'feed',
+      content: toContent(profiles[0]),
+      buttons,
+    };
+  }
+
   return {
     objectType: 'list',
     headerTitle: `소개 풀 (${profiles.length}명)`,
     headerLink: link,
-    contents: profiles.map(profile => {
-      const content: KakaoContent = {
-        title: `${genderLabels[profile.gender]} ${formatBirthYearLabel(profile.birthYear)} · ${profile.residence}`,
-        description: buildProfileDescription(profile),
-        link,
-      };
-      const firstPhoto = profile.photos[0];
-      if (firstPhoto) content.imageUrl = firstPhoto.url;
-      return content;
-    }),
-    buttons: [{title: '확인', link}],
+    contents: profiles.map(toContent),
+    buttons,
   };
 }
 
@@ -109,7 +130,7 @@ export function ShareButton({profiles}: ShareButtonProps) {
 
   const shareGroup = (group: Profile[]) => {
     initKakao();
-    window.Kakao.Share.sendDefault(buildListTemplate(group, window.location.origin));
+    window.Kakao.Share.sendDefault(buildTemplate(group, window.location.origin));
   };
 
   const handleClick = () => {
