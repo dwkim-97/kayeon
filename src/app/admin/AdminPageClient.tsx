@@ -1,9 +1,10 @@
 'use client';
 
-import {ArrowLeft, History, Plus, Trash2, X} from 'lucide-react';
+import {Plus, Trash2, X} from 'lucide-react';
 import Link from 'next/link';
 import {FormEvent, useEffect, useState} from 'react';
 
+import {AppHeader} from '@/components/AppHeader';
 import {closedAlertState, CustomAlert, type CustomAlertState} from '@/components/CustomAlert';
 import {recordHistory} from '@/lib/history/events';
 import type {ManagedUser} from '@/types/user';
@@ -128,21 +129,13 @@ export function AdminPageClient({authorName}: AdminPageClientProps) {
   };
 
   return (
-    <main className="min-h-screen bg-[var(--background)] px-4 py-6">
-      <div className="mx-auto max-w-5xl">
+    <main className="min-h-screen bg-[var(--background)]">
+      <AppHeader page="admin" />
+
+      <div className="mx-auto max-w-5xl px-4 py-6">
         <header className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="flex flex-wrap gap-3">
-              <Link className="inline-flex items-center gap-1 text-sm font-bold text-[var(--violet-800)]" href="/">
-                <ArrowLeft size={16} aria-hidden />
-                대시보드
-              </Link>
-              <Link className="inline-flex items-center gap-1 text-sm font-bold text-[var(--violet-800)]" href="/history">
-                <History size={16} aria-hidden />
-                히스토리
-              </Link>
-            </div>
-            <h1 className="mt-2 text-3xl font-black text-[var(--violet-950)]">관리자 페이지</h1>
+            <h1 className="text-3xl font-black text-[var(--violet-950)]">관리자 페이지</h1>
             <p className="mt-1 text-sm text-slate-500">모든 유저는 관리자 권한으로 소개 풀을 관리합니다.</p>
           </div>
           <button

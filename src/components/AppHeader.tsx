@@ -1,0 +1,54 @@
+'use client';
+
+import {History, LogOut, ShieldCheck, Users} from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+
+import {logout} from '@/lib/auth/logout';
+
+type NavPage = 'dashboard' | 'admin' | 'history';
+
+const NAV_LINKS: Record<NavPage, {href: string; label: string; icon: React.ReactNode}[]> = {
+  dashboard: [
+    {href: '/history', label: '히스토리', icon: <History size={16} aria-hidden />},
+    {href: '/admin', label: '관리자', icon: <ShieldCheck size={16} aria-hidden />},
+  ],
+  admin: [
+    {href: '/', label: '대시보드', icon: <Users size={16} aria-hidden />},
+    {href: '/history', label: '히스토리', icon: <History size={16} aria-hidden />},
+  ],
+  history: [
+    {href: '/', label: '대시보드', icon: <Users size={16} aria-hidden />},
+    {href: '/admin', label: '관리자', icon: <ShieldCheck size={16} aria-hidden />},
+  ],
+};
+
+export function AppHeader({page}: {page: NavPage}) {
+  return (
+    <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-white/92 backdrop-blur">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+        <Image src="/logo.png" alt="카연" width={100} height={34} priority />
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          {NAV_LINKS[page].map(link => (
+            <Link
+              key={link.href}
+              className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[var(--violet-200)] bg-white px-3 text-sm font-bold text-[var(--violet-900)] sm:flex-none"
+              href={link.href}
+            >
+              {link.icon}
+              {link.label}
+            </Link>
+          ))}
+          <button
+            className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[var(--border)] bg-white px-3 text-sm font-bold text-slate-600 sm:flex-none"
+            type="button"
+            onClick={logout}
+          >
+            <LogOut size={16} aria-hidden />
+            로그아웃
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}

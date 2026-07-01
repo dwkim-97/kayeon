@@ -1,9 +1,8 @@
 'use client';
 
-import {ArrowLeft, ShieldCheck} from 'lucide-react';
-import Link from 'next/link';
 import {useEffect, useState} from 'react';
 
+import {AppHeader} from '@/components/AppHeader';
 import {historyEventLabels} from '@/lib/history/events';
 import type {HistoryEvent} from '@/types/history';
 
@@ -19,21 +18,12 @@ export default function HistoryPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[var(--background)] px-4 py-6">
-      <div className="mx-auto max-w-5xl">
+    <main className="min-h-screen bg-[var(--background)]">
+      <AppHeader page="history" />
+      <div className="mx-auto max-w-5xl px-4 py-6">
         <header className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="flex flex-wrap gap-3">
-              <Link className="inline-flex items-center gap-1 text-sm font-bold text-[var(--violet-800)]" href="/">
-                <ArrowLeft size={16} aria-hidden />
-                대시보드
-              </Link>
-              <Link className="inline-flex items-center gap-1 text-sm font-bold text-[var(--violet-800)]" href="/admin">
-                <ShieldCheck size={16} aria-hidden />
-                관리자
-              </Link>
-            </div>
-            <h1 className="mt-2 text-3xl font-black text-[var(--violet-950)]">히스토리</h1>
+            <h1 className="text-3xl font-black text-[var(--violet-950)]">히스토리</h1>
             <p className="mt-1 text-sm text-slate-500">서비스 내 주요 변경 이벤트를 시간순으로 확인합니다.</p>
           </div>
           <div className="rounded-full bg-[var(--violet-50)] px-3 py-1.5 text-sm font-bold text-[var(--violet-900)]">

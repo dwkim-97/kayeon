@@ -1,6 +1,6 @@
 'use client';
 
-import {LockKeyhole} from 'lucide-react';
+import Image from 'next/image';
 import {useRouter, useSearchParams} from 'next/navigation';
 import {FormEvent, Suspense, useState} from 'react';
 
@@ -96,14 +96,9 @@ function LoginShell({children}: {children: React.ReactNode}) {
   return (
     <main className="grid min-h-screen place-items-center bg-[var(--violet-50)] px-5 py-10">
       <section className="w-full max-w-[420px] rounded-[8px] border border-[var(--border)] bg-white p-8 shadow-[0_24px_80px_rgba(47,13,104,0.12)]">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="grid h-11 w-11 place-items-center rounded-[8px] bg-[var(--violet-100)] text-[var(--violet-700)]">
-            <LockKeyhole size={22} aria-hidden />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-[var(--violet-950)]">Kayeon</h1>
-            <p className="mt-1 text-sm text-slate-500">관리자가 등록한 사용자만 접근할 수 있습니다.</p>
-          </div>
+        <div className="mb-8">
+          <Image src="/logo.png" alt="카연" width={140} height={48} className="mb-3" priority />
+          <p className="text-sm text-slate-500">관리자가 등록한 사용자만 접근할 수 있습니다.</p>
         </div>
         {children}
       </section>

@@ -1,9 +1,10 @@
 'use client';
 
-import {History, LogOut, Plus, ShieldCheck, Users} from 'lucide-react';
+import {Plus, Users} from 'lucide-react';
 import Link from 'next/link';
 import {useEffect, useMemo, useState} from 'react';
 
+import {AppHeader} from '@/components/AppHeader';
 import {closedAlertState, CustomAlert, type CustomAlertState} from '@/components/CustomAlert';
 import {FilterBar} from '@/components/FilterBar';
 import {ProfileCard} from '@/components/ProfileCard';
@@ -273,11 +274,6 @@ export function Dashboard({authorName}: DashboardProps) {
     });
   };
 
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', {method: 'POST'});
-    window.location.href = '/login';
-  };
-
   return (
     <main className="min-h-screen bg-[var(--background)]">
       {isMutating ? (
@@ -288,38 +284,7 @@ export function Dashboard({authorName}: DashboardProps) {
           </div>
         </div>
       ) : null}
-      <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-white/92 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4">
-          <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-[var(--violet-600)]">Kayeon</p>
-            <h1 className="mt-1 text-2xl font-black text-[var(--violet-950)]">소개 풀 대시보드</h1>
-          </div>
-          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-            <Link
-              className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[var(--violet-200)] bg-white px-3 text-sm font-bold text-[var(--violet-900)] sm:flex-none"
-              href="/history"
-            >
-              <History size={16} aria-hidden />
-              히스토리
-            </Link>
-            <Link
-              className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[var(--violet-200)] bg-[var(--violet-50)] px-3 text-sm font-bold text-[var(--violet-900)] sm:flex-none"
-              href="/admin"
-            >
-              <ShieldCheck size={16} aria-hidden />
-              관리자
-            </Link>
-            <button
-              className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[var(--border)] bg-white px-3 text-sm font-bold text-slate-600 sm:flex-none"
-              type="button"
-              onClick={handleLogout}
-            >
-              <LogOut size={16} aria-hidden />
-              로그아웃
-            </button>
-          </div>
-        </div>
-      </header>
+      <AppHeader page="dashboard" />
 
       <div className="mx-auto max-w-7xl px-4 py-6">
         <section className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
