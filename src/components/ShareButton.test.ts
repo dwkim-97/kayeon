@@ -63,13 +63,12 @@ describe('share image helpers', () => {
   });
 
   it('uses dashboard-style profile information rows without author text', () => {
-    expect(getShareProfileLabel(profile)).toBe('여성 98년생');
+    expect(getShareProfileLabel(profile)).toBe('98년생');
     expect(getProfileInformationRows(profile)).toEqual([
       ['나이', '98년생'],
       ['키', '164cm'],
       ['사는 곳', '서울 강남구'],
       ['회사', 'IBK / 을지로 / 금융'],
-      ['종교', '무교'],
       ['MBTI', 'ENFJ'],
       ['취미', '독서'],
       ['흡연/음주', '비흡연 / 마심'],

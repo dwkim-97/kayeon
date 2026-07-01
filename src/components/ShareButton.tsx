@@ -65,41 +65,61 @@ function chunk<T>(arr: T[], size: number): T[][] {
 }
 
 function buildProfileDescription(profile: Profile): string {
-  const parts: string[] = [`${profile.height}cm`, profile.job];
+  const parts: string[] = [profile.residence, `${profile.height}cm`, profile.job];
   if (profile.religion !== 'not_selected') parts.push(religionLabels[profile.religion]);
   if (profile.mbti) parts.push(profile.mbti);
-  return parts.join(' · ');
+  if (profile.hobbies) parts.push(profile.hobbies);
+  if (profile.idealType) parts.push(profile.idealType);
+  return parts.filter(Boolean).join(' · ');
 }
 
 function buildTemplate(profiles: Profile[], origin: string): KakaoTemplate {
   const link: KakaoLink = {mobileWebUrl: origin, webUrl: origin};
   const buttons = [{title: '확인', link}];
 
-  const toContent = (profile: Profile): KakaoContent => {
-    const content: KakaoContent = {
-      title: `${genderLabels[profile.gender]} ${formatBirthYearLabel(profile.birthYear)} · ${profile.residence}`,
-      description: buildProfileDescription(profile),
-      link,
-    };
-    const firstPhoto = profile.photos[0];
-    if (firstPhoto) content.imageUrl = firstPhoto.url;
-    return content;
-  };
-
-  // list 템플릿은 2~3개만 허용 — 1명은 feed로
+  // 1명 + 사진 여러 장: 사진별 list 항목으로 모든 사진 노출 (최대 3장)
   if (profiles.length === 1) {
-    return {
-      objectType: 'feed',
-      content: toContent(profiles[0]),
-      buttons,
-    };
+    const profile = profiles[0];
+    const photos = profile.photos.slice(0, 3);
+    const title = formatBirthYearLabel(profile.birthYear);
+    const description = buildProfileDescription(profile);
+
+    if (photos.length >= 2) {
+      return {
+        objectType: 'list',
+        headerTitle: title,
+        headerLink: link,
+        contents: photos.map((photo, i) => ({
+          title: i === 0 ? title : `사진 ${i + 1}`,
+          description: i === 0 ? description : '',
+          imageUrl: photo.url,
+          link,
+        })),
+        buttons,
+      };
+    }
+
+    // 사진 1장 또는 없음: feed
+    const feedContent: KakaoContent = {title, description, link};
+    if (photos[0]) feedContent.imageUrl = photos[0].url;
+    return {objectType: 'feed', content: feedContent, buttons};
   }
 
+  // 2~3명: 프로필별 list 항목
   return {
     objectType: 'list',
     headerTitle: `소개 풀 (${profiles.length}명)`,
     headerLink: link,
-    contents: profiles.map(toContent),
+    contents: profiles.map(profile => {
+      const content: KakaoContent = {
+        title: formatBirthYearLabel(profile.birthYear),
+        description: buildProfileDescription(profile),
+        link,
+      };
+      const firstPhoto = profile.photos[0];
+      if (firstPhoto) content.imageUrl = firstPhoto.url;
+      return content;
+    }),
     buttons,
   };
 }
@@ -111,7 +131,7 @@ function initKakao() {
 }
 
 export function getShareProfileLabel(profile: Profile) {
-  return `${genderLabels[profile.gender]} ${formatBirthYearLabel(profile.birthYear)}`;
+  return formatBirthYearLabel(profile.birthYear);
 }
 
 // ---------- component ----------
