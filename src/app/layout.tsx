@@ -4,6 +4,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "카연",
   description: "Private matchmaking inventory dashboard",
+  icons: {
+    icon: '/favicon.png',
+  },
 };
 
 export default function RootLayout({
