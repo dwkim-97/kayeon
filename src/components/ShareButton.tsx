@@ -73,54 +73,61 @@ function buildProfileDescription(profile: Profile): string {
   return parts.filter(Boolean).join(' · ');
 }
 
-function buildTemplate(profiles: Profile[], origin: string): KakaoTemplate {
-  const link: KakaoLink = {mobileWebUrl: origin, webUrl: origin};
-  const buttons = [{title: '확인', link}];
+function profileLink(profileId: string, origin: string): KakaoLink {
+  const url = `${origin}/profiles/${profileId}`;
+  return {mobileWebUrl: url, webUrl: url};
+}
 
-  // 1명 + 사진 여러 장: 사진별 list 항목으로 모든 사진 노출 (최대 3장)
+function buildTemplate(profiles: Profile[], origin: string): KakaoTemplate {
+  const originLink: KakaoLink = {mobileWebUrl: origin, webUrl: origin};
+
+  // 1명: 사진 1장씩 list 항목 (최대 3장), 각 항목·버튼 클릭 시 상세 페이지로
   if (profiles.length === 1) {
     const profile = profiles[0];
     const photos = profile.photos.slice(0, 3);
     const title = formatBirthYearLabel(profile.birthYear);
     const description = buildProfileDescription(profile);
+    const detailLink = profileLink(profile.id, origin);
+    const buttons = [{title: '자세히 보기', link: detailLink}];
 
     if (photos.length >= 2) {
       return {
         objectType: 'list',
         headerTitle: title,
-        headerLink: link,
+        headerLink: detailLink,
         contents: photos.map((photo, i) => ({
           title: i === 0 ? title : `사진 ${i + 1}`,
           description: i === 0 ? description : '',
           imageUrl: photo.url,
-          link,
+          link: detailLink,
         })),
         buttons,
       };
     }
 
     // 사진 1장 또는 없음: feed
-    const feedContent: KakaoContent = {title, description, link};
+    const feedContent: KakaoContent = {title, description, link: detailLink};
     if (photos[0]) feedContent.imageUrl = photos[0].url;
     return {objectType: 'feed', content: feedContent, buttons};
   }
 
-  // 2~3명: 프로필별 list 항목
+  // 2~3명: 프로필별 항목, 각 항목 클릭 시 해당 프로필 상세 페이지로
   return {
     objectType: 'list',
     headerTitle: `소개 풀 (${profiles.length}명)`,
-    headerLink: link,
+    headerLink: originLink,
     contents: profiles.map(profile => {
+      const detailLink = profileLink(profile.id, origin);
       const content: KakaoContent = {
         title: formatBirthYearLabel(profile.birthYear),
         description: buildProfileDescription(profile),
-        link,
+        link: detailLink,
       };
       const firstPhoto = profile.photos[0];
       if (firstPhoto) content.imageUrl = firstPhoto.url;
       return content;
     }),
-    buttons,
+    buttons: [{title: '자세히 보기', link: profileLink(profiles[0].id, origin)}],
   };
 }
 
