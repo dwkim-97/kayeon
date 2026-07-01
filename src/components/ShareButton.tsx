@@ -101,13 +101,13 @@ type ShareButtonProps = {
 
 export function ShareButton({profiles}: ShareButtonProps) {
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
+  const [kakaoReady, setKakaoReady] = useState(false);
 
   const hasKakao = !!kakaoKey;
   const groups = chunk(profiles, BATCH_SIZE);
   const isSingleBatch = groups.length <= 1;
 
   const shareGroup = (group: Profile[]) => {
-    if (!window.Kakao?.Share) return;
     initKakao();
     window.Kakao.Share.sendDefault(buildListTemplate(group, window.location.origin));
   };
@@ -115,8 +115,7 @@ export function ShareButton({profiles}: ShareButtonProps) {
   const handleClick = () => {
     if (profiles.length === 0) return;
 
-    if (!hasKakao || !window.Kakao?.Share) {
-      // fallback: canvas download
+    if (!hasKakao || !kakaoReady) {
       void renderAndDownload(profiles);
       return;
     }
@@ -131,7 +130,11 @@ export function ShareButton({profiles}: ShareButtonProps) {
   return (
     <>
       {hasKakao ? (
-        <Script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.5/kakao.min.js" strategy="afterInteractive" />
+        <Script
+          src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.5/kakao.min.js"
+          strategy="afterInteractive"
+          onLoad={() => setKakaoReady(true)}
+        />
       ) : null}
 
       <button
