@@ -87,6 +87,13 @@ export function prepareManagedUserCreateInput(input: CreateManagedUserInput): Pr
     };
   }
 
+  if (!/^\d{3}-\d{3,4}-\d{4}$/.test(phoneNumber)) {
+    return {
+      success: false,
+      message: '전화번호는 000-0000-0000 형식으로 입력해 주세요.',
+    };
+  }
+
   return {
     success: true,
     value: {

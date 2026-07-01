@@ -259,20 +259,22 @@ function UserCreateModal({
     password: '',
     phoneNumber: '',
   });
-  const [error, setError] = useState('');
+  const [alertState, setAlertState] = useState<CustomAlertState>(closedAlertState);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const showError = (message: string) =>
+    setAlertState({kind: 'alert', title: '입력 오류', message});
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError('');
 
-    if (!values.name.trim() || !values.loginId.trim() || !values.password.trim() || !values.phoneNumber.trim()) {
-      setError('필수 값을 모두 입력해 주세요.');
-      return;
-    }
-
-    if (values.password.trim().length < 8) {
-      setError('비밀번호는 8자 이상으로 입력해 주세요.');
+    if (!values.name.trim()) { showError('이름을 입력해 주세요.'); return; }
+    if (!values.loginId.trim()) { showError('아이디를 입력해 주세요.'); return; }
+    if (!values.password.trim()) { showError('비밀번호를 입력해 주세요.'); return; }
+    if (values.password.trim().length < 8) { showError('비밀번호는 8자 이상으로 입력해 주세요.'); return; }
+    if (!values.phoneNumber.trim()) { showError('전화번호를 입력해 주세요.'); return; }
+    if (!/^\d{3}-\d{3,4}-\d{4}$/.test(values.phoneNumber.trim())) {
+      showError('전화번호는 000-0000-0000 형식으로 입력해 주세요.');
       return;
     }
 
@@ -281,7 +283,7 @@ function UserCreateModal({
     setIsSubmitting(false);
 
     if (!result.success) {
-      setError(result.message);
+      showError(result.message);
     }
   };
 
@@ -343,7 +345,6 @@ function UserCreateModal({
             disabled={false}
             onChange={value => setValues(current => ({...current, phoneNumber: value}))}
           />
-          {error ? <p className="text-sm font-semibold text-[var(--danger)]">{error}</p> : null}
           <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
             <button className="h-10 rounded-[8px] border border-[var(--border)] px-4 font-bold text-slate-600" type="button" onClick={onClose}>
               취소
@@ -358,6 +359,7 @@ function UserCreateModal({
           </div>
         </form>
       </section>
+      <CustomAlert state={alertState} onClose={() => setAlertState(closedAlertState)} />
     </div>
   );
 }

@@ -54,7 +54,7 @@ export function CustomAlert({state, onClose}: CustomAlertProps) {
             <h2 id="custom-alert-title" className="text-lg font-extrabold text-[var(--violet-950)]">
               {state.title}
             </h2>
-            <p className="mt-2 break-keep text-sm leading-6 text-slate-600">{state.message}</p>
+            <p className="mt-2 whitespace-pre-line break-keep text-sm leading-6 text-slate-600">{state.message}</p>
           </div>
           <button
             className="grid h-8 w-8 shrink-0 place-items-center rounded-[8px] text-slate-500 hover:bg-[var(--violet-50)]"

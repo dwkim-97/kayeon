@@ -58,7 +58,6 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
   const [values, setValues] = useState<ProfileFormValues>(() =>
     mode.kind === 'edit' ? profileToFormValues(mode.profile) : emptyProfileFormValues,
   );
-  const [errors, setErrors] = useState<string[]>([]);
   const [alertState, setAlertState] = useState<CustomAlertState>(closedAlertState);
   const [draggingPhotoId, setDraggingPhotoId] = useState('');
   const [isUploadDragActive, setIsUploadDragActive] = useState(false);
@@ -142,7 +141,11 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
     const validation = validateProfileFormValues(values);
 
     if (!validation.success) {
-      setErrors(validation.errors);
+      setAlertState({
+        kind: 'alert',
+        title: '입력 오류',
+        message: validation.errors.join('\n'),
+      });
       return;
     }
 
@@ -190,14 +193,6 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
         </div>
 
         <form className="max-h-[calc(94vh-80px)] overflow-y-auto p-4 sm:p-5" onSubmit={handleSubmit}>
-          {errors.length > 0 ? (
-            <div className="mb-4 rounded-[8px] border border-red-100 bg-red-50 p-3 text-sm font-semibold text-[var(--danger)]">
-              {errors.map(error => (
-                <p key={error}>{error}</p>
-              ))}
-            </div>
-          ) : null}
-
           <div className="grid gap-5 lg:grid-cols-[260px_1fr]">
             <div>
               <label
