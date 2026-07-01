@@ -288,7 +288,7 @@ export function Dashboard({authorName}: DashboardProps) {
           </div>
         </div>
       ) : null}
-      <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-white/92 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-white/92 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-[var(--violet-600)]">Kayeon</p>
