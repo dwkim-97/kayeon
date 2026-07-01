@@ -5,6 +5,7 @@
 import {ChevronLeft, ChevronRight, Pencil, Trash2} from 'lucide-react';
 import {useState} from 'react';
 
+import {PhotoLightbox} from '@/components/PhotoLightbox';
 import {formatBirthYearLabel} from '@/lib/profiles/age';
 import {getProfileInformationRows} from '@/lib/profiles/information';
 import type {Profile} from '@/types/profile';
@@ -27,6 +28,7 @@ export function ProfileCard({
   onStatusChange,
 }: ProfileCardProps) {
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const hasMultiplePhotos = profile.photos.length > 1;
   const isBlocked = !profile.isActivated;
   const birthYearLabel = formatBirthYearLabel(profile.birthYear);
@@ -81,16 +83,25 @@ export function ProfileCard({
 
         <div className="relative aspect-[4/5] bg-[var(--violet-100)]">
           {profile.photos.length > 0 ? (
-            profile.photos.map((p, i) => (
-              <img
-                key={p.id}
-                className="absolute inset-0 h-full w-full select-none object-cover"
-                src={p.url}
-                alt={p.alt}
-                draggable={false}
-                style={{opacity: i === photoIndex ? 1 : 0}}
+            <>
+              {profile.photos.map((p, i) => (
+                <img
+                  key={p.id}
+                  className="absolute inset-0 h-full w-full select-none object-cover"
+                  src={p.url}
+                  alt={p.alt}
+                  draggable={false}
+                  style={{opacity: i === photoIndex ? 1 : 0}}
+                />
+              ))}
+              {/* 이미지 클릭 → 라이트박스 */}
+              <button
+                className="absolute inset-0 z-10 cursor-zoom-in"
+                type="button"
+                onClick={() => setLightboxIndex(photoIndex)}
+                aria-label="사진 크게 보기"
               />
-            ))
+            </>
           ) : (
             <div className="grid h-full place-items-center text-sm text-slate-500">사진 없음</div>
           )}
@@ -98,22 +109,22 @@ export function ProfileCard({
           {hasMultiplePhotos ? (
             <>
               <button
-                className="absolute left-2 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-white/85 text-[var(--violet-900)]"
+                className="absolute left-2 top-1/2 z-20 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-white/85 text-[var(--violet-900)]"
                 type="button"
-                onClick={() => movePhoto(-1)}
+                onClick={e => { e.stopPropagation(); movePhoto(-1); }}
                 aria-label="이전 사진"
               >
                 <ChevronLeft size={18} aria-hidden />
               </button>
               <button
-                className="absolute right-2 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-white/85 text-[var(--violet-900)]"
+                className="absolute right-2 top-1/2 z-20 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-white/85 text-[var(--violet-900)]"
                 type="button"
-                onClick={() => movePhoto(1)}
+                onClick={e => { e.stopPropagation(); movePhoto(1); }}
                 aria-label="다음 사진"
               >
                 <ChevronRight size={18} aria-hidden />
               </button>
-              <div className="absolute bottom-3 right-3 z-10 rounded-full bg-black/55 px-2 py-1 text-xs font-bold text-white">
+              <div className="absolute bottom-3 right-3 z-20 rounded-full bg-black/55 px-2 py-1 text-xs font-bold text-white">
                 {photoIndex + 1}/{profile.photos.length}
               </div>
             </>
@@ -152,6 +163,16 @@ export function ProfileCard({
           </div>
         </div>
       </div>
+
+      {lightboxIndex !== null ? (
+        <PhotoLightbox
+          photos={profile.photos}
+          initialIndex={lightboxIndex}
+          currentIndex={lightboxIndex}
+          onIndexChange={setLightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      ) : null}
     </article>
   );
 }
