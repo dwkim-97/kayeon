@@ -183,10 +183,11 @@ export async function createManagedUser(input: CreateManagedUserInput): Promise<
       id: authUser.id,
       login_id: value.loginId,
       auth_email: value.authEmail,
+      name: value.name,
       recommender_name: value.recommenderName,
       phone_number: value.phoneNumber,
     })
-    .select('id, login_id, recommender_name, phone_number, created_at')
+    .select('id, login_id, name, recommender_name, phone_number, created_at')
     .single();
 
   if (error) {
