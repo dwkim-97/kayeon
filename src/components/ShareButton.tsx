@@ -85,7 +85,6 @@ export function ShareButton({profiles}: ShareButtonProps) {
   const isSingleBatch = groups.length <= 1;
 
   const shareGroup = (group: Profile[]) => {
-    initKakao();
     const origin = window.location.origin;
 
     if (group.length === 1) {
@@ -125,11 +124,13 @@ export function ShareButton({profiles}: ShareButtonProps) {
   const handleClick = () => {
     if (profiles.length === 0) return;
 
-    // SDK 로드 여부를 런타임에 확인 (빌드타임 env 여부와 무관)
-    if (!window.Kakao?.Share) {
+    if (!window.Kakao) {
       alert('카카오 공유 기능을 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
       return;
     }
+
+    // init이 안 됐으면 여기서 실행
+    initKakao();
 
     if (isSingleBatch) {
       shareGroup(profiles);
