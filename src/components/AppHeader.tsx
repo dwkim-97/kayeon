@@ -23,9 +23,13 @@ const NAV_LINKS: Record<NavPage, {href: string; label: string; icon: React.React
   ],
 };
 
-export function AppHeader({page}: {page: NavPage}) {
+export function AppHeader({page, sticky = true}: {page: NavPage; sticky?: boolean}) {
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-white/92 backdrop-blur">
+    <header
+      className={`border-b border-[var(--border)] bg-white/92 backdrop-blur ${
+        sticky ? 'sticky top-0 z-40' : ''
+      }`}
+    >
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
         <Image src="/logo.png" alt="카연" width={100} height={34} priority />
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">

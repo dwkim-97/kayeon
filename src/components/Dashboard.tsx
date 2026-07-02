@@ -1,6 +1,6 @@
 'use client';
 
-import {Plus, Users} from 'lucide-react';
+import {ChevronDown, ChevronUp, Plus, SlidersHorizontal, Users} from 'lucide-react';
 import Link from 'next/link';
 import {useEffect, useMemo, useState} from 'react';
 
@@ -141,6 +141,7 @@ export function Dashboard({authorName}: DashboardProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [modal, setModal] = useState<ModalState>({kind: 'closed'});
   const [alertState, setAlertState] = useState<CustomAlertState>(closedAlertState);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
     fetch('/api/profiles')
@@ -342,14 +343,16 @@ export function Dashboard({authorName}: DashboardProps) {
           </div>
         </div>
       ) : null}
-      <AppHeader page="dashboard" />
+      <div className="sticky top-0 z-40 bg-white/95 backdrop-blur">
+        <AppHeader page="dashboard" sticky={false} />
 
-      <div className="mx-auto max-w-7xl px-4 py-6 pb-24">
-        <section className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-          <div className="inline-flex w-full rounded-[8px] border border-[var(--violet-200)] bg-white p-1 sm:w-auto">
+        {/* 성별 토글 + 필터 토글 */}
+        <div className="border-b border-[var(--border)]">
+        <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-2">
+          <div className="inline-flex rounded-[8px] border border-[var(--violet-200)] bg-white p-1">
             {(['female', 'male'] as Gender[]).map(gender => (
               <button
-                className={`h-10 flex-1 rounded-[7px] px-5 text-sm font-extrabold sm:flex-none ${
+                className={`h-9 rounded-[6px] px-4 text-sm font-extrabold ${
                   filters.gender === gender ? 'bg-[var(--violet-600)] text-white' : 'text-[var(--violet-900)]'
                 }`}
                 key={gender}
@@ -361,11 +364,32 @@ export function Dashboard({authorName}: DashboardProps) {
             ))}
           </div>
 
-        </section>
+          <button
+            className={`ml-auto inline-flex h-9 items-center gap-1.5 rounded-[8px] border px-3 text-sm font-bold transition ${
+              isFilterOpen
+                ? 'border-[var(--violet-600)] bg-[var(--violet-600)] text-white'
+                : 'border-[var(--violet-200)] bg-white text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
+            }`}
+            type="button"
+            onClick={() => setIsFilterOpen(v => !v)}
+            aria-expanded={isFilterOpen}
+          >
+            <SlidersHorizontal size={15} aria-hidden />
+            필터
+            {isFilterOpen ? <ChevronUp size={14} aria-hidden /> : <ChevronDown size={14} aria-hidden />}
+          </button>
+        </div>
 
-        <FilterBar filters={filters} onChange={setFilters} onReset={resetFilters} />
+          {isFilterOpen ? (
+            <div className="mx-auto max-w-7xl px-4 pb-3">
+              <FilterBar filters={filters} onChange={setFilters} onReset={resetFilters} />
+            </div>
+          ) : null}
+        </div>
+      </div>
 
-        <section className="mt-5 rounded-[8px] border border-[var(--border)] bg-white p-4">
+      <div className="mx-auto max-w-7xl px-4 py-6 pb-24">
+        <section className="mt-2 rounded-[8px] border border-[var(--border)] bg-white p-4">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <label className="inline-flex items-center gap-2 text-sm font-bold text-slate-700">
               <input
