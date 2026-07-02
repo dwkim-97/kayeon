@@ -37,7 +37,7 @@ function StarButton({
   if (isOtherStar) {
     return (
       <button
-        className="absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-full bg-white/90 px-2 py-1 shadow-sm"
+        className="absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-full bg-white/90 px-2 py-1 shadow-sm"
         type="button"
         disabled
         title={`${starredByName}님의 집착매물`}
@@ -50,7 +50,7 @@ function StarButton({
 
   return (
     <button
-      className="absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-full bg-white/90 px-2 py-1 shadow-sm transition hover:scale-110"
+      className="absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-full bg-white/90 px-2 py-1 shadow-sm transition hover:scale-110"
       type="button"
       onClick={onClick}
       aria-label={isMystar ? '집착매물 해제' : '집착매물 지정'}
@@ -115,23 +115,12 @@ export function ProfileCard({
       >
         {isBlocked ? <div className="absolute inset-0 z-10 bg-slate-200/65" aria-hidden /> : null}
 
-        {/* 좌측 상단: 등록자 */}
-        <div className="absolute left-3 top-3 z-20 rounded-full bg-white/92 px-3 py-1 text-xs font-bold text-[var(--violet-800)] shadow-sm">
-          {profile.authorName}
-        </div>
-
-        {/* 중앙 상단: 집착매물 뱃지 or 별 버튼 */}
+        {/* 좌측 상단: 집착매물 뱃지 */}
         {profile.starredByName ? (
-          <div className="absolute left-1/2 top-3 z-20 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-yellow-400/90 px-2.5 py-1 text-xs font-black text-yellow-900 shadow-sm">
+          <div className="absolute left-3 top-3 z-20 flex items-center gap-1 whitespace-nowrap rounded-full bg-yellow-400/90 px-2.5 py-1 text-xs font-black text-yellow-900 shadow-sm">
             ⭐️ {profile.starredByName}의 집착매물 ⭐️
           </div>
         ) : null}
-
-        <StarButton
-          profile={profile}
-          authorName={authorName}
-          onClick={() => onToggleStar(profile)}
-        />
 
         {/* 우측 상단: 상태 토글 */}
         <button
@@ -172,6 +161,18 @@ export function ProfileCard({
           ) : (
             <div className="grid h-full place-items-center text-sm text-slate-500">사진 없음</div>
           )}
+
+          {/* 좌측 하단: 등록자 뱃지 */}
+          <div className="absolute bottom-3 left-3 z-20 rounded-full bg-white/92 px-3 py-1 text-xs font-bold text-[var(--violet-800)] shadow-sm">
+            {profile.authorName}
+          </div>
+
+          {/* 하단 중앙: 별 버튼 */}
+          <StarButton
+            profile={profile}
+            authorName={authorName}
+            onClick={() => onToggleStar(profile)}
+          />
 
           {hasMultiplePhotos ? (
             <>
