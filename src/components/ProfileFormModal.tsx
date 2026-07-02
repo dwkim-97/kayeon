@@ -30,8 +30,8 @@ type ProfileFormModalProps = {
   mode: ModalMode;
   authorName: string;
   onClose: () => void;
-  onCreate: (profile: Profile) => void;
-  onUpdate: (profile: Profile) => void;
+  onCreate: (profile: Profile) => Promise<void>;
+  onUpdate: (profile: Profile) => Promise<void>;
 };
 
 const genderOptions: [Gender, string][] = (['female', 'male'] as Gender[]).map(value => [value, genderLabels[value]]);
@@ -59,6 +59,7 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
     mode.kind === 'edit' ? profileToFormValues(mode.profile) : emptyProfileFormValues,
   );
   const [alertState, setAlertState] = useState<CustomAlertState>(closedAlertState);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [draggingPhotoId, setDraggingPhotoId] = useState('');
   const [isUploadDragActive, setIsUploadDragActive] = useState(false);
   const isEdit = mode.kind === 'edit';
@@ -136,7 +137,7 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
     );
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const validation = validateProfileFormValues(values);
 
@@ -152,24 +153,28 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
     const normalized = normalizeProfileFormValues(values);
     const now = new Date().toISOString();
 
-    if (mode.kind === 'edit') {
-      onUpdate({
-        ...mode.profile,
-        ...normalized,
-        updatedAt: now,
-      });
-      return;
+    setIsSubmitting(true);
+    try {
+      if (mode.kind === 'edit') {
+        await onUpdate({
+          ...mode.profile,
+          ...normalized,
+          updatedAt: now,
+        });
+      } else {
+        await onCreate({
+          id: crypto.randomUUID(),
+          status: 'active',
+          isActivated: true,
+          authorName,
+          createdAt: now,
+          updatedAt: now,
+          ...normalized,
+        });
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-
-    onCreate({
-      id: crypto.randomUUID(),
-      status: 'active',
-      isActivated: true,
-      authorName,
-      createdAt: now,
-      updatedAt: now,
-      ...normalized,
-    });
   };
 
   return (
@@ -347,8 +352,17 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
             <button className="h-11 rounded-[8px] border border-[var(--border)] px-5 font-bold text-slate-600" type="button" onClick={onClose}>
               취소
             </button>
-            <button className="h-11 rounded-[8px] bg-[var(--violet-600)] px-5 font-bold text-white hover:bg-[var(--violet-700)]" type="submit">
-              저장
+            <button
+              className="inline-flex h-11 items-center gap-2 rounded-[8px] bg-[var(--violet-600)] px-5 font-bold text-white hover:bg-[var(--violet-700)] disabled:bg-[var(--violet-300)]"
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  저장 중
+                </>
+              ) : '저장'}
             </button>
           </div>
         </form>
