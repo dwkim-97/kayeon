@@ -5,7 +5,12 @@ export type ProfileEventType =
   | 'profile_blocked'
   | 'profile_activated';
 
-export type HistoryEventType = ProfileEventType | 'admin_created' | 'admin_removed';
+export type HistoryEventType =
+  | ProfileEventType
+  | 'admin_created'
+  | 'admin_removed'
+  | 'match_created'
+  | 'match_ended';
 
 export type HistoryEvent = {
   id: string;

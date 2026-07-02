@@ -140,6 +140,34 @@ export type Database = {
         };
         Relationships: [];
       };
+      matches: {
+        Row: {
+          id: string;
+          female_id: string;
+          male_id: string;
+          status: 'ongoing' | 'ended';
+          memo: string;
+          created_by_name: string;
+          created_at: string;
+          ended_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          female_id: string;
+          male_id: string;
+          status?: 'ongoing' | 'ended';
+          memo?: string;
+          created_by_name: string;
+          created_at?: string;
+          ended_at?: string | null;
+        };
+        Update: {
+          status?: 'ongoing' | 'ended';
+          memo?: string;
+          ended_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
   };
 };

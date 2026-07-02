@@ -1,4 +1,5 @@
 import type {HistoryEvent} from '@/types/history';
+import type {Match} from '@/types/match';
 import type {Profile, ProfilePhoto} from '@/types/profile';
 
 import type {Database} from './types';
@@ -6,6 +7,20 @@ import type {Database} from './types';
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 type ProfilePhotoRow = Database['public']['Tables']['profile_photos']['Row'];
 type HistoryEventRow = Database['public']['Tables']['history_events']['Row'];
+type MatchRow = Database['public']['Tables']['matches']['Row'];
+
+export function rowToMatch(row: MatchRow): Match {
+  return {
+    id: row.id,
+    femaleId: row.female_id,
+    maleId: row.male_id,
+    status: row.status,
+    memo: row.memo,
+    createdByName: row.created_by_name,
+    createdAt: row.created_at,
+    endedAt: row.ended_at,
+  };
+}
 
 export function rowToProfile(row: ProfileRow, photoRows: ProfilePhotoRow[], publicUrlBase: string): Profile {
   const photos: ProfilePhoto[] = [...photoRows]
