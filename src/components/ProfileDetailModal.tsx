@@ -65,11 +65,21 @@ export function ProfileDetailModal({
       onClick={onClose}
     >
       <section
-        className="flex h-full w-full max-w-4xl flex-col overflow-hidden bg-white shadow-2xl sm:h-[90vh] sm:rounded-[12px] md:flex-row"
+        className="relative flex h-full w-full max-w-4xl flex-col overflow-y-auto bg-white shadow-2xl sm:h-[90vh] sm:rounded-[12px] md:flex-row md:overflow-hidden"
         onClick={event => event.stopPropagation()}
       >
-        {/* 좌측(PC) / 상단(모바일): 사진 슬라이더 */}
-        <div className="relative h-[45vh] w-full shrink-0 bg-black sm:h-[52vh] md:h-full md:w-[55%]">
+        {/* 항상 보이는 닫기 버튼 (좌상단 오버레이) — 모바일/PC 공통 */}
+        <button
+          className="absolute left-3 top-3 z-40 grid h-9 w-9 place-items-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/60"
+          type="button"
+          onClick={onClose}
+          aria-label="닫기"
+        >
+          <X size={20} aria-hidden />
+        </button>
+
+        {/* 좌측(PC) / 상단(모바일): 사진 슬라이더 — 모바일에서는 고정하지 않고 함께 스크롤 */}
+        <div className="relative aspect-[4/5] w-full shrink-0 bg-black sm:aspect-auto sm:h-[52vh] md:h-full md:w-[55%]">
           {/* infoRows는 우측 패널에서 보여주므로 슬라이더 내부 오버레이는 비운다 */}
           <PhotoSlider photos={profile.photos} infoRows={[]} />
 
@@ -85,17 +95,9 @@ export function ProfileDetailModal({
         <div className="flex min-h-0 flex-1 flex-col md:w-[45%]">
           <header className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
             <h2 className="text-lg font-black text-[var(--violet-950)]">{title}</h2>
-            <button
-              className="grid h-9 w-9 place-items-center rounded-[8px] text-slate-500 hover:bg-[var(--violet-50)]"
-              type="button"
-              onClick={onClose}
-              aria-label="닫기"
-            >
-              <X size={20} aria-hidden />
-            </button>
           </header>
 
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="min-h-0 flex-1 md:overflow-y-auto">
             {/* 전체 정보 */}
             <div className="border-b border-[var(--border)] px-5 py-4">
               <ul className="space-y-2">

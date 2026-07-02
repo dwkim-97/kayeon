@@ -438,11 +438,11 @@ export function Dashboard({authorName}: DashboardProps) {
 
         {/* 성별 토글 + 필터 토글 (relative — 필터가 아래에 absolute로 겹침) */}
         <div className="relative border-b border-[var(--border)]">
-          <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-2">
-            <div className="inline-flex rounded-[8px] border border-[var(--violet-200)] bg-white p-1">
+          <div className="mx-auto flex max-w-7xl items-center gap-2 overflow-x-auto px-4 py-2">
+            <div className="inline-flex shrink-0 rounded-[8px] border border-[var(--violet-200)] bg-white p-1">
               {(['female', 'male'] as Gender[]).map(gender => (
                 <button
-                  className={`h-9 rounded-[6px] px-4 text-sm font-extrabold ${
+                  className={`h-9 whitespace-nowrap rounded-[6px] px-4 text-sm font-extrabold ${
                     filters.gender === gender ? 'bg-[var(--violet-600)] text-white' : 'text-[var(--violet-900)]'
                   }`}
                   key={gender}
@@ -455,7 +455,7 @@ export function Dashboard({authorName}: DashboardProps) {
             </div>
 
             {/* 뷰 전환 토글: 상세보기 / 작게보기 */}
-            <div className="ml-auto inline-flex rounded-[8px] border border-[var(--violet-200)] bg-white p-1">
+            <div className="ml-auto inline-flex shrink-0 rounded-[8px] border border-[var(--violet-200)] bg-white p-1">
               {([
                 ['detailed', LayoutGrid, '상세보기'],
                 ['compact', Grid3x3, '작게보기'],
@@ -480,7 +480,7 @@ export function Dashboard({authorName}: DashboardProps) {
             </div>
 
             <button
-              className={`inline-flex h-9 items-center gap-1.5 rounded-[8px] border px-3 text-sm font-bold transition ${
+              className={`inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[8px] border px-3 text-sm font-bold transition ${
                 isFilterOpen
                   ? 'border-[var(--violet-600)] bg-[var(--violet-600)] text-white'
                   : 'border-[var(--violet-200)] bg-white text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
@@ -496,7 +496,7 @@ export function Dashboard({authorName}: DashboardProps) {
 
             {/* 편집 모드 토글: 켜면 각 카드에 수정/삭제/비활성화 버튼 노출 */}
             <button
-              className={`inline-flex h-9 items-center gap-1.5 rounded-[8px] border px-3 text-sm font-bold transition ${
+              className={`inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[8px] border px-3 text-sm font-bold transition ${
                 isEditMode
                   ? 'border-[var(--violet-600)] bg-[var(--violet-600)] text-white'
                   : 'border-[var(--violet-200)] bg-white text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
