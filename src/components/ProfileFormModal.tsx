@@ -252,12 +252,20 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
           {showParseInput ? (
             <div className="mt-3 rounded-[8px] border border-[var(--violet-200)] bg-[var(--violet-50)] p-3">
               <p className="mb-2 text-xs font-bold text-[var(--violet-700)]">
+<<<<<<< HEAD
                 텍스트를 붙여넣으면 AI가 폼을 자동으로 채워줍니다.
+=======
+                텍스트를 붙여넣으면 AI가 폼을 자동으로 채워줍니다. 학력·특기 등 폼에 없는 내용은 기타에 입력됩니다.
+>>>>>>> 827c7fc (feat: AI auto-fill with extra field fallback for education/skills/etc)
               </p>
               <textarea
                 className="w-full resize-none rounded-[6px] border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--violet-500)]"
                 rows={5}
+<<<<<<< HEAD
                 placeholder={'나이: 96년생\n키: 161cm\n직장: 고등학교 교사\n거주: 하남 미사'}
+=======
+                placeholder={'나이: 96년생\n키: 161cm\n직장: 고등학교 교사\n학력: 이화여대 졸\n거주: 하남 미사'}
+>>>>>>> 827c7fc (feat: AI auto-fill with extra field fallback for education/skills/etc)
                 value={parseText}
                 onChange={e => setParseText(e.target.value)}
               />
