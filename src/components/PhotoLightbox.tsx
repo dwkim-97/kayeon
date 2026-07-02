@@ -5,6 +5,7 @@
 import {ChevronLeft, ChevronRight, X} from 'lucide-react';
 import {useEffect} from 'react';
 
+import {useBodyScrollLock} from '@/hooks/useBodyScrollLock';
 import type {ProfilePhoto} from '@/types/profile';
 
 type PhotoLightboxProps = {
@@ -17,6 +18,7 @@ type PhotoLightboxProps = {
 
 export function PhotoLightbox({photos, currentIndex, onIndexChange, onClose}: PhotoLightboxProps) {
   const hasMultiple = photos.length > 1;
+  useBodyScrollLock(true);
 
   const moveTo = (direction: -1 | 1) => {
     onIndexChange((currentIndex + direction + photos.length) % photos.length);

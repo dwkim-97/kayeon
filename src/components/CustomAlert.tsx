@@ -2,6 +2,8 @@
 
 import {AlertTriangle, CheckCircle2, X} from 'lucide-react';
 
+import {useBodyScrollLock} from '@/hooks/useBodyScrollLock';
+
 export type CustomAlertState =
   | {
       kind: 'closed';
@@ -28,6 +30,8 @@ type CustomAlertProps = {
 export const closedAlertState: CustomAlertState = {kind: 'closed'};
 
 export function CustomAlert({state, onClose}: CustomAlertProps) {
+  useBodyScrollLock(state.kind !== 'closed');
+
   if (state.kind === 'closed') {
     return null;
   }

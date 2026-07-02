@@ -4,6 +4,8 @@ import {Share2, X} from 'lucide-react';
 import Script from 'next/script';
 import {useState} from 'react';
 
+import {useBodyScrollLock} from '@/hooks/useBodyScrollLock';
+
 import {formatBirthYearLabel} from '@/lib/profiles/age';
 import {religionLabels} from '@/lib/profiles/options';
 import type {Profile} from '@/types/profile';
@@ -179,6 +181,7 @@ function BatchShareModal({
   onClose: () => void;
 }) {
   const [sentIndexes, setSentIndexes] = useState<Set<number>>(new Set());
+  useBodyScrollLock(true);
 
   const handleShare = (group: Profile[], index: number) => {
     onShareGroup(group);

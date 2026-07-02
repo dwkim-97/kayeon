@@ -6,6 +6,7 @@ import {GripVertical, ImagePlus, Sparkles, X} from 'lucide-react';
 import {ChangeEvent, DragEvent, FormEvent, useState} from 'react';
 
 import {closedAlertState, CustomAlert, type CustomAlertState} from '@/components/CustomAlert';
+import {useBodyScrollLock} from '@/hooks/useBodyScrollLock';
 import {
   birthYearBounds,
   emptyProfileFormValues,
@@ -66,6 +67,7 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
   const [draggingPhotoId, setDraggingPhotoId] = useState('');
   const [isUploadDragActive, setIsUploadDragActive] = useState(false);
   const isEdit = mode.kind === 'edit';
+  useBodyScrollLock(true);
 
   const updateField = <K extends keyof ProfileFormValues>(field: K, value: ProfileFormValues[K]) => {
     setValues(current => ({...current, [field]: value}));
@@ -306,29 +308,38 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
                 <input className="sr-only" type="file" accept="image/*" multiple onChange={handlePhotoUpload} />
               </label>
 
-              <div className="mt-3 grid grid-cols-2 gap-2">
+              <div
+                className="mt-3 grid grid-cols-2 gap-2"
+                onPointerMove={event => {
+                  if (!draggingPhotoId) return;
+                  // hit-test: find which photo cell the pointer is over
+                  const el = document.elementFromPoint(event.clientX, event.clientY);
+                  const cell = el?.closest('[data-photo-id]') as HTMLElement | null;
+                  const targetId = cell?.dataset.photoId;
+                  if (targetId && targetId !== draggingPhotoId) {
+                    reorderPhoto(targetId);
+                  }
+                }}
+                onPointerUp={() => setDraggingPhotoId('')}
+                onPointerCancel={() => setDraggingPhotoId('')}
+              >
                 {values.photos.map(photo => (
                   <div
                     className={`relative aspect-square overflow-hidden rounded-[8px] border border-[var(--violet-100)] bg-[var(--violet-100)] transition-opacity ${
                       draggingPhotoId === photo.id ? 'opacity-40' : ''
                     }`}
                     key={photo.id}
-                    onPointerEnter={() => {
-                      if (draggingPhotoId && draggingPhotoId !== photo.id) {
-                        reorderPhoto(photo.id);
-                      }
-                    }}
+                    data-photo-id={photo.id}
                   >
-                    <img className="h-full w-full object-cover" src={photo.url} alt={photo.alt} />
-                    {/* 그립 핸들 — pointer down 으로 드래그 시작 */}
+                    <img className="pointer-events-none h-full w-full object-cover" src={photo.url} alt={photo.alt} />
+                    {/* 그립 핸들 */}
                     <span
                       className="absolute left-1 top-1 grid h-7 w-7 cursor-grab touch-none place-items-center rounded-full bg-white/90 text-[var(--violet-800)] active:cursor-grabbing"
                       onPointerDown={event => {
-                        event.currentTarget.setPointerCapture(event.pointerId);
+                        event.preventDefault();
+                        // 부모에서 pointermove를 받으려면 캡처 없이 진행
                         setDraggingPhotoId(photo.id);
                       }}
-                      onPointerUp={() => setDraggingPhotoId('')}
-                      onPointerCancel={() => setDraggingPhotoId('')}
                     >
                       <GripVertical size={15} aria-hidden />
                     </span>
@@ -450,7 +461,7 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
               취소
             </button>
             <button
-              className="inline-flex h-11 items-center gap-2 rounded-[8px] bg-[var(--violet-600)] px-5 font-bold text-white hover:bg-[var(--violet-700)] disabled:bg-[var(--violet-300)]"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[var(--violet-600)] px-5 font-bold text-white hover:bg-[var(--violet-700)] disabled:bg-[var(--violet-300)]"
               type="submit"
               disabled={isSubmitting}
             >
