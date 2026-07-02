@@ -81,7 +81,7 @@ export async function PUT(request: Request, {params}: RouteParams) {
 
   // Update sort_order for retained photos (handles reordering)
   if (retainedPhotos.length > 0) {
-    await Promise.all(
+    const updateResults = await Promise.all(
       retainedPhotos.map(({id, order}) =>
         supabase
           .from('profile_photos')
@@ -90,6 +90,10 @@ export async function PUT(request: Request, {params}: RouteParams) {
           .eq('profile_id', profileId),
       ),
     );
+    const updateError = updateResults.find(r => r.error)?.error;
+    if (updateError) {
+      return NextResponse.json({message: updateError.message}, {status: 500});
+    }
   }
 
   if (newPhotos.length > 0) {
