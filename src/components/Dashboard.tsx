@@ -277,7 +277,7 @@ export function Dashboard({authorName}: DashboardProps) {
   return (
     <main className="min-h-screen bg-[var(--background)]">
       {isMutating ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" aria-label="처리 중">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm" aria-label="처리 중">
           <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-8 py-6 shadow-xl">
             <div className="h-9 w-9 animate-spin rounded-full border-4 border-[var(--violet-200)] border-t-[var(--violet-600)]" />
             <p className="text-sm font-bold text-[var(--violet-950)]">처리 중...</p>
