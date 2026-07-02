@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import {GripVertical, ImagePlus, Sparkles, X} from 'lucide-react';
-import {ChangeEvent, DragEvent, FormEvent, useState} from 'react';
+import {ChangeEvent, DragEvent, FormEvent, useEffect, useState} from 'react';
 
 import {closedAlertState, CustomAlert, type CustomAlertState} from '@/components/CustomAlert';
 import {useBodyScrollLock} from '@/hooks/useBodyScrollLock';
@@ -113,6 +113,26 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
     setIsUploadDragActive(false);
     await handleFiles(Array.from(event.dataTransfer.files).filter(file => file.type.startsWith('image/')));
   };
+
+  // 클립보드 붙여넣기(Cmd/Ctrl+V)로 이미지 추가. 이미지가 있을 때만 가로채므로
+  // 텍스트 입력창의 일반 붙여넣기는 방해하지 않는다. 붙여넣을 때마다 기존 사진 뒤에 누적된다.
+  useEffect(() => {
+    const onPaste = (event: ClipboardEvent) => {
+      const items = event.clipboardData?.items;
+      if (!items) return;
+      const imageFiles = Array.from(items)
+        .filter(item => item.kind === 'file' && item.type.startsWith('image/'))
+        .map(item => item.getAsFile())
+        .filter((file): file is File => file !== null);
+      if (imageFiles.length === 0) return;
+      event.preventDefault();
+      void handleFiles(imageFiles);
+    };
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+    // handleFiles는 values.photos에 의존하므로, 최신 사진 개수를 반영하도록 의존성에 포함
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values.photos]);
 
   const removePhoto = (photoId: string) => {
     updateField(
