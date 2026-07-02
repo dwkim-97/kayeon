@@ -10,11 +10,29 @@ import type {Profile} from '@/types/profile';
 
 // ---------- Kakao SDK types ----------
 
+type KakaoLink = {mobileWebUrl: string; webUrl: string};
+
+type KakaoContent = {
+  title: string;
+  description: string;
+  imageUrl?: string;
+  link: KakaoLink;
+};
+
+type KakaoListTemplate = {
+  objectType: 'list';
+  headerTitle: string;
+  headerLink: KakaoLink;
+  contents: KakaoContent[]; // 2~3개
+  buttons?: Array<{title: string; link: KakaoLink}>;
+};
+
 type KakaoShareApi = {
   isInitialized: () => boolean;
   init: (key: string) => void;
   Share: {
     sendCustom: (input: {templateId: number; templateArgs: Record<string, string>}) => void;
+    sendDefault: (input: KakaoListTemplate) => void;
   };
 };
 
@@ -81,11 +99,40 @@ export function ShareButton({profiles}: ShareButtonProps) {
 
   const shareGroup = (group: Profile[]) => {
     initKakao();
-    // 프로필별로 각각 sendCustom 호출 — 각자 독립된 말풍선으로 전송됨
-    for (const profile of group) {
+    const origin = window.location.origin;
+
+    if (group.length === 1) {
+      // 1명: 피드형 커스텀 템플릿
       window.Kakao.Share.sendCustom({
         templateId: TEMPLATE_ID,
-        templateArgs: buildTemplateArgs(profile, window.location.origin),
+        templateArgs: buildTemplateArgs(group[0], origin),
+      });
+    } else {
+      // 2~3명: list 템플릿
+      const originLink: KakaoLink = {mobileWebUrl: origin, webUrl: origin};
+      window.Kakao.Share.sendDefault({
+        objectType: 'list',
+        headerTitle: `소개 풀 (${group.length}명)`,
+        headerLink: originLink,
+        contents: group.map(profile => {
+          const url = `${origin}/profiles/${profile.id}`;
+          const link: KakaoLink = {mobileWebUrl: url, webUrl: url};
+          const content: KakaoContent = {
+            title: formatBirthYearLabel(profile.birthYear),
+            description: buildDescription(profile),
+            link,
+          };
+          const firstPhoto = profile.photos[0];
+          if (firstPhoto) content.imageUrl = firstPhoto.url;
+          return content;
+        }),
+        buttons: [{
+          title: '자세히 보기',
+          link: {
+            mobileWebUrl: `${origin}/profiles/${group[0].id}`,
+            webUrl: `${origin}/profiles/${group[0].id}`,
+          },
+        }],
       });
     }
   };
