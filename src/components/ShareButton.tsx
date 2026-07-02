@@ -160,16 +160,7 @@ export function ShareButton({profiles}: ShareButtonProps) {
   const shareGroup = (group: Profile[]) => {
     initKakao();
     const template = buildTemplate(group, window.location.origin);
-    try {
-      window.Kakao.Share.sendDefault(template);
-    } catch (error) {
-      console.error('[KakaoShare] error type:', Object.prototype.toString.call(error));
-      console.error('[KakaoShare] error:', error);
-      const message = error instanceof Error ? error.message : String((error as {message?: string}).message ?? error);
-      if (message.includes('unsupported environment')) {
-        alert('카카오톡이 설치된 모바일 기기에서 공유해 주세요.');
-      }
-    }
+    window.Kakao.Share.sendDefault(template);
   };
 
   const handleClick = () => {
