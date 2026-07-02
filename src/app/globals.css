@@ -1,23 +1,26 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css");
 @import "tailwindcss";
 
 :root {
-  --background: #fbfaff;
-  --foreground: #211a2f;
-  --violet-50: #f5f3ff;
-  --violet-100: #ede9fe;
-  --violet-200: #ddd6ff;
-  --violet-300: #c4b4ff;
-  --violet-400: #a684ff;
-  --violet-500: #8e51ff;
-  --violet-600: #7f22fe;
-  --violet-700: #7008e7;
-  --violet-800: #5d0ec0;
-  --violet-900: #4d179a;
-  --violet-950: #2f0d68;
+  /* designmd (Airbnb) 팔레트 기반 — 브랜드 컬러를 #ff385c 로즈 계열로 교체.
+     변수명(--violet-*)은 컴포넌트 호환을 위해 유지하고 값만 핑크 스케일로 치환. */
+  --background: #ffffff;
+  --foreground: #222222;
+  --violet-50: #fff1f3;
+  --violet-100: #ffe0e5;
+  --violet-200: #ffc6cf;
+  --violet-300: #ff9daf;
+  --violet-400: #ff6b85;
+  --violet-500: #ff385c;
+  --violet-600: #ff385c;
+  --violet-700: #e11d48;
+  --violet-800: #be123c;
+  --violet-900: #9f1239;
+  --violet-950: #6b0f29;
   --surface: #ffffff;
-  --surface-muted: #f8f7fc;
-  --border: #e8e2f6;
-  --danger: #e5484d;
+  --surface-muted: #f7f7f7;
+  --border: #e5e5e5;
+  --danger: #e01e2c;
 }
 
 @theme inline {
@@ -38,7 +41,11 @@ input, textarea {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button,

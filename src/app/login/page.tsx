@@ -81,7 +81,7 @@ function LoginForm() {
         {error ? <p className="text-sm font-semibold text-[var(--danger)]">{error}</p> : null}
 
         <button
-          className="h-12 w-full rounded-[8px] bg-[var(--violet-600)] px-4 font-bold text-white shadow-[0_12px_28px_rgba(127,34,254,0.24)] transition hover:bg-[var(--violet-700)] disabled:bg-[var(--violet-300)]"
+          className="h-12 w-full rounded-[8px] bg-[var(--violet-600)] px-4 font-semibold text-white shadow-sm transition hover:bg-[var(--violet-700)] disabled:bg-[var(--violet-300)]"
           type="submit"
           disabled={isSubmitting || loginId.trim().length === 0 || password.length === 0}
         >
@@ -95,7 +95,7 @@ function LoginForm() {
 function LoginShell({children}: {children: React.ReactNode}) {
   return (
     <main className="grid min-h-screen place-items-center bg-[var(--violet-50)] px-5 py-10">
-      <section className="w-full max-w-[420px] rounded-[8px] border border-[var(--border)] bg-white p-8 shadow-[0_24px_80px_rgba(47,13,104,0.12)]">
+      <section className="w-full max-w-[420px] rounded-[8px] border border-[var(--border)] bg-white p-8 shadow-sm">
         <div className="mb-8">
           <Image src="/logo.png" alt="카연" width={140} height={48} className="mb-3" priority />
           <p className="text-sm text-slate-500">관리자가 등록한 사용자만 접근할 수 있습니다.</p>

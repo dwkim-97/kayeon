@@ -45,7 +45,7 @@ export function FilterBar({filters, onChange, onReset}: FilterBarProps) {
     <section className="rounded-[8px] border border-[var(--border)] bg-white p-4 shadow-sm">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_1fr_1fr]">
         <label className="flex h-12 items-center rounded-[8px] border border-[var(--border)] bg-white px-3 transition focus-within:border-[var(--violet-500)] focus-within:ring-4 focus-within:ring-[var(--violet-100)] sm:col-span-2 lg:col-span-1">
-          <Search className="shrink-0 text-slate-400" size={17} aria-hidden />
+          <Search className="shrink-0 text-slate-400" size={17} strokeWidth={1.75} aria-hidden />
           <input
             className="h-full min-w-0 flex-1 border-0 bg-transparent pl-3 outline-none"
             value={filters.query}
@@ -55,7 +55,7 @@ export function FilterBar({filters, onChange, onReset}: FilterBarProps) {
         </label>
 
         <fieldset className="rounded-[8px] border border-[var(--border)] p-2">
-          <legend className="px-1 text-xs font-extrabold text-[var(--violet-800)]">년생</legend>
+          <legend className="px-1 text-xs font-semibold text-[var(--violet-800)]">년생</legend>
           <div className="grid grid-cols-[1fr_80px] gap-2">
             <input
               className="h-10 rounded-[8px] border border-[var(--border)] px-3 outline-none focus:border-[var(--violet-500)]"
@@ -79,7 +79,7 @@ export function FilterBar({filters, onChange, onReset}: FilterBarProps) {
         </fieldset>
 
         <fieldset className="rounded-[8px] border border-[var(--border)] p-2">
-          <legend className="px-1 text-xs font-extrabold text-[var(--violet-800)]">키</legend>
+          <legend className="px-1 text-xs font-semibold text-[var(--violet-800)]">키</legend>
           <div className="grid grid-cols-[1fr_80px] gap-2">
             <input
               className="h-10 rounded-[8px] border border-[var(--border)] px-3 outline-none focus:border-[var(--violet-500)]"
@@ -103,7 +103,7 @@ export function FilterBar({filters, onChange, onReset}: FilterBarProps) {
         </fieldset>
 
         <fieldset className="rounded-[8px] border border-[var(--border)] p-2">
-          <legend className="px-1 text-xs font-extrabold text-[var(--violet-800)]">종교</legend>
+          <legend className="px-1 text-xs font-semibold text-[var(--violet-800)]">종교</legend>
           <select
             className={selectClass}
             value={filters.religion}
@@ -117,7 +117,7 @@ export function FilterBar({filters, onChange, onReset}: FilterBarProps) {
         </fieldset>
 
         <fieldset className="rounded-[8px] border border-[var(--border)] p-2">
-          <legend className="px-1 text-xs font-extrabold text-[var(--violet-800)]">흡연</legend>
+          <legend className="px-1 text-xs font-semibold text-[var(--violet-800)]">흡연</legend>
           <select
             className={selectClass}
             value={filters.smoking}
@@ -148,11 +148,11 @@ export function FilterBar({filters, onChange, onReset}: FilterBarProps) {
           활성화된 매물만 보기
         </label>
         <button
-          className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[var(--violet-200)] bg-white px-3 text-sm font-bold text-[var(--violet-900)] transition hover:bg-[var(--violet-50)]"
+          className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[var(--border)] bg-white px-3 text-sm font-semibold text-[var(--violet-900)] transition hover:bg-[var(--violet-50)]"
           type="button"
           onClick={onReset}
         >
-          <RotateCcw size={15} aria-hidden />
+          <RotateCcw size={15} strokeWidth={1.75} aria-hidden />
           필터 초기화
         </button>
       </div>

@@ -6,6 +6,7 @@ import {ChevronLeft, ChevronRight, Eye, EyeOff, Pencil, Trash2} from 'lucide-rea
 import {useState} from 'react';
 
 import {formatBirthYearLabel} from '@/lib/profiles/age';
+import {getAuthorColor} from '@/lib/profiles/author-color';
 import type {Profile} from '@/types/profile';
 
 export type ProfileCardVariant = 'detailed' | 'compact';
@@ -94,6 +95,7 @@ export function ProfileCard({
   const isCompact = variant === 'compact';
   const birthYearLabel = formatBirthYearLabel(profile.birthYear);
   const isStarred = !!profile.starredByName;
+  const authorColor = getAuthorColor(profile.authorName);
   // compact: 년생 / 키 / 사는 곳 / 회사 를 한 줄로 요약 (빈 값은 제외)
   const compactSummary = [birthYearLabel, `${profile.height}cm`, profile.residence, profile.job]
     .filter(part => part && part.trim().length > 0)
@@ -107,7 +109,7 @@ export function ProfileCard({
     <article className="relative">
       {/* 좌측 상단: 체크박스 */}
       <label
-        className={`absolute -left-1.5 -top-1.5 z-20 grid place-items-center rounded-[7px] border border-[var(--violet-200)] bg-white shadow-sm ${
+        className={`absolute -left-1.5 -top-1.5 z-20 grid place-items-center rounded-[7px] border border-[var(--border)] bg-white shadow-sm ${
           isCompact ? 'h-6 w-6' : 'h-8 w-8'
         } ${isBlocked ? 'opacity-55' : ''}`}
       >
@@ -124,10 +126,10 @@ export function ProfileCard({
       <div
         className={`relative overflow-hidden rounded-[8px] bg-white transition ${
           isStarred
-            ? 'border-4 border-yellow-400 shadow-[0_0_0_2px_rgba(251,191,36,0.35),0_18px_45px_rgba(202,138,4,0.25)]'
+            ? 'border-4 border-yellow-400 shadow-sm'
             : !isBlocked && isSelected
-              ? 'border-4 border-[var(--violet-600)] shadow-[0_18px_45px_rgba(47,13,104,0.10)]'
-              : 'border border-[var(--border)] shadow-[0_18px_45px_rgba(47,13,104,0.10)]'
+              ? 'border-4 border-[var(--violet-600)] shadow-sm'
+              : 'border border-[var(--border)] shadow-sm'
         } ${isBlocked ? 'grayscale' : ''}`}
       >
         {isBlocked ? <div className="absolute inset-0 z-10 bg-slate-200/65" aria-hidden /> : null}
@@ -156,11 +158,12 @@ export function ProfileCard({
             <div className="grid h-full place-items-center text-sm text-slate-500">사진 없음</div>
           )}
 
-          {/* 주선자 뱃지 — compact: 좌하단 / detailed: 우상단 */}
+          {/* 주선자 뱃지 — compact: 좌하단 / detailed: 우상단. 주선자별 고정 색 */}
           <div
-            className={`absolute z-20 rounded-full bg-white/92 font-bold text-[var(--violet-800)] shadow-sm ${
+            className={`absolute z-20 rounded-full font-semibold shadow-sm ${
               isCompact ? 'bottom-3 left-3 px-2 py-0.5 text-[10px]' : 'right-3 top-3 px-3 py-1 text-xs'
             }`}
+            style={{backgroundColor: authorColor.bg, color: authorColor.text}}
           >
             {profile.authorName}
           </div>
@@ -168,7 +171,7 @@ export function ProfileCard({
           {/* 진행중 매칭 배지 — compact: 우상단 / detailed: 좌상단(주선자와 겹치지 않게) */}
           {ongoingMatchCount > 0 ? (
             <div
-              className={`absolute top-3 z-20 rounded-full bg-pink-500/90 font-black text-white shadow-sm ${
+              className={`absolute top-3 z-20 rounded-full bg-pink-500/90 font-bold text-white shadow-sm ${
                 isCompact ? 'right-3 px-2 py-0.5 text-[10px]' : 'left-3 px-2.5 py-1 text-xs'
               }`}
             >
@@ -179,7 +182,7 @@ export function ProfileCard({
           {/* detailed: 사진 하단에 핵심 정보 오버레이 (그라데이션 위) */}
           {!isCompact ? (
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-4 pb-3 pt-16">
-              <p className="text-lg font-black leading-tight text-white drop-shadow">
+              <p className="text-lg font-bold leading-tight text-white drop-shadow">
                 {birthYearLabel} / {profile.height}cm
               </p>
               <p className="mt-0.5 break-keep text-sm font-semibold text-white/90 drop-shadow">
@@ -207,7 +210,7 @@ export function ProfileCard({
                 onClick={e => { e.stopPropagation(); movePhoto(-1); }}
                 aria-label="이전 사진"
               >
-                <ChevronLeft size={isCompact ? 14 : 18} aria-hidden />
+                <ChevronLeft size={isCompact ? 14 : 18} strokeWidth={1.75} aria-hidden />
               </button>
               <button
                 className={`absolute right-2 top-1/2 z-20 grid -translate-y-1/2 place-items-center rounded-full bg-white/65 text-[var(--violet-900)] ${
@@ -217,10 +220,10 @@ export function ProfileCard({
                 onClick={e => { e.stopPropagation(); movePhoto(1); }}
                 aria-label="다음 사진"
               >
-                <ChevronRight size={isCompact ? 14 : 18} aria-hidden />
+                <ChevronRight size={isCompact ? 14 : 18} strokeWidth={1.75} aria-hidden />
               </button>
               <div
-                className={`absolute bottom-3 right-3 z-20 rounded-full bg-black/55 font-bold text-white ${
+                className={`absolute bottom-3 right-3 z-20 rounded-full bg-black/55 font-semibold text-white ${
                   isCompact ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1 text-xs'
                 }`}
               >
@@ -235,7 +238,7 @@ export function ProfileCard({
         <div className={`relative z-20 ${isCompact ? 'p-2' : 'p-4'}`}>
           {/* compact: 사진 아래 슬래시 요약. detailed: 정보는 사진 위 오버레이에 표시됨 */}
           {isCompact ? (
-            <p className="line-clamp-2 h-[42px] break-keep rounded-[6px] border border-[var(--violet-100)] bg-[var(--violet-50)] px-2 py-1 text-xs font-semibold leading-5 text-[var(--violet-900)]">
+            <p className="line-clamp-2 h-[42px] break-keep px-1 py-1 text-xs font-medium leading-5 text-[var(--foreground)]">
               {compactSummary}
             </p>
           ) : null}
@@ -256,17 +259,17 @@ export function ProfileCard({
                 aria-label={`${birthYearLabel} 매물 ${isBlocked ? '활성화' : '비활성화'}`}
                 title={isBlocked ? '활성화' : '비활성화'}
               >
-                {isBlocked ? <Eye size={isCompact ? 15 : 17} aria-hidden /> : <EyeOff size={isCompact ? 15 : 17} aria-hidden />}
+                {isBlocked ? <Eye size={isCompact ? 15 : 17} strokeWidth={1.75} aria-hidden /> : <EyeOff size={isCompact ? 15 : 17} strokeWidth={1.75} aria-hidden />}
               </button>
               <button
-                className={`grid place-items-center rounded-[8px] border border-[var(--violet-200)] text-[var(--violet-800)] transition hover:bg-[var(--violet-50)] ${
+                className={`grid place-items-center rounded-[8px] border border-[var(--border)] text-[var(--violet-800)] transition hover:bg-[var(--violet-50)] ${
                   isCompact ? 'h-8 w-8' : 'h-9 w-9'
                 }`}
                 type="button"
                 onClick={() => onEdit(profile)}
                 aria-label={`${birthYearLabel} 매물 수정`}
               >
-                <Pencil size={isCompact ? 15 : 17} aria-hidden />
+                <Pencil size={isCompact ? 15 : 17} strokeWidth={1.75} aria-hidden />
               </button>
               <button
                 className={`grid place-items-center rounded-[8px] border border-red-100 text-[var(--danger)] transition hover:bg-red-50 ${
@@ -276,7 +279,7 @@ export function ProfileCard({
                 onClick={() => onDelete(profile)}
                 aria-label={`${birthYearLabel} 매물 삭제`}
               >
-                <Trash2 size={isCompact ? 15 : 17} aria-hidden />
+                <Trash2 size={isCompact ? 15 : 17} strokeWidth={1.75} aria-hidden />
               </button>
             </div>
           ) : null}
