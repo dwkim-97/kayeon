@@ -135,15 +135,15 @@ export function AdminPageClient({authorName}: AdminPageClientProps) {
       <div className="mx-auto max-w-5xl px-4 py-6">
         <header className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-black text-[var(--violet-950)]">관리자 페이지</h1>
+            <h1 className="text-3xl font-bold text-[var(--violet-950)]">관리자 페이지</h1>
             <p className="mt-1 text-sm text-slate-500">모든 유저는 관리자 권한으로 소개 풀을 관리합니다.</p>
           </div>
           <button
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[var(--violet-600)] px-4 font-bold text-white hover:bg-[var(--violet-700)]"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[var(--violet-600)] px-4 font-semibold text-white hover:bg-[var(--violet-700)]"
             type="button"
             onClick={() => setIsModalOpen(true)}
           >
-            <Plus size={18} aria-hidden />
+            <Plus size={18} strokeWidth={1.75} aria-hidden />
             관리자 추가
           </button>
         </header>
@@ -162,7 +162,7 @@ export function AdminPageClient({authorName}: AdminPageClientProps) {
             <tbody className="divide-y divide-[var(--border)] text-sm">
               {users.map(user => (
                 <tr key={user.id}>
-                  <td className="px-4 py-3 font-bold text-[var(--violet-950)]">{user.loginId}</td>
+                  <td className="px-4 py-3 font-semibold text-[var(--violet-950)]">{user.loginId}</td>
                   <td className="px-4 py-3 text-slate-600">{user.recommenderName}</td>
                   <td className="px-4 py-3 text-slate-600">{user.phoneNumber}</td>
                   <td className="px-4 py-3 text-slate-500">{new Date(user.createdAt).toLocaleDateString('ko-KR')}</td>
@@ -173,7 +173,7 @@ export function AdminPageClient({authorName}: AdminPageClientProps) {
                       onClick={() => requestRemove(user)}
                       aria-label={`${user.loginId} 관리자 제거`}
                     >
-                      <Trash2 size={17} aria-hidden />
+                      <Trash2 size={17} strokeWidth={1.75} aria-hidden />
                     </button>
                   </td>
                 </tr>
@@ -187,7 +187,7 @@ export function AdminPageClient({authorName}: AdminPageClientProps) {
             <article className="rounded-[8px] border border-[var(--border)] bg-white p-4 shadow-sm" key={user.id}>
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-extrabold text-[var(--violet-950)]">{user.loginId}</h2>
+                  <h2 className="text-lg font-semibold text-[var(--violet-950)]">{user.loginId}</h2>
                 </div>
                 <button
                   className="grid h-9 w-9 shrink-0 place-items-center rounded-[8px] border border-red-100 text-[var(--danger)] hover:bg-red-50"
@@ -195,15 +195,15 @@ export function AdminPageClient({authorName}: AdminPageClientProps) {
                   onClick={() => requestRemove(user)}
                   aria-label={`${user.loginId} 관리자 제거`}
                 >
-                  <Trash2 size={17} aria-hidden />
+                  <Trash2 size={17} strokeWidth={1.75} aria-hidden />
                 </button>
               </div>
               <dl className="mt-3 grid grid-cols-[76px_1fr] gap-y-2 text-sm">
-                <dt className="font-bold text-[var(--violet-900)]">추천인</dt>
+                <dt className="font-semibold text-[var(--violet-900)]">추천인</dt>
                 <dd className="text-slate-600">{user.recommenderName}</dd>
-                <dt className="font-bold text-[var(--violet-900)]">전화번호</dt>
+                <dt className="font-semibold text-[var(--violet-900)]">전화번호</dt>
                 <dd className="text-slate-600">{user.phoneNumber}</dd>
-                <dt className="font-bold text-[var(--violet-900)]">등록일</dt>
+                <dt className="font-semibold text-[var(--violet-900)]">등록일</dt>
                 <dd className="text-slate-500">{new Date(user.createdAt).toLocaleDateString('ko-KR')}</dd>
               </dl>
             </article>
@@ -282,16 +282,16 @@ function UserCreateModal({
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-[var(--violet-950)]/45 p-3 sm:p-4">
-      <section className="max-h-[94vh] w-full max-w-md overflow-hidden rounded-[8px] bg-white shadow-[0_28px_90px_rgba(47,13,104,0.26)]">
+      <section className="max-h-[94vh] w-full max-w-md overflow-hidden rounded-[8px] bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
-          <h2 className="text-xl font-extrabold text-[var(--violet-950)]">관리자 추가</h2>
+          <h2 className="text-xl font-semibold text-[var(--violet-950)]">관리자 추가</h2>
           <button
             className="grid h-9 w-9 place-items-center rounded-[8px] text-slate-500 hover:bg-[var(--violet-50)]"
             type="button"
             onClick={onClose}
             aria-label="닫기"
           >
-            <X size={20} aria-hidden />
+            <X size={20} strokeWidth={1.75} aria-hidden />
           </button>
         </div>
         <form className="max-h-[calc(94vh-74px)] space-y-4 overflow-y-auto p-5" onSubmit={handleSubmit}>
@@ -326,7 +326,7 @@ function UserCreateModal({
             onChange={value => setValues(current => ({...current, password: value}))}
           />
           <label className="block">
-            <span className="mb-2 block text-sm font-bold text-slate-700">추천인</span>
+            <span className="mb-2 block text-sm font-semibold text-slate-700">추천인</span>
             <p className="flex h-10 items-center rounded-[8px] border border-[var(--border)] bg-slate-50 px-3 text-sm text-slate-500">{authorName}</p>
           </label>
           <AdminTextField
@@ -339,11 +339,11 @@ function UserCreateModal({
             onChange={value => setValues(current => ({...current, phoneNumber: value}))}
           />
           <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
-            <button className="h-10 rounded-[8px] border border-[var(--border)] px-4 font-bold text-slate-600" type="button" onClick={onClose}>
+            <button className="h-10 rounded-[8px] border border-[var(--border)] px-4 font-semibold text-slate-600" type="button" onClick={onClose}>
               취소
             </button>
             <button
-              className="h-10 rounded-[8px] bg-[var(--violet-600)] px-4 font-bold text-white disabled:bg-[var(--violet-300)]"
+              className="h-10 rounded-[8px] bg-[var(--violet-600)] px-4 font-semibold text-white disabled:bg-[var(--violet-300)]"
               type="submit"
               disabled={isSubmitting}
             >
@@ -376,7 +376,7 @@ function AdminTextField({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-bold text-slate-700">
+      <span className="mb-2 block text-sm font-semibold text-slate-700">
         {label}
         {required ? <span className="ml-1 text-[var(--danger)]">*</span> : null}
       </span>

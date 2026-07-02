@@ -65,7 +65,7 @@ export function ProfileDetailModal({
       onClick={onClose}
     >
       <section
-        className="relative flex h-full w-full max-w-4xl flex-col overflow-y-auto bg-white shadow-2xl sm:h-[90vh] sm:rounded-[12px] md:flex-row md:overflow-hidden"
+        className="relative flex h-full w-full max-w-4xl flex-col overflow-y-auto bg-white shadow-sm sm:h-[90vh] sm:rounded-[12px] md:flex-row md:overflow-hidden"
         onClick={event => event.stopPropagation()}
       >
         {/* 항상 보이는 닫기 버튼 (좌상단 오버레이) — 모바일/PC 공통 */}
@@ -75,7 +75,7 @@ export function ProfileDetailModal({
           onClick={onClose}
           aria-label="닫기"
         >
-          <X size={20} aria-hidden />
+          <X size={20} strokeWidth={1.75} aria-hidden />
         </button>
 
         {/* 좌측(PC) / 상단(모바일): 사진 슬라이더 — 모바일에서는 고정하지 않고 함께 스크롤 */}
@@ -85,7 +85,7 @@ export function ProfileDetailModal({
 
           {/* 하단 우측: 집착매물 뱃지 */}
           {profile.starredByName ? (
-            <div className="pointer-events-none absolute bottom-4 right-4 z-30 flex items-center gap-1 whitespace-nowrap rounded-full bg-yellow-400/95 px-3 py-1.5 text-xs font-black text-yellow-900 shadow-md">
+            <div className="pointer-events-none absolute bottom-4 right-4 z-30 flex items-center gap-1 whitespace-nowrap rounded-full bg-yellow-400/95 px-3 py-1.5 text-xs font-bold text-yellow-900 shadow-sm">
               ⭐️ {profile.starredByName}의 집착매물
             </div>
           ) : null}
@@ -94,7 +94,7 @@ export function ProfileDetailModal({
         {/* 우측(PC) / 하단(모바일): 전체 정보 + 매칭 허브 */}
         <div className="flex min-h-0 flex-1 flex-col md:w-[45%]">
           <header className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
-            <h2 className="text-lg font-black text-[var(--violet-950)]">{title}</h2>
+            <h2 className="text-lg font-bold text-[var(--violet-950)]">{title}</h2>
           </header>
 
           <div className="min-h-0 flex-1 md:overflow-y-auto">
@@ -104,9 +104,9 @@ export function ProfileDetailModal({
                 {informationRows.map(([label, value]) => (
                   <li
                     key={label}
-                    className="grid grid-cols-[96px_1fr] overflow-hidden rounded-[8px] border border-[var(--violet-100)] text-sm"
+                    className="grid grid-cols-[96px_1fr] overflow-hidden rounded-[8px] border border-[var(--border)] text-sm"
                   >
-                    <span className="border-r border-[var(--violet-100)] bg-[var(--violet-50)] px-3 py-2.5 font-bold text-[var(--violet-900)]">
+                    <span className="border-r border-[var(--border)] bg-[var(--violet-50)] px-3 py-2.5 font-semibold text-[var(--violet-900)]">
                       {label}
                     </span>
                     <span className="break-keep px-3 py-2.5 leading-6 text-slate-700">{value}</span>
@@ -117,7 +117,7 @@ export function ProfileDetailModal({
 
             {/* 매칭 현황 */}
             <div className="px-5 py-4">
-              <h3 className="mb-2 text-sm font-black text-[var(--violet-900)]">매칭 현황</h3>
+              <h3 className="mb-2 text-sm font-bold text-[var(--violet-900)]">매칭 현황</h3>
               {profileMatches.length === 0 ? (
                 <p className="text-sm text-slate-400">아직 연결된 매칭이 없습니다.</p>
               ) : (
@@ -128,10 +128,10 @@ export function ProfileDetailModal({
                     return (
                       <li
                         key={m.id}
-                        className="flex items-center gap-2 rounded-[8px] border border-[var(--violet-100)] px-3 py-2 text-sm"
+                        className="flex items-center gap-2 rounded-[8px] border border-[var(--border)] px-3 py-2 text-sm"
                       >
                         <button
-                          className="min-w-0 flex-1 truncate text-left font-bold text-[var(--violet-900)] hover:underline disabled:no-underline"
+                          className="min-w-0 flex-1 truncate text-left font-semibold text-[var(--violet-900)] hover:underline disabled:no-underline"
                           type="button"
                           disabled={!partner}
                           onClick={() => partner && onOpenProfile(partner.id)}
@@ -141,7 +141,7 @@ export function ProfileDetailModal({
                             : '(삭제된 매물)'}
                         </button>
                         <span
-                          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${
+                          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
                             m.status === 'ongoing' ? 'bg-pink-100 text-pink-700' : 'bg-slate-100 text-slate-500'
                           }`}
                         >
@@ -149,7 +149,7 @@ export function ProfileDetailModal({
                         </span>
                         {m.status === 'ongoing' ? (
                           <button
-                            className="shrink-0 rounded-[6px] border border-slate-200 px-2 py-1 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                            className="shrink-0 rounded-[6px] border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
                             type="button"
                             onClick={() => onEndMatch(m.id)}
                           >
@@ -157,7 +157,7 @@ export function ProfileDetailModal({
                           </button>
                         ) : null}
                         <button
-                          className="shrink-0 rounded-[6px] border border-red-100 px-2 py-1 text-xs font-bold text-[var(--danger)] hover:bg-red-50"
+                          className="shrink-0 rounded-[6px] border border-red-100 px-2 py-1 text-xs font-semibold text-[var(--danger)] hover:bg-red-50"
                           type="button"
                           onClick={() => onDeleteMatch(m.id)}
                         >
@@ -170,8 +170,8 @@ export function ProfileDetailModal({
               )}
 
               {showCandidates ? (
-                <div className="mt-3 max-h-56 space-y-1 overflow-y-auto rounded-[8px] border border-[var(--violet-100)] p-2">
-                  <p className="px-1 pb-1 text-xs font-bold text-slate-400">
+                <div className="mt-3 max-h-56 space-y-1 overflow-y-auto rounded-[8px] border border-[var(--border)] p-2">
+                  <p className="px-1 pb-1 text-xs font-semibold text-slate-400">
                     {profile.gender === 'female' ? '남성' : '여성'} 매물을 선택하면 바로 연결됩니다
                   </p>
                   {candidates.length === 0 ? (
@@ -191,7 +191,7 @@ export function ProfileDetailModal({
                 </div>
               ) : (
                 <button
-                  className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-[8px] bg-[var(--violet-600)] px-3 text-sm font-bold text-white hover:bg-[var(--violet-700)]"
+                  className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-[8px] bg-[var(--violet-600)] px-3 text-sm font-semibold text-white hover:bg-[var(--violet-700)]"
                   type="button"
                   onClick={() => setShowCandidates(true)}
                 >

@@ -427,9 +427,9 @@ export function Dashboard({authorName}: DashboardProps) {
     <main className="min-h-screen bg-[var(--background)]">
       {isMutating ? (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm" aria-label="처리 중">
-          <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-8 py-6 shadow-xl">
+          <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-8 py-6 shadow-sm">
             <div className="h-9 w-9 animate-spin rounded-full border-4 border-[var(--violet-200)] border-t-[var(--violet-600)]" />
-            <p className="text-sm font-bold text-[var(--violet-950)]">처리 중...</p>
+            <p className="text-sm font-semibold text-[var(--violet-950)]">처리 중...</p>
           </div>
         </div>
       ) : null}
@@ -439,10 +439,10 @@ export function Dashboard({authorName}: DashboardProps) {
         {/* 성별 토글 + 필터 토글 (relative — 필터가 아래에 absolute로 겹침) */}
         <div className="relative border-b border-[var(--border)]">
           <div className="mx-auto flex max-w-7xl items-center gap-2 overflow-x-auto px-4 py-2">
-            <div className="inline-flex shrink-0 rounded-[8px] border border-[var(--violet-200)] bg-white p-1">
+            <div className="inline-flex shrink-0 rounded-[8px] border border-[var(--border)] bg-white p-1">
               {(['female', 'male'] as Gender[]).map(gender => (
                 <button
-                  className={`h-9 whitespace-nowrap rounded-[6px] px-4 text-sm font-extrabold ${
+                  className={`h-8 whitespace-nowrap rounded-[6px] px-3 text-sm font-semibold ${
                     filters.gender === gender ? 'bg-[var(--violet-600)] text-white' : 'text-[var(--violet-900)]'
                   }`}
                   key={gender}
@@ -455,14 +455,14 @@ export function Dashboard({authorName}: DashboardProps) {
             </div>
 
             {/* 뷰 전환 토글: 상세보기 / 작게보기 */}
-            <div className="ml-auto inline-flex shrink-0 rounded-[8px] border border-[var(--violet-200)] bg-white p-1">
+            <div className="ml-auto inline-flex shrink-0 rounded-[8px] border border-[var(--border)] bg-white p-1">
               {([
                 ['detailed', LayoutGrid, '상세보기'],
                 ['compact', Grid3x3, '작게보기'],
               ] as const).map(([mode, Icon, label]) => (
                 <button
                   key={mode}
-                  className={`inline-flex h-7 items-center gap-1 rounded-[6px] px-2.5 text-xs font-extrabold transition ${
+                  className={`inline-flex h-7 items-center gap-1 rounded-[6px] px-2.5 text-xs font-semibold transition ${
                     viewMode === mode
                       ? 'bg-[var(--violet-600)] text-white'
                       : 'text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
@@ -473,46 +473,46 @@ export function Dashboard({authorName}: DashboardProps) {
                   aria-label={label}
                   title={label}
                 >
-                  <Icon size={14} aria-hidden />
+                  <Icon size={14} strokeWidth={1.75} aria-hidden />
                   <span className="hidden sm:inline">{label}</span>
                 </button>
               ))}
             </div>
 
             <button
-              className={`inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[8px] border px-3 text-sm font-bold transition ${
+              className={`inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[8px] border px-2.5 text-sm font-semibold transition ${
                 isFilterOpen
                   ? 'border-[var(--violet-600)] bg-[var(--violet-600)] text-white'
-                  : 'border-[var(--violet-200)] bg-white text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
+                  : 'border-[var(--border)] bg-white text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
               }`}
               type="button"
               onClick={() => setIsFilterOpen(v => !v)}
               aria-expanded={isFilterOpen}
             >
-              <SlidersHorizontal size={15} aria-hidden />
+              <SlidersHorizontal size={15} strokeWidth={1.75} aria-hidden />
               필터
-              {isFilterOpen ? <ChevronUp size={14} aria-hidden /> : <ChevronDown size={14} aria-hidden />}
+              {isFilterOpen ? <ChevronUp size={14} strokeWidth={1.75} aria-hidden /> : <ChevronDown size={14} strokeWidth={1.75} aria-hidden />}
             </button>
 
             {/* 편집 모드 토글: 켜면 각 카드에 수정/삭제/비활성화 버튼 노출 */}
             <button
-              className={`inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[8px] border px-3 text-sm font-bold transition ${
+              className={`inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[8px] border px-2.5 text-sm font-semibold transition ${
                 isEditMode
                   ? 'border-[var(--violet-600)] bg-[var(--violet-600)] text-white'
-                  : 'border-[var(--violet-200)] bg-white text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
+                  : 'border-[var(--border)] bg-white text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
               }`}
               type="button"
               onClick={() => setIsEditMode(v => !v)}
               aria-pressed={isEditMode}
             >
-              {isEditMode ? <Check size={15} aria-hidden /> : <Pencil size={15} aria-hidden />}
+              {isEditMode ? <Check size={15} strokeWidth={1.75} aria-hidden /> : <Pencil size={15} strokeWidth={1.75} aria-hidden />}
               {isEditMode ? '편집 완료' : '편집'}
             </button>
           </div>
 
           {/* 필터: absolute 로 띄워 대시보드 콘텐츠 흐름에 영향 주지 않음 */}
           {isFilterOpen ? (
-            <div className="absolute left-0 right-0 top-full z-40 border-b border-[var(--border)] bg-white/95 shadow-lg backdrop-blur">
+            <div className="absolute left-0 right-0 top-full z-40 border-b border-[var(--border)] bg-white/95 shadow-sm backdrop-blur">
               <div className="mx-auto max-w-7xl px-4 py-3">
                 <FilterBar filters={filters} onChange={setFilters} onReset={resetFilters} />
               </div>
@@ -524,7 +524,7 @@ export function Dashboard({authorName}: DashboardProps) {
       <div className="mx-auto max-w-7xl px-4 py-6 pb-24">
         <section className="mt-2 rounded-[8px] border border-[var(--border)] bg-white p-4">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-            <label className="inline-flex items-center gap-3 text-sm font-bold text-slate-700">
+            <label className="inline-flex items-center gap-3 text-sm font-semibold text-slate-700">
               <input
                 className="h-8 w-8 accent-[var(--violet-600)]"
                 type="checkbox"
@@ -534,8 +534,8 @@ export function Dashboard({authorName}: DashboardProps) {
               />
               전체 선택
             </label>
-            <div className="inline-flex items-center gap-2 rounded-full bg-[var(--violet-50)] px-3 py-1.5 text-sm font-bold text-[var(--violet-900)]">
-              <Users size={16} aria-hidden />
+            <div className="inline-flex items-center gap-2 rounded-full bg-[var(--violet-50)] px-3 py-1.5 text-sm font-semibold text-[var(--violet-900)]">
+              <Users size={16} strokeWidth={1.75} aria-hidden />
               {isLoading ? '로딩 중...' : `${visibleProfiles.length}명 표시 · ${selectedProfiles.length}명 공유 선택`}
             </div>
           </div>
@@ -579,11 +579,11 @@ export function Dashboard({authorName}: DashboardProps) {
 
       {/* 우측 하단 고정: 매물 추가 */}
       <button
-        className="fixed bottom-4 right-4 z-30 inline-flex h-14 items-center justify-center gap-2 rounded-full bg-[var(--violet-950)] px-5 font-bold text-white shadow-[0_12px_30px_rgba(47,13,104,0.24)] transition hover:bg-[var(--violet-900)]"
+        className="fixed bottom-4 right-4 z-30 inline-flex h-14 items-center justify-center gap-2 rounded-full bg-[var(--violet-950)] px-5 font-semibold text-white shadow-sm transition hover:bg-[var(--violet-900)]"
         type="button"
         onClick={() => setModal({kind: 'create'})}
       >
-        <Plus size={20} aria-hidden />
+        <Plus size={20} strokeWidth={1.75} aria-hidden />
         매물 추가
       </button>
 

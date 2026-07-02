@@ -10,16 +10,16 @@ type NavPage = 'dashboard' | 'admin' | 'history';
 
 const NAV_LINKS: Record<NavPage, {href: string; label: string; icon: React.ReactNode}[]> = {
   dashboard: [
-    {href: '/history', label: '히스토리', icon: <History size={16} aria-hidden />},
-    {href: '/admin', label: '관리자', icon: <ShieldCheck size={16} aria-hidden />},
+    {href: '/history', label: '히스토리', icon: <History size={16} strokeWidth={1.75} aria-hidden />},
+    {href: '/admin', label: '관리자', icon: <ShieldCheck size={16} strokeWidth={1.75} aria-hidden />},
   ],
   admin: [
-    {href: '/', label: '대시보드', icon: <Users size={16} aria-hidden />},
-    {href: '/history', label: '히스토리', icon: <History size={16} aria-hidden />},
+    {href: '/', label: '대시보드', icon: <Users size={16} strokeWidth={1.75} aria-hidden />},
+    {href: '/history', label: '히스토리', icon: <History size={16} strokeWidth={1.75} aria-hidden />},
   ],
   history: [
-    {href: '/', label: '대시보드', icon: <Users size={16} aria-hidden />},
-    {href: '/admin', label: '관리자', icon: <ShieldCheck size={16} aria-hidden />},
+    {href: '/', label: '대시보드', icon: <Users size={16} strokeWidth={1.75} aria-hidden />},
+    {href: '/admin', label: '관리자', icon: <ShieldCheck size={16} strokeWidth={1.75} aria-hidden />},
   ],
 };
 
@@ -36,7 +36,7 @@ export function AppHeader({page, sticky = true}: {page: NavPage; sticky?: boolea
           {NAV_LINKS[page].map(link => (
             <Link
               key={link.href}
-              className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[var(--violet-200)] bg-white px-3 text-sm font-bold text-[var(--violet-900)] sm:flex-none"
+              className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[var(--border)] bg-white px-3 text-sm font-semibold text-[var(--violet-900)] sm:flex-none"
               href={link.href}
             >
               {link.icon}
@@ -44,11 +44,11 @@ export function AppHeader({page, sticky = true}: {page: NavPage; sticky?: boolea
             </Link>
           ))}
           <button
-            className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[var(--border)] bg-white px-3 text-sm font-bold text-slate-600 sm:flex-none"
+            className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[var(--border)] bg-white px-3 text-sm font-semibold text-slate-600 sm:flex-none"
             type="button"
             onClick={logout}
           >
-            <LogOut size={16} aria-hidden />
+            <LogOut size={16} strokeWidth={1.75} aria-hidden />
             로그아웃
           </button>
         </div>

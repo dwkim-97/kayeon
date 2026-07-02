@@ -223,22 +223,22 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-[var(--violet-950)]/45 p-3 sm:p-4">
-      <section className="max-h-[94vh] w-full max-w-4xl overflow-hidden rounded-[8px] bg-white shadow-[0_28px_90px_rgba(47,13,104,0.26)]">
+      <section className="max-h-[94vh] w-full max-w-4xl overflow-hidden rounded-[8px] bg-white shadow-sm">
         <div className="border-b border-[var(--border)] px-4 py-4 sm:px-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-xl font-extrabold text-[var(--violet-950)]">
+              <h2 className="text-xl font-bold text-[var(--violet-950)]">
                 {isEdit ? '매물 정보 수정' : '매물 정보 추가'}
               </h2>
               <p className="mt-1 text-sm text-slate-500">사진은 최대 4장까지 등록할 수 있습니다.</p>
             </div>
             <div className="flex items-center gap-2">
               <button
-                className="inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-[var(--violet-200)] bg-[var(--violet-50)] px-3 text-sm font-bold text-[var(--violet-700)] hover:bg-[var(--violet-100)]"
+                className="inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-[var(--violet-200)] bg-[var(--violet-50)] px-3 text-sm font-semibold text-[var(--violet-700)] hover:bg-[var(--violet-100)]"
                 type="button"
                 onClick={() => setShowParseInput(v => !v)}
               >
-                <Sparkles size={15} aria-hidden />
+                <Sparkles size={15} strokeWidth={1.75} aria-hidden />
                 AI 자동입력
               </button>
               <button
@@ -247,14 +247,14 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
                 onClick={onClose}
                 aria-label="닫기"
               >
-                <X size={20} aria-hidden />
+                <X size={20} strokeWidth={1.75} aria-hidden />
               </button>
             </div>
           </div>
 
           {showParseInput ? (
             <div className="mt-3 rounded-[8px] border border-[var(--violet-200)] bg-[var(--violet-50)] p-3">
-              <p className="mb-2 text-xs font-bold text-[var(--violet-700)]">
+              <p className="mb-2 text-xs font-semibold text-[var(--violet-700)]">
                 텍스트를 붙여넣으면 AI가 폼을 자동으로 채워줍니다. 학력·특기 등 폼에 없는 내용은 기타에 입력됩니다.
               </p>
               <textarea
@@ -266,7 +266,7 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
               />
               <div className="mt-2 flex justify-end">
                 <button
-                  className="inline-flex h-9 items-center gap-1.5 rounded-[8px] bg-[var(--violet-600)] px-4 text-sm font-bold text-white hover:bg-[var(--violet-700)] disabled:bg-[var(--violet-300)]"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-[8px] bg-[var(--violet-600)] px-4 text-sm font-semibold text-white hover:bg-[var(--violet-700)] disabled:bg-[var(--violet-300)]"
                   type="button"
                   disabled={isParsing || !parseText.trim()}
                   onClick={handleParse}
@@ -278,7 +278,7 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
                     </>
                   ) : (
                     <>
-                      <Sparkles size={14} aria-hidden />
+                      <Sparkles size={14} strokeWidth={1.75} aria-hidden />
                       폼 채우기
                     </>
                   )}
@@ -302,8 +302,8 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
                 onDragLeave={() => setIsUploadDragActive(false)}
                 onDrop={handlePhotoDrop}
               >
-                <ImagePlus size={28} aria-hidden />
-                <span className="mt-2 text-sm font-bold">사진 업로드 *</span>
+                <ImagePlus size={28} strokeWidth={1.75} aria-hidden />
+                <span className="mt-2 text-sm font-semibold">사진 업로드 *</span>
                 <span className="mt-1 text-xs text-slate-500">{values.photos.length}/4</span>
                 <input className="sr-only" type="file" accept="image/*" multiple onChange={handlePhotoUpload} />
               </label>
@@ -325,7 +325,7 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
               >
                 {values.photos.map(photo => (
                   <div
-                    className={`relative aspect-square overflow-hidden rounded-[8px] border border-[var(--violet-100)] bg-[var(--violet-100)] transition-opacity ${
+                    className={`relative aspect-square overflow-hidden rounded-[8px] border border-[var(--border)] bg-[var(--violet-100)] transition-opacity ${
                       draggingPhotoId === photo.id ? 'opacity-40' : ''
                     }`}
                     key={photo.id}
@@ -341,7 +341,7 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
                         setDraggingPhotoId(photo.id);
                       }}
                     >
-                      <GripVertical size={15} aria-hidden />
+                      <GripVertical size={15} strokeWidth={1.75} aria-hidden />
                     </span>
                     <button
                       className="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-white/90 text-[var(--danger)]"
@@ -349,7 +349,7 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
                       onClick={() => removePhoto(photo.id)}
                       aria-label="사진 삭제"
                     >
-                      <X size={15} aria-hidden />
+                      <X size={15} strokeWidth={1.75} aria-hidden />
                     </button>
                   </div>
                 ))}
@@ -358,8 +358,8 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
 
             <div className="space-y-5">
               {/* 주요 정보: 카드/목록에 노출되는 핵심 항목 */}
-              <fieldset className="rounded-[10px] border border-[var(--violet-200)] p-4">
-                <legend className="px-2 text-sm font-extrabold text-[var(--violet-700)]">주요 정보</legend>
+              <fieldset className="rounded-[10px] border border-[var(--border)] p-4">
+                <legend className="px-2 text-sm font-semibold text-[var(--violet-700)]">주요 정보</legend>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <RadioGroup<Gender>
                     label="성별"
@@ -404,7 +404,7 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
 
               {/* 추가 정보: 상세 모달에서만 노출되는 부가 항목 */}
               <fieldset className="rounded-[10px] border border-[var(--border)] p-4">
-                <legend className="px-2 text-sm font-extrabold text-slate-500">추가 정보</legend>
+                <legend className="px-2 text-sm font-semibold text-slate-500">추가 정보</legend>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <RadioGroup<Religion>
                     label="종교"
@@ -470,11 +470,11 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
           </div>
 
           <div className="mt-6 flex flex-col-reverse gap-2 border-t border-[var(--border)] pt-4 sm:flex-row sm:justify-end">
-            <button className="h-11 rounded-[8px] border border-[var(--border)] px-5 font-bold text-slate-600" type="button" onClick={onClose}>
+            <button className="h-11 rounded-[8px] border border-[var(--border)] px-5 font-semibold text-slate-600" type="button" onClick={onClose}>
               취소
             </button>
             <button
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[var(--violet-600)] px-5 font-bold text-white hover:bg-[var(--violet-700)] disabled:bg-[var(--violet-300)]"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[var(--violet-600)] px-5 font-semibold text-white hover:bg-[var(--violet-700)] disabled:bg-[var(--violet-300)]"
               type="submit"
               disabled={isSubmitting}
             >
@@ -603,7 +603,7 @@ function RadioGroup<TValue extends string>({
             className={`rounded-full border px-3 py-1.5 text-sm font-semibold ${
               value === optionValue
                 ? 'border-[var(--violet-600)] bg-[var(--violet-600)] text-white'
-                : 'border-[var(--violet-200)] bg-[var(--violet-50)] text-[var(--violet-900)]'
+                : 'border-[var(--border)] bg-[var(--violet-50)] text-[var(--violet-900)]'
             }`}
             key={optionValue}
             type="button"
@@ -619,7 +619,7 @@ function RadioGroup<TValue extends string>({
 
 function FieldLabel({label, required}: {label: string; required: boolean}) {
   return (
-    <span className="mb-2 block text-sm font-bold text-slate-700">
+    <span className="mb-2 block text-sm font-semibold text-slate-700">
       {label}
       {required ? <span className="ml-1 text-[var(--danger)]">*</span> : null}
     </span>
