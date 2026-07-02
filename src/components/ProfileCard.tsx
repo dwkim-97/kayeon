@@ -156,20 +156,20 @@ export function ProfileCard({
             <div className="grid h-full place-items-center text-sm text-slate-500">사진 없음</div>
           )}
 
-          {/* 등록자 뱃지 — compact: 좌하단 / detailed: 좌상단(오버레이 정보와 겹치지 않게) */}
+          {/* 주선자 뱃지 — compact: 좌하단 / detailed: 우상단 */}
           <div
-            className={`absolute left-3 z-20 rounded-full bg-white/92 font-bold text-[var(--violet-800)] shadow-sm ${
-              isCompact ? 'bottom-3 px-2 py-0.5 text-[10px]' : 'top-3 px-3 py-1 text-xs'
+            className={`absolute z-20 rounded-full bg-white/92 font-bold text-[var(--violet-800)] shadow-sm ${
+              isCompact ? 'bottom-3 left-3 px-2 py-0.5 text-[10px]' : 'right-3 top-3 px-3 py-1 text-xs'
             }`}
           >
-            주선자 · {profile.authorName}
+            {profile.authorName}
           </div>
 
-          {/* 우측 상단: 진행중 매칭 배지 */}
+          {/* 진행중 매칭 배지 — compact: 우상단 / detailed: 좌상단(주선자와 겹치지 않게) */}
           {ongoingMatchCount > 0 ? (
             <div
-              className={`absolute right-3 top-3 z-20 rounded-full bg-pink-500/90 font-black text-white shadow-sm ${
-                isCompact ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs'
+              className={`absolute top-3 z-20 rounded-full bg-pink-500/90 font-black text-white shadow-sm ${
+                isCompact ? 'right-3 px-2 py-0.5 text-[10px]' : 'left-3 px-2.5 py-1 text-xs'
               }`}
             >
               💞 매칭 {ongoingMatchCount}
@@ -230,6 +230,8 @@ export function ProfileCard({
           ) : null}
         </div>
 
+        {/* 하단 영역: compact 요약 또는 편집 버튼이 있을 때만 렌더 (detailed 조회모드는 사진만) */}
+        {isCompact || isEditMode ? (
         <div className={`relative z-20 ${isCompact ? 'p-2' : 'p-4'}`}>
           {/* compact: 사진 아래 슬래시 요약. detailed: 정보는 사진 위 오버레이에 표시됨 */}
           {isCompact ? (
@@ -279,6 +281,7 @@ export function ProfileCard({
             </div>
           ) : null}
         </div>
+        ) : null}
       </div>
     </article>
   );
