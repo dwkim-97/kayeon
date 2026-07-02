@@ -35,7 +35,7 @@ export function PhotoSlider({photos, infoRows}: PhotoSliderProps) {
       {photos.map((photo, i) => (
         <img
           key={photo.id}
-          className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
+          className="absolute inset-0 h-full w-full object-contain transition-opacity duration-300"
           src={photo.url}
           alt={photo.alt}
           style={{opacity: i === index ? 1 : 0}}
