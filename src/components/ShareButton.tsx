@@ -5,45 +5,16 @@ import Script from 'next/script';
 import {useState} from 'react';
 
 import {formatBirthYearLabel} from '@/lib/profiles/age';
-import {genderLabels, religionLabels} from '@/lib/profiles/options';
+import {religionLabels} from '@/lib/profiles/options';
 import type {Profile} from '@/types/profile';
 
 // ---------- Kakao SDK types ----------
-
-type KakaoLink = {
-  mobileWebUrl: string;
-  webUrl: string;
-};
-
-type KakaoContent = {
-  title: string;
-  description: string;
-  imageUrl?: string;
-  link: KakaoLink;
-};
-
-type KakaoFeedTemplate = {
-  objectType: 'feed';
-  content: KakaoContent;
-  buttons?: Array<{title: string; link: KakaoLink}>;
-};
-
-type KakaoListTemplate = {
-  objectType: 'list';
-  headerTitle: string;
-  headerLink: KakaoLink;
-  contents: KakaoContent[]; // 2~3개
-  buttons?: Array<{title: string; link: KakaoLink}>;
-};
-
-type KakaoTemplate = KakaoFeedTemplate | KakaoListTemplate;
 
 type KakaoShareApi = {
   isInitialized: () => boolean;
   init: (key: string) => void;
   Share: {
-    sendDefault: (input: KakaoTemplate) => void;
-    uploadImage: (input: {file: FileList | File[]}) => Promise<{infos: {original: {url: string}}}>;
+    sendCustom: (input: {templateId: number; templateArgs: Record<string, string>}) => void;
   };
 };
 
@@ -56,6 +27,7 @@ declare global {
 // ---------- helpers ----------
 
 const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY || '';
+const TEMPLATE_ID = 134945;
 const BATCH_SIZE = 3;
 
 function chunk<T>(arr: T[], size: number): T[][] {
@@ -64,73 +36,23 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return result;
 }
 
-function buildProfileDescription(profile: Profile): string {
+function buildDescription(profile: Profile): string {
   const parts: string[] = [profile.residence, `${profile.height}cm`, profile.job];
   if (profile.religion !== 'not_selected') parts.push(religionLabels[profile.religion]);
   if (profile.mbti) parts.push(profile.mbti);
   if (profile.hobbies) parts.push(profile.hobbies);
-  if (profile.idealType) parts.push(profile.idealType);
   return parts.filter(Boolean).join(' · ');
 }
 
-function profileLink(profileId: string, origin: string): KakaoLink {
-  const url = `${origin}/profiles/${profileId}`;
-  return {mobileWebUrl: url, webUrl: url};
-}
-
-function buildTemplate(profiles: Profile[], origin: string): KakaoTemplate {
-  const originLink: KakaoLink = {mobileWebUrl: origin, webUrl: origin};
-
-  // 1명: 사진 1장씩 list 항목 (최대 3장)
-  if (profiles.length === 1) {
-    const profile = profiles[0];
-    const photos = profile.photos.slice(0, 3);
-    const title = formatBirthYearLabel(profile.birthYear);
-    const description = buildProfileDescription(profile);
-    const detailLink = profileLink(profile.id, origin);
-
-    // list 템플릿은 2~3개 필요 — 사진 없거나 1장이면 더미 항목으로 채움
-    const contents: KakaoContent[] = photos.length > 0
-      ? photos.map((photo, i) => ({
-          title: i === 0 ? title : `사진 ${i + 1}`,
-          description: i === 0 ? description : '',
-          imageUrl: photo.url,
-          link: detailLink,
-        }))
-      : [{title, description, link: detailLink}];
-
-    // 항목이 1개면 동일 내용으로 하나 더 추가해 list 최소 조건(2개) 충족
-    if (contents.length === 1) {
-      contents.push({...contents[0], description: ''});
-    }
-
-    return {
-      objectType: 'list',
-      headerTitle: title,
-      headerLink: detailLink,
-      contents,
-      buttons: [{title: '자세히 보기', link: detailLink}],
-    };
-  }
-
-  // 2명 이상: 프로필별 항목 1개씩, 각 항목 클릭 시 해당 프로필 상세 페이지로
-  return {
-    objectType: 'list',
-    headerTitle: `소개 풀 (${profiles.length}명)`,
-    headerLink: originLink,
-    contents: profiles.map(profile => {
-      const detailLink = profileLink(profile.id, origin);
-      const content: KakaoContent = {
-        title: formatBirthYearLabel(profile.birthYear),
-        description: buildProfileDescription(profile),
-        link: detailLink,
-      };
-      const firstPhoto = profile.photos[0];
-      if (firstPhoto) content.imageUrl = firstPhoto.url;
-      return content;
-    }),
-    buttons: [{title: '자세히 보기', link: profileLink(profiles[0].id, origin)}],
+function buildTemplateArgs(profile: Profile, origin: string): Record<string, string> {
+  const args: Record<string, string> = {
+    title: formatBirthYearLabel(profile.birthYear),
+    description: buildDescription(profile),
+    profileUrl: `profiles/${profile.id}`,
   };
+  const firstPhoto = profile.photos[0];
+  if (firstPhoto) args.imageUrl = firstPhoto.url;
+  return args;
 }
 
 function initKakao() {
@@ -159,15 +81,20 @@ export function ShareButton({profiles}: ShareButtonProps) {
 
   const shareGroup = (group: Profile[]) => {
     initKakao();
-    const template = buildTemplate(group, window.location.origin);
-    window.Kakao.Share.sendDefault(template);
+    // 프로필별로 각각 sendCustom 호출 — 각자 독립된 말풍선으로 전송됨
+    for (const profile of group) {
+      window.Kakao.Share.sendCustom({
+        templateId: TEMPLATE_ID,
+        templateArgs: buildTemplateArgs(profile, window.location.origin),
+      });
+    }
   };
 
   const handleClick = () => {
     if (profiles.length === 0) return;
 
     if (!hasKakao || !kakaoReady) {
-      void renderAndDownload(profiles);
+      alert('카카오 공유 기능을 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
       return;
     }
 
@@ -289,114 +216,73 @@ function BatchShareModal({
 
 // ---------- canvas fallback (no Kakao key) ----------
 
+// Kept for environments where the Kakao key is absent
+export function getShareImageLayout(profileCount: number) {
+  const base = {width: 1080, cardHeight: 760, gap: 34, padding: 56};
+  return {
+    ...base,
+    height: base.padding * 2 + profileCount * base.cardHeight + Math.max(0, profileCount - 1) * base.gap,
+  };
+}
+
+export function getShareProfileCardLayout(cardWidth: number) {
+  const layout = {imageHeight: 640, imageInset: 28, imageWidth: 500, informationGap: 28, informationRightPadding: 28};
+  return {
+    ...layout,
+    informationWidth: cardWidth - layout.imageInset - layout.imageWidth - layout.informationGap - layout.informationRightPadding,
+  };
+}
+
+export function wrapTextByWidth(text: string, maxWidth: number, measureText: (v: string) => number): string[] {
+  const normalized = text.trim();
+  if (!normalized) return [''];
+  const lines: string[] = [];
+  let current = '';
+  for (const ch of normalized) {
+    if (ch === ' ' && current.length === 0) continue;
+    const next = `${current}${ch}`;
+    if (current && measureText(next) > maxWidth) { lines.push(current.trimEnd()); current = ch.trimStart(); continue; }
+    current = next;
+  }
+  if (current) lines.push(current.trimEnd());
+  return lines;
+}
+
 async function renderAndDownload(profiles: Profile[]) {
   const {width, cardHeight, gap, padding, height} = getShareImageLayout(profiles.length);
   const dpr = 2;
   const canvas = document.createElement('canvas');
   canvas.width = width * dpr;
   canvas.height = height * dpr;
-  const context = canvas.getContext('2d');
-  if (!context) return;
-  context.scale(dpr, dpr);
-  context.fillStyle = '#F5F3FF';
-  context.fillRect(0, 0, width, height);
-
-  for (const [index, profile] of profiles.entries()) {
-    const y = padding + index * (cardHeight + gap);
-    await drawProfileCard(context, profile, padding, y, width - padding * 2, cardHeight);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  ctx.scale(dpr, dpr);
+  ctx.fillStyle = '#F5F3FF';
+  ctx.fillRect(0, 0, width, height);
+  for (const [i, profile] of profiles.entries()) {
+    const y = padding + i * (cardHeight + gap);
+    await drawCard(ctx, profile, padding, y, width - padding * 2, cardHeight);
   }
-
   canvas.toBlob(blob => {
     if (!blob) return;
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'kayeon-share.png';
-    a.click();
+    const a = document.createElement('a'); a.href = url; a.download = 'kayeon-share.png'; a.click();
     URL.revokeObjectURL(url);
   }, 'image/png');
 }
 
-const shareImageLayoutBase = {width: 1080, cardHeight: 760, gap: 34, padding: 56};
-const shareProfileCardLayout = {
-  imageHeight: 640,
-  imageInset: 28,
-  imageWidth: 500,
-  informationGap: 28,
-  informationRightPadding: 28,
-};
-
-export function getShareImageLayout(profileCount: number) {
-  return {
-    ...shareImageLayoutBase,
-    height:
-      shareImageLayoutBase.padding * 2 +
-      profileCount * shareImageLayoutBase.cardHeight +
-      Math.max(0, profileCount - 1) * shareImageLayoutBase.gap,
-  };
-}
-
-export function getShareProfileCardLayout(cardWidth: number) {
-  return {
-    ...shareProfileCardLayout,
-    informationWidth:
-      cardWidth -
-      shareProfileCardLayout.imageInset -
-      shareProfileCardLayout.imageWidth -
-      shareProfileCardLayout.informationGap -
-      shareProfileCardLayout.informationRightPadding,
-  };
-}
-
-export function wrapTextByWidth(
-  text: string,
-  maxWidth: number,
-  measureText: (value: string) => number,
-): string[] {
-  const normalizedText = text.trim();
-  if (!normalizedText) return [''];
-
-  const lines: string[] = [];
-  let currentLine = '';
-
-  for (const character of normalizedText) {
-    if (character === ' ' && currentLine.length === 0) continue;
-    const nextLine = `${currentLine}${character}`;
-    if (currentLine && measureText(nextLine) > maxWidth) {
-      lines.push(currentLine.trimEnd());
-      currentLine = character.trimStart();
-      continue;
-    }
-    currentLine = nextLine;
-  }
-
-  if (currentLine) lines.push(currentLine.trimEnd());
-  return lines;
-}
-
-async function drawProfileCard(
-  ctx: CanvasRenderingContext2D,
-  profile: Profile,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-) {
-  roundedRect(ctx, x, y, width, height, 28, '#FFFFFF');
-  const {imageHeight, imageInset, imageWidth, informationGap, informationWidth} = getShareProfileCardLayout(width);
-  const imageX = x + imageInset;
-  const imageY = y + imageInset;
+async function drawCard(ctx: CanvasRenderingContext2D, profile: Profile, x: number, y: number, w: number, h: number) {
+  roundRect(ctx, x, y, w, h, 28, '#FFFFFF');
+  const {imageHeight, imageInset, imageWidth, informationGap, informationWidth} = getShareProfileCardLayout(w);
+  const ix = x + imageInset, iy = y + imageInset;
   const photos = profile.photos.slice(0, 4);
-
   for (const [i, photo] of photos.entries()) {
     const cw = photos.length === 1 ? imageWidth : (imageWidth - 8) / 2;
     const ch = photos.length === 1 ? imageHeight : (imageHeight - 8) / 2;
-    const cx = imageX + (photos.length === 1 ? 0 : (i % 2) * (cw + 8));
-    const cy = imageY + (photos.length === 1 ? 0 : Math.floor(i / 2) * (ch + 8));
-    await drawImage(ctx, photo.url, cx, cy, cw, ch);
+    const cx = ix + (photos.length === 1 ? 0 : (i % 2) * (cw + 8));
+    const cy = iy + (photos.length === 1 ? 0 : Math.floor(i / 2) * (ch + 8));
+    await drawImg(ctx, photo.url, cx, cy, cw, ch);
   }
-
-  const textX = imageX + imageWidth + informationGap;
   const rows: Array<[string, string]> = [
     ['나이', formatBirthYearLabel(profile.birthYear)],
     ['키', `${profile.height}cm`],
@@ -404,100 +290,45 @@ async function drawProfileCard(
     ['회사', profile.job],
   ];
   if (profile.mbti) rows.push(['MBTI', profile.mbti]);
-  if (profile.hobbies) rows.push(['취미', profile.hobbies]);
-  if (profile.idealType) rows.push(['이상형', profile.idealType]);
-  if (profile.matchmakerComment) rows.push(['코멘트', profile.matchmakerComment]);
-
-  drawInfoRows(ctx, rows, textX, y + imageInset, informationWidth);
+  drawInfoRows(ctx, rows, ix + imageWidth + informationGap, y + imageInset, informationWidth);
 }
 
-async function drawImage(
-  ctx: CanvasRenderingContext2D,
-  src: string,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-) {
+async function drawImg(ctx: CanvasRenderingContext2D, src: string, x: number, y: number, w: number, h: number) {
   try {
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new Image();
-      el.crossOrigin = 'anonymous';
-      el.onload = () => resolve(el);
-      el.onerror = reject;
-      el.src = src;
+    const img = await new Promise<HTMLImageElement>((res, rej) => {
+      const el = new Image(); el.crossOrigin = 'anonymous';
+      el.onload = () => res(el); el.onerror = rej; el.src = src;
     });
-    roundedRect(ctx, x, y, w, h, 18, '#EDE9FE');
     const scale = Math.max(w / img.naturalWidth, h / img.naturalHeight);
-    const sw = w / scale;
-    const sh = h / scale;
-    const sx = (img.naturalWidth - sw) / 2;
-    const sy = (img.naturalHeight - sh) / 2;
-    ctx.save();
-    ctx.beginPath();
-    ctx.roundRect(x, y, w, h, 18);
-    ctx.clip();
+    const sw = w / scale, sh = h / scale;
+    const sx = (img.naturalWidth - sw) / 2, sy = (img.naturalHeight - sh) / 2;
+    roundRect(ctx, x, y, w, h, 18, '#EDE9FE');
+    ctx.save(); ctx.beginPath(); ctx.roundRect(x, y, w, h, 18); ctx.clip();
     ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
     ctx.restore();
-  } catch {
-    roundedRect(ctx, x, y, w, h, 18, '#EDE9FE');
-  }
+  } catch { roundRect(ctx, x, y, w, h, 18, '#EDE9FE'); }
 }
 
-function drawInfoRows(
-  ctx: CanvasRenderingContext2D,
-  rows: Array<[string, string]>,
-  x: number,
-  y: number,
-  width: number,
-) {
-  const labelWidth = 112;
-  const lineHeight = 24;
-  const vPad = 11;
-  let curY = y;
-
+function drawInfoRows(ctx: CanvasRenderingContext2D, rows: Array<[string, string]>, x: number, y: number, w: number) {
+  const lw = 112, lh = 24, vp = 11; let cy = y;
   for (const [label, value] of rows) {
-    const lines = wrapTextByWidth(value, width - labelWidth - 32, t => ctx.measureText(t).width);
-    const rowH = Math.max(46, lines.length * lineHeight + vPad * 2);
-
-    roundedRect(ctx, x, curY, width, rowH, 10, '#FFFFFF');
-    ctx.strokeStyle = '#DDD6FF';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x, curY, width, rowH);
-    ctx.fillStyle = '#F5F3FF';
-    ctx.fillRect(x, curY, labelWidth, rowH);
-    ctx.fillStyle = '#4D179A';
-    ctx.font = '700 20px Arial';
-    ctx.fillText(label, x + 14, curY + vPad + 18);
-    ctx.fillStyle = '#334155';
-    ctx.font = '500 20px Arial';
-    for (const [li, line] of lines.entries()) {
-      ctx.fillText(line, x + labelWidth + 16, curY + vPad + 18 + li * lineHeight);
-    }
-    curY += rowH + 6;
+    const lines = wrapTextByWidth(value, w - lw - 32, t => ctx.measureText(t).width);
+    const rh = Math.max(46, lines.length * lh + vp * 2);
+    roundRect(ctx, x, cy, w, rh, 10, '#FFFFFF');
+    ctx.strokeStyle = '#DDD6FF'; ctx.lineWidth = 2; ctx.strokeRect(x, cy, w, rh);
+    ctx.fillStyle = '#F5F3FF'; ctx.fillRect(x, cy, lw, rh);
+    ctx.fillStyle = '#4D179A'; ctx.font = '700 20px Arial'; ctx.fillText(label, x + 14, cy + vp + 18);
+    ctx.fillStyle = '#334155'; ctx.font = '500 20px Arial';
+    for (const [li, line] of lines.entries()) ctx.fillText(line, x + lw + 16, cy + vp + 18 + li * lh);
+    cy += rh + 6;
   }
 }
 
-function roundedRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number,
-  fill: string,
-) {
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number, fill: string) {
   ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-  ctx.fillStyle = fill;
-  ctx.fill();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
 }
