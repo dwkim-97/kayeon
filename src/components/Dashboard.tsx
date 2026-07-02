@@ -394,9 +394,9 @@ export function Dashboard({authorName}: DashboardProps) {
       <div className="mx-auto max-w-7xl px-4 py-6 pb-24">
         <section className="mt-2 rounded-[8px] border border-[var(--border)] bg-white p-4">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-            <label className="inline-flex items-center gap-2 text-sm font-bold text-slate-700">
+            <label className="inline-flex items-center gap-3 text-sm font-bold text-slate-700">
               <input
-                className="h-4 w-4 accent-[var(--violet-600)]"
+                className="h-8 w-8 accent-[var(--violet-600)]"
                 type="checkbox"
                 checked={allVisibleSelected}
                 disabled={activeVisibleProfiles.length === 0}

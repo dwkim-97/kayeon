@@ -93,13 +93,14 @@ export function ProfileCard({
 
   return (
     <article className="relative">
+      {/* 좌측 상단: 체크박스 */}
       <label
-        className={`absolute -left-1 -top-1 z-20 grid h-7 w-7 place-items-center rounded-[6px] border border-[var(--violet-200)] bg-white shadow-sm ${
+        className={`absolute -left-2 -top-2 z-20 grid h-12 w-12 place-items-center rounded-[8px] border border-[var(--violet-200)] bg-white shadow-sm ${
           isBlocked ? 'opacity-55' : ''
         }`}
       >
         <input
-          className="h-4 w-4 accent-[var(--violet-600)]"
+          className="h-8 w-8 accent-[var(--violet-600)]"
           type="checkbox"
           checked={!isBlocked && isSelected}
           disabled={isBlocked}
@@ -108,19 +109,19 @@ export function ProfileCard({
         />
       </label>
 
+      {/* 체크박스 아래: 집착매물 뱃지 */}
+      {profile.starredByName ? (
+        <div className="absolute -left-2 top-11 z-20 flex items-center gap-1 whitespace-nowrap rounded-full bg-yellow-400/90 px-2.5 py-1 text-xs font-black text-yellow-900 shadow-sm">
+          ⭐️ {profile.starredByName}의 집착매물 ⭐️
+        </div>
+      ) : null}
+
       <div
         className={`relative overflow-hidden rounded-[8px] border border-[var(--border)] bg-white shadow-[0_18px_45px_rgba(47,13,104,0.10)] transition ${
           isBlocked ? 'grayscale' : ''
         }`}
       >
         {isBlocked ? <div className="absolute inset-0 z-10 bg-slate-200/65" aria-hidden /> : null}
-
-        {/* 좌측 상단: 집착매물 뱃지 */}
-        {profile.starredByName ? (
-          <div className="absolute left-3 top-3 z-20 flex items-center gap-1 whitespace-nowrap rounded-full bg-yellow-400/90 px-2.5 py-1 text-xs font-black text-yellow-900 shadow-sm">
-            ⭐️ {profile.starredByName}의 집착매물 ⭐️
-          </div>
-        ) : null}
 
         {/* 우측 상단: 상태 토글 */}
         <button
