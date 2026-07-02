@@ -325,6 +325,9 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
                 <ImagePlus size={28} strokeWidth={1.75} aria-hidden />
                 <span className="mt-2 text-sm font-semibold">사진 업로드 *</span>
                 <span className="mt-1 text-xs text-slate-500">{values.photos.length}/4</span>
+                <span className="mt-1.5 text-[11px] leading-4 text-slate-400">
+                  클릭·드래그 또는 붙여넣기(Ctrl/⌘+V)
+                </span>
                 <input className="sr-only" type="file" accept="image/*" multiple onChange={handlePhotoUpload} />
               </label>
 
