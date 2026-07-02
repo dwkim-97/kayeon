@@ -346,43 +346,46 @@ export function Dashboard({authorName}: DashboardProps) {
       <div className="sticky top-0 z-40 bg-white/95 backdrop-blur">
         <AppHeader page="dashboard" sticky={false} />
 
-        {/* 성별 토글 + 필터 토글 */}
-        <div className="border-b border-[var(--border)]">
-        <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-2">
-          <div className="inline-flex rounded-[8px] border border-[var(--violet-200)] bg-white p-1">
-            {(['female', 'male'] as Gender[]).map(gender => (
-              <button
-                className={`h-9 rounded-[6px] px-4 text-sm font-extrabold ${
-                  filters.gender === gender ? 'bg-[var(--violet-600)] text-white' : 'text-[var(--violet-900)]'
-                }`}
-                key={gender}
-                type="button"
-                onClick={() => switchGender(gender)}
-              >
-                {genderLabels[gender]}
-              </button>
-            ))}
+        {/* 성별 토글 + 필터 토글 (relative — 필터가 아래에 absolute로 겹침) */}
+        <div className="relative border-b border-[var(--border)]">
+          <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-2">
+            <div className="inline-flex rounded-[8px] border border-[var(--violet-200)] bg-white p-1">
+              {(['female', 'male'] as Gender[]).map(gender => (
+                <button
+                  className={`h-9 rounded-[6px] px-4 text-sm font-extrabold ${
+                    filters.gender === gender ? 'bg-[var(--violet-600)] text-white' : 'text-[var(--violet-900)]'
+                  }`}
+                  key={gender}
+                  type="button"
+                  onClick={() => switchGender(gender)}
+                >
+                  {genderLabels[gender]}
+                </button>
+              ))}
+            </div>
+
+            <button
+              className={`ml-auto inline-flex h-9 items-center gap-1.5 rounded-[8px] border px-3 text-sm font-bold transition ${
+                isFilterOpen
+                  ? 'border-[var(--violet-600)] bg-[var(--violet-600)] text-white'
+                  : 'border-[var(--violet-200)] bg-white text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
+              }`}
+              type="button"
+              onClick={() => setIsFilterOpen(v => !v)}
+              aria-expanded={isFilterOpen}
+            >
+              <SlidersHorizontal size={15} aria-hidden />
+              필터
+              {isFilterOpen ? <ChevronUp size={14} aria-hidden /> : <ChevronDown size={14} aria-hidden />}
+            </button>
           </div>
 
-          <button
-            className={`ml-auto inline-flex h-9 items-center gap-1.5 rounded-[8px] border px-3 text-sm font-bold transition ${
-              isFilterOpen
-                ? 'border-[var(--violet-600)] bg-[var(--violet-600)] text-white'
-                : 'border-[var(--violet-200)] bg-white text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
-            }`}
-            type="button"
-            onClick={() => setIsFilterOpen(v => !v)}
-            aria-expanded={isFilterOpen}
-          >
-            <SlidersHorizontal size={15} aria-hidden />
-            필터
-            {isFilterOpen ? <ChevronUp size={14} aria-hidden /> : <ChevronDown size={14} aria-hidden />}
-          </button>
-        </div>
-
+          {/* 필터: absolute 로 띄워 대시보드 콘텐츠 흐름에 영향 주지 않음 */}
           {isFilterOpen ? (
-            <div className="mx-auto max-w-7xl px-4 pb-3">
-              <FilterBar filters={filters} onChange={setFilters} onReset={resetFilters} />
+            <div className="absolute left-0 right-0 top-full z-40 border-b border-[var(--border)] bg-white/95 shadow-lg backdrop-blur">
+              <div className="mx-auto max-w-7xl px-4 py-3">
+                <FilterBar filters={filters} onChange={setFilters} onReset={resetFilters} />
+              </div>
             </div>
           ) : null}
         </div>
