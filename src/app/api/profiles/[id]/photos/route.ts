@@ -1,5 +1,6 @@
 import {NextResponse} from 'next/server';
 
+import {createSupabaseAdminClient} from '@/lib/supabase/admin';
 import {createSupabaseServerClient, PROFILE_PHOTOS_BUCKET} from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
@@ -79,20 +80,50 @@ export async function PUT(request: Request, {params}: RouteParams) {
     }
   }
 
-  // Update sort_order for retained photos (handles reordering)
+  // Update sort_order for retained photos (handles reordering).
+  // Use admin client to bypass any RLS on profile_photos, and run sequentially
+  // to avoid transient UNIQUE(profile_id, sort_order) collisions during swaps.
   if (retainedPhotos.length > 0) {
-    const updateResults = await Promise.all(
-      retainedPhotos.map(({id, order}) =>
-        supabase
-          .from('profile_photos')
-          .update({sort_order: order})
-          .eq('id', id)
-          .eq('profile_id', profileId),
-      ),
-    );
-    const updateError = updateResults.find(r => r.error)?.error;
-    if (updateError) {
-      return NextResponse.json({message: updateError.message}, {status: 500});
+    const admin = createSupabaseAdminClient();
+
+    // Step A: push all retained rows into a temporary "high" range so no two rows
+    // in the target set share sort_order during the second pass. This defuses any
+    // UNIQUE(profile_id, sort_order) constraint during the swap.
+    for (let i = 0; i < retainedPhotos.length; i++) {
+      const {id} = retainedPhotos[i];
+      const {error} = await admin
+        .from('profile_photos')
+        .update({sort_order: 1000 + i})
+        .eq('id', id)
+        .eq('profile_id', profileId)
+        .select('id');
+      if (error) {
+        console.error('[photos PUT] temp update failed', {id, error});
+        return NextResponse.json({message: error.message}, {status: 500});
+      }
+    }
+
+    // Step B: apply the desired sort_order values.
+    for (const {id, order} of retainedPhotos) {
+      const {data, error} = await admin
+        .from('profile_photos')
+        .update({sort_order: order})
+        .eq('id', id)
+        .eq('profile_id', profileId)
+        .select('id, sort_order');
+
+      if (error) {
+        console.error('[photos PUT] final update failed', {id, order, error});
+        return NextResponse.json({message: error.message}, {status: 500});
+      }
+      if (!data || data.length === 0) {
+        // RLS or missing row silently drops the update
+        console.error('[photos PUT] update matched 0 rows', {id, order, profileId});
+        return NextResponse.json(
+          {message: `사진 순서 저장 실패 (id: ${id})`},
+          {status: 500},
+        );
+      }
     }
   }
 

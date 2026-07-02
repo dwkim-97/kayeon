@@ -77,7 +77,7 @@ async function apiUploadPhotos(profileId: string, photos: Profile['photos']): Pr
     );
 
     // Step 3: register uploaded paths in DB
-    await fetch(`/api/profiles/${profileId}/photos`, {
+    const registerRes = await fetch(`/api/profiles/${profileId}/photos`, {
       method: 'PUT',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
@@ -88,6 +88,10 @@ async function apiUploadPhotos(profileId: string, photos: Profile['photos']): Pr
         retainedPhotos,
       }),
     });
+    if (!registerRes.ok) {
+      const body = await registerRes.text();
+      throw new Error(`사진 저장 실패: ${body}`);
+    }
 
     uploadedPhotoIds = signed.map(s => {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -99,11 +103,15 @@ async function apiUploadPhotos(profileId: string, photos: Profile['photos']): Pr
     });
   } else {
     // No new photos — still send retainedPhotos to update sort_order
-    await fetch(`/api/profiles/${profileId}/photos`, {
+    const reorderRes = await fetch(`/api/profiles/${profileId}/photos`, {
       method: 'PUT',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({newPhotos: [], retainedPhotos}),
     });
+    if (!reorderRes.ok) {
+      const body = await reorderRes.text();
+      throw new Error(`사진 순서 저장 실패: ${body}`);
+    }
   }
 
   return uploadedPhotoIds;
@@ -195,13 +203,20 @@ export function Dashboard({authorName}: DashboardProps) {
         body: JSON.stringify(rest),
       });
 
-      if (!res.ok) return;
+      if (!res.ok) {
+        const message = await res.text();
+        setAlertState({kind: 'alert', title: '저장 실패', message});
+        return;
+      }
 
       const {profile: created} = await res.json();
       const uploadedPhotoIds = await apiUploadPhotos(created.id, photos);
       setProfiles(current => [{...created, photos: resolvePhotos(photos, uploadedPhotoIds)}, ...current]);
       writeHistory(created, 'profile_created');
       setModal({kind: 'closed'});
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setAlertState({kind: 'alert', title: '저장 실패', message});
     } finally {
       setIsMutating(false);
     }
@@ -217,13 +232,20 @@ export function Dashboard({authorName}: DashboardProps) {
         body: JSON.stringify(rest),
       });
 
-      if (!res.ok) return;
+      if (!res.ok) {
+        const message = await res.text();
+        setAlertState({kind: 'alert', title: '저장 실패', message});
+        return;
+      }
 
       const uploadedPhotoIds = await apiUploadPhotos(updatedProfile.id, photos);
       const profileWithPhotos = {...updatedProfile, photos: resolvePhotos(photos, uploadedPhotoIds)};
       setProfiles(current => current.map(p => (p.id === updatedProfile.id ? profileWithPhotos : p)));
       writeHistory(profileWithPhotos, 'profile_updated');
       setModal({kind: 'closed'});
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setAlertState({kind: 'alert', title: '저장 실패', message});
     } finally {
       setIsMutating(false);
     }
