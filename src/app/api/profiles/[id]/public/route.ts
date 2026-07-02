@@ -1,7 +1,7 @@
 import {NextResponse} from 'next/server';
 
 import {rowToProfile} from '@/lib/supabase/mappers';
-import {createSupabaseServerClient, getStoragePublicBase} from '@/lib/supabase/server';
+import {createSupabasePublicClient, getStoragePublicBase} from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
 
@@ -9,7 +9,7 @@ type RouteParams = {params: Promise<{id: string}>};
 
 export async function GET(_request: Request, {params}: RouteParams) {
   const {id} = await params;
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
 
   const {data, error} = await supabase
     .from('profiles')
