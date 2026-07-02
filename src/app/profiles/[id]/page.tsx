@@ -5,8 +5,6 @@ import {PhotoSlider} from './PhotoSlider';
 import {getProfileInformationRows} from '@/lib/profiles/information';
 import {createSupabaseServerClient, getStoragePublicBase} from '@/lib/supabase/server';
 import {rowToProfile} from '@/lib/supabase/mappers';
-import {formatBirthYearLabel} from '@/lib/profiles/age';
-
 type PageProps = {params: Promise<{id: string}>};
 
 export default async function ProfileDetailPage({params}: PageProps) {
@@ -27,7 +25,6 @@ export default async function ProfileDetailPage({params}: PageProps) {
   const {profile_photos: photoRows, ...row} = data;
   const profile = rowToProfile(row, photoRows ?? [], getStoragePublicBase());
   const informationRows = getProfileInformationRows(profile);
-  const birthYearLabel = formatBirthYearLabel(profile.birthYear);
 
   return (
     <div className="flex h-screen flex-col bg-black md:flex-row">
@@ -46,9 +43,7 @@ export default async function ProfileDetailPage({params}: PageProps) {
       {/* 우측(PC): 정보 패널 / 모바일: 숨김 (오버레이로 대체) */}
       <div className="hidden md:flex md:h-screen md:w-[45%] md:flex-col md:overflow-y-auto md:bg-white">
         <div className="flex flex-1 flex-col px-8 pb-10 pt-24">
-          <h1 className="text-3xl font-black text-[var(--violet-950)]">{birthYearLabel}</h1>
-
-          <ul className="mt-6 space-y-2">
+          <ul className="space-y-2">
             {informationRows.map(([label, value]) => (
               <li
                 key={label}
