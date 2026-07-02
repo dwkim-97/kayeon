@@ -43,6 +43,7 @@ type KakaoShareApi = {
   init: (key: string) => void;
   Share: {
     sendDefault: (input: KakaoTemplate) => void;
+    createDefaultUrl: (input: KakaoTemplate) => string;
     uploadImage: (input: {file: FileList | File[]}) => Promise<{infos: {original: {url: string}}}>;
   };
 };
@@ -159,7 +160,14 @@ export function ShareButton({profiles}: ShareButtonProps) {
 
   const shareGroup = (group: Profile[]) => {
     initKakao();
-    window.Kakao.Share.sendDefault(buildTemplate(group, window.location.origin));
+    const template = buildTemplate(group, window.location.origin);
+    try {
+      window.Kakao.Share.sendDefault(template);
+    } catch {
+      // PC 환경 등 앱 미설치 시 웹 공유 URL로 fallback
+      const url = window.Kakao.Share.createDefaultUrl(template);
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
   };
 
   const handleClick = () => {
