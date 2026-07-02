@@ -30,7 +30,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const supabase = await createSupabaseServerClient();
   const [actorName, body] = await Promise.all([
-    getSessionUserName(),
+    getSessionUserName(supabase),
     request.json() as Promise<Omit<Profile, 'createdAt' | 'updatedAt'>>,
   ]);
 
