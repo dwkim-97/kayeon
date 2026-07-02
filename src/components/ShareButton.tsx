@@ -43,7 +43,6 @@ type KakaoShareApi = {
   init: (key: string) => void;
   Share: {
     sendDefault: (input: KakaoTemplate) => void;
-    createDefaultUrl: (input: KakaoTemplate) => string;
     uploadImage: (input: {file: FileList | File[]}) => Promise<{infos: {original: {url: string}}}>;
   };
 };
@@ -161,8 +160,15 @@ export function ShareButton({profiles}: ShareButtonProps) {
   const shareGroup = (group: Profile[]) => {
     initKakao();
     const template = buildTemplate(group, window.location.origin);
-    const url = window.Kakao.Share.createDefaultUrl(template);
-    window.open(url, '_blank', 'noopener,noreferrer');
+    try {
+      window.Kakao.Share.sendDefault(template);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('unsupported environment')) {
+        alert('카카오톡이 설치된 모바일 기기에서 공유해 주세요.');
+      } else {
+        throw error;
+      }
+    }
   };
 
   const handleClick = () => {
