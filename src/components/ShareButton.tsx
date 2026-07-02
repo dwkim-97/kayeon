@@ -10,29 +10,11 @@ import type {Profile} from '@/types/profile';
 
 // ---------- Kakao SDK types ----------
 
-type KakaoLink = {mobileWebUrl: string; webUrl: string};
-
-type KakaoContent = {
-  title: string;
-  description: string;
-  imageUrl?: string;
-  link: KakaoLink;
-};
-
-type KakaoListTemplate = {
-  objectType: 'list';
-  headerTitle: string;
-  headerLink: KakaoLink;
-  contents: KakaoContent[]; // 2~3개
-  buttons?: Array<{title: string; link: KakaoLink}>;
-};
-
 type KakaoShareApi = {
   isInitialized: () => boolean;
   init: (key: string) => void;
   Share: {
     sendCustom: (input: {templateId: number; templateArgs: Record<string, string>}) => void;
-    sendDefault: (input: KakaoListTemplate) => void;
   };
 };
 
@@ -45,8 +27,10 @@ declare global {
 // ---------- helpers ----------
 
 const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY || '';
-const TEMPLATE_ID = 134945;
-const BATCH_SIZE = 3;
+const FEED_TEMPLATE_ID = 134945;
+const LIST_TEMPLATE_ID = 134947;
+const LIST_SIZE = 5;
+const EMPTY_IMAGE_URL = 'https://kayeon.vercel.app/empty-profile.svg';
 
 function chunk<T>(arr: T[], size: number): T[][] {
   const result: T[][] = [];
@@ -94,7 +78,7 @@ export function ShareButton({profiles}: ShareButtonProps) {
   const [kakaoReady, setKakaoReady] = useState(false);
 
   const hasKakao = !!kakaoKey;
-  const groups = chunk(profiles, BATCH_SIZE);
+  const groups = chunk(profiles, LIST_SIZE);
   const isSingleBatch = groups.length <= 1;
 
   const shareGroup = (group: Profile[]) => {
@@ -104,35 +88,33 @@ export function ShareButton({profiles}: ShareButtonProps) {
     if (group.length === 1) {
       // 1명: 피드형 커스텀 템플릿
       window.Kakao.Share.sendCustom({
-        templateId: TEMPLATE_ID,
+        templateId: FEED_TEMPLATE_ID,
         templateArgs: buildTemplateArgs(group[0], origin),
       });
     } else {
-      // 2~3명: list 템플릿
-      const originLink: KakaoLink = {mobileWebUrl: origin, webUrl: origin};
-      window.Kakao.Share.sendDefault({
-        objectType: 'list',
+      // 2명 이상: 리스트형 커스텀 템플릿 (최대 5명 고정 슬롯)
+      const args: Record<string, string> = {
         headerTitle: `소개 풀 (${group.length}명)`,
-        headerLink: originLink,
-        contents: group.map(profile => {
-          const url = `${origin}/profiles/${profile.id}`;
-          const link: KakaoLink = {mobileWebUrl: url, webUrl: url};
-          const content: KakaoContent = {
-            title: formatBirthYearLabel(profile.birthYear),
-            description: buildDescription(profile),
-            link,
-          };
-          const firstPhoto = profile.photos[0];
-          if (firstPhoto) content.imageUrl = firstPhoto.url;
-          return content;
-        }),
-        buttons: [{
-          title: '자세히 보기',
-          link: {
-            mobileWebUrl: `${origin}/profiles/${group[0].id}`,
-            webUrl: `${origin}/profiles/${group[0].id}`,
-          },
-        }],
+      };
+
+      for (let i = 0; i < LIST_SIZE; i++) {
+        const profile = group[i];
+        if (profile) {
+          args[`title${i + 1}`] = formatBirthYearLabel(profile.birthYear);
+          args[`desc${i + 1}`] = buildDescription(profile);
+          args[`img${i + 1}`] = profile.photos[0]?.url ?? EMPTY_IMAGE_URL;
+          args[`url${i + 1}`] = `profiles/${profile.id}`;
+        } else {
+          args[`title${i + 1}`] = '-';
+          args[`desc${i + 1}`] = '-';
+          args[`img${i + 1}`] = EMPTY_IMAGE_URL;
+          args[`url${i + 1}`] = '';
+        }
+      }
+
+      window.Kakao.Share.sendCustom({
+        templateId: LIST_TEMPLATE_ID,
+        templateArgs: args,
       });
     }
   };
