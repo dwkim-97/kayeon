@@ -58,6 +58,10 @@ function buildTemplateArgs(profile: Profile, origin: string): Record<string, str
 }
 
 function initKakao() {
+  if (!kakaoKey) {
+    console.warn('[Kakao] NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY is not set');
+    return;
+  }
   if (!window.Kakao.isInitialized()) {
     window.Kakao.init(kakaoKey);
   }

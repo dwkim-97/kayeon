@@ -101,10 +101,7 @@ export function normalizeProfileFormValues(values: ProfileFormValues): Normalize
     idealType: values.idealType.trim(),
     matchmakerComment: values.matchmakerComment.trim(),
     extra: values.extra.trim(),
-    photos: values.photos
-      .slice()
-      .sort((left, right) => left.order - right.order)
-      .map((photo, order) => ({...photo, order})),
+    photos: values.photos.map((photo, order) => ({...photo, order})),
   };
 }
 
