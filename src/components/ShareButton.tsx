@@ -75,7 +75,6 @@ type ShareButtonProps = {
 
 export function ShareButton({profiles}: ShareButtonProps) {
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
-  const [kakaoReady, setKakaoReady] = useState(false);
 
   const hasKakao = !!kakaoKey;
   const groups = chunk(profiles, LIST_SIZE);
@@ -122,7 +121,7 @@ export function ShareButton({profiles}: ShareButtonProps) {
   const handleClick = () => {
     if (profiles.length === 0) return;
 
-    if (!hasKakao || !kakaoReady) {
+    if (!hasKakao || !window.Kakao?.Share) {
       alert('카카오 공유 기능을 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
       return;
     }
@@ -140,7 +139,6 @@ export function ShareButton({profiles}: ShareButtonProps) {
         <Script
           src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.5/kakao.min.js"
           strategy="afterInteractive"
-          onLoad={() => setKakaoReady(true)}
         />
       ) : null}
 
