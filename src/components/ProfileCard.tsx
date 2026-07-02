@@ -2,12 +2,11 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import {ChevronLeft, ChevronRight, Pencil, Trash2} from 'lucide-react';
+import {ChevronLeft, ChevronRight, Eye, EyeOff, Pencil, Trash2} from 'lucide-react';
 import {useState} from 'react';
 
-import {PhotoLightbox} from '@/components/PhotoLightbox';
 import {formatBirthYearLabel} from '@/lib/profiles/age';
-import {getProfileInformationRows} from '@/lib/profiles/information';
+import {getPrimaryInformationRows} from '@/lib/profiles/information';
 import type {Profile} from '@/types/profile';
 
 export type ProfileCardVariant = 'detailed' | 'compact';
@@ -21,7 +20,10 @@ type ProfileCardProps = {
   onDelete: (profile: Profile) => void;
   onStatusChange: (profileId: string, status: Profile['status']) => void;
   onToggleStar: (profile: Profile) => void;
+  onOpenDetail: (profile: Profile) => void;
   variant?: ProfileCardVariant;
+  isEditMode?: boolean;
+  ongoingMatchCount?: number;
 };
 
 function StarButton({
@@ -82,15 +84,19 @@ export function ProfileCard({
   onDelete,
   onStatusChange,
   onToggleStar,
+  onOpenDetail,
   variant = 'detailed',
+  isEditMode = false,
+  ongoingMatchCount = 0,
 }: ProfileCardProps) {
   const [photoIndex, setPhotoIndex] = useState(0);
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const hasMultiplePhotos = profile.photos.length > 1;
   const isBlocked = !profile.isActivated;
   const isCompact = variant === 'compact';
   const birthYearLabel = formatBirthYearLabel(profile.birthYear);
-  const informationRows = getProfileInformationRows(profile);
+  const isStarred = !!profile.starredByName;
+  // 카드에는 주요 정보(나이/키/사는 곳/회사)만 표시. 전체 정보는 상세 모달에서 확인.
+  const informationRows = getPrimaryInformationRows(profile);
   // compact: 년생 / 키 / 사는 곳 / 회사 를 한 줄로 요약 (빈 값은 제외)
   const compactSummary = [birthYearLabel, `${profile.height}cm`, profile.residence, profile.job]
     .filter(part => part && part.trim().length > 0)
@@ -104,12 +110,12 @@ export function ProfileCard({
     <article className="relative">
       {/* 좌측 상단: 체크박스 */}
       <label
-        className={`absolute -left-2 -top-2 z-20 grid place-items-center rounded-[8px] border border-[var(--violet-200)] bg-white shadow-sm ${
-          isCompact ? 'h-8 w-8' : 'h-12 w-12'
+        className={`absolute -left-1.5 -top-1.5 z-20 grid place-items-center rounded-[7px] border border-[var(--violet-200)] bg-white shadow-sm ${
+          isCompact ? 'h-6 w-6' : 'h-8 w-8'
         } ${isBlocked ? 'opacity-55' : ''}`}
       >
         <input
-          className={`accent-[var(--violet-600)] ${isCompact ? 'h-5 w-5' : 'h-8 w-8'}`}
+          className={`accent-[var(--violet-600)] ${isCompact ? 'h-4 w-4' : 'h-5 w-5'}`}
           type="checkbox"
           checked={!isBlocked && isSelected}
           disabled={isBlocked}
@@ -118,37 +124,16 @@ export function ProfileCard({
         />
       </label>
 
-      {/* 체크박스 아래: 집착매물 뱃지 */}
-      {profile.starredByName ? (
-        <div className="absolute -left-2 top-11 z-20 flex items-center gap-1 whitespace-nowrap rounded-full bg-yellow-400/90 px-2.5 py-1 text-xs font-black text-yellow-900 shadow-sm">
-          ⭐️ {profile.starredByName}의 집착매물 ⭐️
-        </div>
-      ) : null}
-
       <div
-        className={`relative overflow-hidden rounded-[8px] bg-white shadow-[0_18px_45px_rgba(47,13,104,0.10)] transition ${
-          !isBlocked && isSelected
-            ? 'border-4 border-[var(--violet-600)]'
-            : 'border border-[var(--border)]'
+        className={`relative overflow-hidden rounded-[8px] bg-white transition ${
+          isStarred
+            ? 'border-4 border-yellow-400 shadow-[0_0_0_2px_rgba(251,191,36,0.35),0_18px_45px_rgba(202,138,4,0.25)]'
+            : !isBlocked && isSelected
+              ? 'border-4 border-[var(--violet-600)] shadow-[0_18px_45px_rgba(47,13,104,0.10)]'
+              : 'border border-[var(--border)] shadow-[0_18px_45px_rgba(47,13,104,0.10)]'
         } ${isBlocked ? 'grayscale' : ''}`}
       >
         {isBlocked ? <div className="absolute inset-0 z-10 bg-slate-200/65" aria-hidden /> : null}
-
-        {/* 우측 상단: 상태 토글 */}
-        <button
-          className={`absolute z-30 rounded-full p-1 transition ${
-            isCompact ? 'right-2 top-2 h-6 w-11' : 'right-3 top-3 h-8 w-14'
-          } ${isBlocked ? 'bg-slate-300' : 'bg-[var(--violet-600)]'}`}
-          type="button"
-          onClick={() => onStatusChange(profile.id, isBlocked ? 'active' : 'blocked')}
-          aria-label={`${birthYearLabel} 매물 상태 변경`}
-        >
-          <span
-            className={`block rounded-full bg-white shadow transition ${
-              isCompact ? 'h-4 w-4' : 'h-6 w-6'
-            } ${isBlocked ? 'translate-x-0' : isCompact ? 'translate-x-5' : 'translate-x-6'}`}
-          />
-        </button>
 
         <div className={`relative ${isCompact ? 'aspect-square' : 'aspect-[4/5]'} bg-[var(--violet-100)]`}>
           {profile.photos.length > 0 ? (
@@ -164,10 +149,10 @@ export function ProfileCard({
                 />
               ))}
               <button
-                className="absolute inset-0 z-10 cursor-zoom-in"
+                className="absolute inset-0 z-10 cursor-pointer"
                 type="button"
-                onClick={() => setLightboxIndex(photoIndex)}
-                aria-label="사진 크게 보기"
+                onClick={() => onOpenDetail(profile)}
+                aria-label="상세 정보 보기"
               />
             </>
           ) : (
@@ -183,12 +168,25 @@ export function ProfileCard({
             {profile.authorName}
           </div>
 
-          {/* 하단 중앙: 별 버튼 */}
-          <StarButton
-            profile={profile}
-            authorName={authorName}
-            onClick={() => onToggleStar(profile)}
-          />
+          {/* 우측 상단: 진행중 매칭 배지 */}
+          {ongoingMatchCount > 0 ? (
+            <div
+              className={`absolute right-3 top-3 z-20 rounded-full bg-pink-500/90 font-black text-white shadow-sm ${
+                isCompact ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs'
+              }`}
+            >
+              💞 매칭 {ongoingMatchCount}
+            </div>
+          ) : null}
+
+          {/* 하단 중앙: 별 버튼 (편집 모드에서만) */}
+          {isEditMode ? (
+            <StarButton
+              profile={profile}
+              authorName={authorName}
+              onClick={() => onToggleStar(profile)}
+            />
+          ) : null}
 
           {hasMultiplePhotos ? (
             <>
@@ -225,7 +223,7 @@ export function ProfileCard({
 
         <div className={`relative z-20 ${isCompact ? 'p-2' : 'p-4'}`}>
           {isCompact ? (
-            <p className="break-keep rounded-[6px] border border-[var(--violet-100)] bg-[var(--violet-50)] px-2 py-1 text-xs font-semibold leading-5 text-[var(--violet-900)]">
+            <p className="line-clamp-2 h-[42px] break-keep rounded-[6px] border border-[var(--violet-100)] bg-[var(--violet-50)] px-2 py-1 text-xs font-semibold leading-5 text-[var(--violet-900)]">
               {compactSummary}
             </p>
           ) : (
@@ -235,46 +233,54 @@ export function ProfileCard({
                   <span className="border-r border-[var(--violet-100)] bg-[var(--violet-50)] px-2 py-1 font-bold text-[var(--violet-900)]">
                     {label}
                   </span>
-                  <span className="min-w-0 break-keep px-2 py-1 text-slate-700">{value}</span>
+                  <span className="truncate px-2 py-1 text-slate-700" title={value}>{value}</span>
                 </li>
               ))}
             </ul>
           )}
 
-          <div className={`flex justify-end ${isCompact ? 'mt-1.5 gap-1.5' : 'gap-2'}`}>
-            <button
-              className={`grid place-items-center rounded-[8px] border border-[var(--violet-200)] text-[var(--violet-800)] transition hover:bg-[var(--violet-50)] ${
-                isCompact ? 'h-8 w-8' : 'h-9 w-9'
-              }`}
-              type="button"
-              onClick={() => onEdit(profile)}
-              aria-label={`${birthYearLabel} 매물 수정`}
-            >
-              <Pencil size={isCompact ? 15 : 17} aria-hidden />
-            </button>
-            <button
-              className={`grid place-items-center rounded-[8px] border border-red-100 text-[var(--danger)] transition hover:bg-red-50 ${
-                isCompact ? 'h-8 w-8' : 'h-9 w-9'
-              }`}
-              type="button"
-              onClick={() => onDelete(profile)}
-              aria-label={`${birthYearLabel} 매물 삭제`}
-            >
-              <Trash2 size={isCompact ? 15 : 17} aria-hidden />
-            </button>
-          </div>
+          {isEditMode ? (
+            <div className={`flex items-center justify-end ${isCompact ? 'mt-1.5 gap-1.5' : 'mt-2 gap-2'}`}>
+              {/* 상태 토글: 활성이면 비활성화(EyeOff), 비활성이면 활성화(Eye) */}
+              <button
+                className={`mr-auto grid place-items-center rounded-[8px] border transition ${
+                  isCompact ? 'h-8 w-8' : 'h-9 w-9'
+                } ${
+                  isBlocked
+                    ? 'border-[var(--violet-300)] bg-[var(--violet-600)] text-white hover:bg-[var(--violet-700)]'
+                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                }`}
+                type="button"
+                onClick={() => onStatusChange(profile.id, isBlocked ? 'active' : 'blocked')}
+                aria-label={`${birthYearLabel} 매물 ${isBlocked ? '활성화' : '비활성화'}`}
+                title={isBlocked ? '활성화' : '비활성화'}
+              >
+                {isBlocked ? <Eye size={isCompact ? 15 : 17} aria-hidden /> : <EyeOff size={isCompact ? 15 : 17} aria-hidden />}
+              </button>
+              <button
+                className={`grid place-items-center rounded-[8px] border border-[var(--violet-200)] text-[var(--violet-800)] transition hover:bg-[var(--violet-50)] ${
+                  isCompact ? 'h-8 w-8' : 'h-9 w-9'
+                }`}
+                type="button"
+                onClick={() => onEdit(profile)}
+                aria-label={`${birthYearLabel} 매물 수정`}
+              >
+                <Pencil size={isCompact ? 15 : 17} aria-hidden />
+              </button>
+              <button
+                className={`grid place-items-center rounded-[8px] border border-red-100 text-[var(--danger)] transition hover:bg-red-50 ${
+                  isCompact ? 'h-8 w-8' : 'h-9 w-9'
+                }`}
+                type="button"
+                onClick={() => onDelete(profile)}
+                aria-label={`${birthYearLabel} 매물 삭제`}
+              >
+                <Trash2 size={isCompact ? 15 : 17} aria-hidden />
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
-
-      {lightboxIndex !== null ? (
-        <PhotoLightbox
-          photos={profile.photos}
-          initialIndex={lightboxIndex}
-          currentIndex={lightboxIndex}
-          onIndexChange={setLightboxIndex}
-          onClose={() => setLightboxIndex(null)}
-        />
-      ) : null}
     </article>
   );
 }

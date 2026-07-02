@@ -35,11 +35,13 @@ const defaultProps = {
   profile,
   authorName: 'Aiden',
   isSelected: false,
+  isEditMode: false,
   onSelectChange: vi.fn(),
   onEdit: vi.fn(),
   onDelete: vi.fn(),
   onStatusChange: vi.fn(),
   onToggleStar: vi.fn(),
+  onOpenDetail: vi.fn(),
 };
 
 describe('ProfileCard', () => {
@@ -75,12 +77,14 @@ describe('ProfileCard', () => {
     expect(screen.getByLabelText('98년생 매물 선택')).toBeDisabled();
   });
 
-  it('renders all information rows in the detailed variant', () => {
+  it('shows only primary information rows in the detailed variant', () => {
     render(<ProfileCard {...defaultProps} variant="detailed" />);
 
-    // detailed shows secondary rows such as MBTI in addition to the core rows
-    expect(screen.getByText('MBTI')).toBeInTheDocument();
-    expect(screen.getByText('ENFJ')).toBeInTheDocument();
+    // primary rows (나이/키/사는 곳/회사) are shown
+    expect(screen.getByText('나이')).toBeInTheDocument();
+    expect(screen.getByText('회사')).toBeInTheDocument();
+    // secondary info (MBTI) is NOT on the card — it lives in the detail modal
+    expect(screen.queryByText('MBTI')).not.toBeInTheDocument();
   });
 
   it('summarizes the compact variant as a single slash-separated line', () => {
@@ -96,9 +100,53 @@ describe('ProfileCard', () => {
     // secondary info is dropped to keep the card compact
     expect(screen.queryByText('MBTI')).not.toBeInTheDocument();
 
-    // interactive controls are still present in compact mode
+    // 선택 체크박스는 조회 모드에서도 유지
     expect(screen.getByLabelText('98년생 매물 선택')).toBeInTheDocument();
+  });
+
+  it('hides edit/delete/status controls when not in edit mode', () => {
+    render(<ProfileCard {...defaultProps} isEditMode={false} />);
+
+    // 조회 모드: 관리 버튼 숨김
+    expect(screen.queryByLabelText('98년생 매물 수정')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('98년생 매물 삭제')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('98년생 매물 비활성화')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('98년생 매물 활성화')).not.toBeInTheDocument();
+
+    // 조회 모드에서도 유지되는 것: 선택 체크박스
+    expect(screen.getByLabelText('98년생 매물 선택')).toBeInTheDocument();
+  });
+
+  it('shows edit/delete/deactivate controls in edit mode', () => {
+    render(<ProfileCard {...defaultProps} isEditMode />);
+
     expect(screen.getByLabelText('98년생 매물 수정')).toBeInTheDocument();
     expect(screen.getByLabelText('98년생 매물 삭제')).toBeInTheDocument();
+    // active 프로필 → 상태 버튼은 '비활성화'
+    expect(screen.getByLabelText('98년생 매물 비활성화')).toBeInTheDocument();
+    expect(screen.queryByLabelText('98년생 매물 활성화')).not.toBeInTheDocument();
+  });
+
+  it('labels the status button 활성화 for a blocked profile in edit mode', () => {
+    render(
+      <ProfileCard
+        {...defaultProps}
+        isEditMode
+        profile={{...profile, isActivated: false, status: 'blocked'}}
+      />,
+    );
+
+    expect(screen.getByLabelText('98년생 매물 활성화')).toBeInTheDocument();
+    expect(screen.queryByLabelText('98년생 매물 비활성화')).not.toBeInTheDocument();
+  });
+
+  it('shows a match badge when there are ongoing matches', () => {
+    render(<ProfileCard {...defaultProps} ongoingMatchCount={2} />);
+    expect(screen.getByText(/매칭 2/)).toBeInTheDocument();
+  });
+
+  it('shows no match badge when count is zero', () => {
+    render(<ProfileCard {...defaultProps} ongoingMatchCount={0} />);
+    expect(screen.queryByText(/매칭/)).not.toBeInTheDocument();
   });
 });
