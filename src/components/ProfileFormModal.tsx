@@ -309,19 +309,27 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
               <div className="mt-3 grid grid-cols-2 gap-2">
                 {values.photos.map(photo => (
                   <div
-                    className="relative aspect-square overflow-hidden rounded-[8px] border border-[var(--violet-100)] bg-[var(--violet-100)]"
-                    draggable
+                    className={`relative aspect-square overflow-hidden rounded-[8px] border border-[var(--violet-100)] bg-[var(--violet-100)] transition-opacity ${
+                      draggingPhotoId === photo.id ? 'opacity-40' : ''
+                    }`}
                     key={photo.id}
-                    onDragStart={event => {
-                      setDraggingPhotoId(photo.id);
-                      event.dataTransfer.effectAllowed = 'move';
+                    onPointerEnter={() => {
+                      if (draggingPhotoId && draggingPhotoId !== photo.id) {
+                        reorderPhoto(photo.id);
+                      }
                     }}
-                    onDragOver={event => event.preventDefault()}
-                    onDrop={() => reorderPhoto(photo.id)}
-                    onDragEnd={() => setDraggingPhotoId('')}
                   >
                     <img className="h-full w-full object-cover" src={photo.url} alt={photo.alt} />
-                    <span className="absolute left-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-white/90 text-[var(--violet-800)]">
+                    {/* 그립 핸들 — pointer down 으로 드래그 시작 */}
+                    <span
+                      className="absolute left-1 top-1 grid h-7 w-7 cursor-grab touch-none place-items-center rounded-full bg-white/90 text-[var(--violet-800)] active:cursor-grabbing"
+                      onPointerDown={event => {
+                        event.currentTarget.setPointerCapture(event.pointerId);
+                        setDraggingPhotoId(photo.id);
+                      }}
+                      onPointerUp={() => setDraggingPhotoId('')}
+                      onPointerCancel={() => setDraggingPhotoId('')}
+                    >
                       <GripVertical size={15} aria-hidden />
                     </span>
                     <button

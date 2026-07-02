@@ -50,7 +50,7 @@ function buildTemplateArgs(profile: Profile, origin: string): Record<string, str
   const args: Record<string, string> = {
     title: formatBirthYearLabel(profile.birthYear),
     description: buildDescription(profile),
-    profileUrl: `profiles/${profile.id}`,
+    profileUrl: `/profiles/${profile.id}`,
   };
   const firstPhoto = profile.photos[0];
   if (firstPhoto) args.imageUrl = firstPhoto.url;
@@ -105,7 +105,7 @@ export function ShareButton({profiles}: ShareButtonProps) {
           args[`title${i + 1}`] = formatBirthYearLabel(profile.birthYear);
           args[`desc${i + 1}`] = buildDescription(profile);
           args[`img${i + 1}`] = profile.photos[0]?.url ?? EMPTY_IMAGE_URL;
-          args[`url${i + 1}`] = `profiles/${profile.id}`;
+          args[`url${i + 1}`] = `/profiles/${profile.id}`;
         } else {
           args[`title${i + 1}`] = '-';
           args[`desc${i + 1}`] = '-';
