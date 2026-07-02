@@ -154,10 +154,10 @@ export function Dashboard({authorName}: DashboardProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [matches, setMatches] = useState<Match[]>([]);
   const [detailProfileId, setDetailProfileId] = useState<string | null>(null);
-  // 첫 렌더는 항상 기본값 'compact'로 시작(SSR/hydration 안전). localStorage는 브라우저에만
+  // 첫 렌더는 항상 기본값 'detailed'로 시작(SSR/hydration 안전). localStorage는 브라우저에만
   // 존재하므로 mount 후 effect에서 읽어 반영한다 — 초기값에서 읽으면 서버 HTML과
-  // 불일치하여 hydration 경고가 발생한다. 저장된 이력이 없으면 'compact'가 기본.
-  const [viewMode, setViewMode] = useState<ProfileCardVariant>('compact');
+  // 불일치하여 hydration 경고가 발생한다. 저장된 이력이 없으면 'detailed'가 기본.
+  const [viewMode, setViewMode] = useState<ProfileCardVariant>('detailed');
 
   useEffect(() => {
     fetch('/api/profiles')
@@ -454,8 +454,8 @@ export function Dashboard({authorName}: DashboardProps) {
               ))}
             </div>
 
-            {/* 뷰 전환 토글: 상세보기 / 작게보기 */}
-            <div className="ml-auto inline-flex rounded-[8px] border border-[var(--violet-200)] bg-white p-1">
+            {/* 뷰 전환 토글: 작게보기 / 상세보기 */}
+            <div className="inline-flex rounded-[8px] border border-[var(--violet-200)] bg-white p-1">
               {([
                 ['compact', Grid3x3, '작게보기'],
                 ['detailed', LayoutGrid, '상세보기'],
