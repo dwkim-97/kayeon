@@ -6,6 +6,7 @@ import {ChevronLeft, ChevronRight, Eye, EyeOff, Pencil, Trash2} from 'lucide-rea
 import {useState} from 'react';
 
 import {formatBirthYearLabel} from '@/lib/profiles/age';
+import {getAuthorColor} from '@/lib/profiles/author-color';
 import type {Profile} from '@/types/profile';
 
 export type ProfileCardVariant = 'detailed' | 'compact';
@@ -94,6 +95,7 @@ export function ProfileCard({
   const isCompact = variant === 'compact';
   const birthYearLabel = formatBirthYearLabel(profile.birthYear);
   const isStarred = !!profile.starredByName;
+  const authorColor = getAuthorColor(profile.authorName);
   // compact: 년생 / 키 / 사는 곳 / 회사 를 한 줄로 요약 (빈 값은 제외)
   const compactSummary = [birthYearLabel, `${profile.height}cm`, profile.residence, profile.job]
     .filter(part => part && part.trim().length > 0)
@@ -156,11 +158,12 @@ export function ProfileCard({
             <div className="grid h-full place-items-center text-sm text-slate-500">사진 없음</div>
           )}
 
-          {/* 주선자 뱃지 — compact: 좌하단 / detailed: 우상단 */}
+          {/* 주선자 뱃지 — compact: 좌하단 / detailed: 우상단. 주선자별 고정 색 */}
           <div
-            className={`absolute z-20 rounded-full bg-white/92 font-semibold text-[var(--violet-800)] shadow-sm ${
+            className={`absolute z-20 rounded-full font-semibold shadow-sm ${
               isCompact ? 'bottom-3 left-3 px-2 py-0.5 text-[10px]' : 'right-3 top-3 px-3 py-1 text-xs'
             }`}
+            style={{backgroundColor: authorColor.bg, color: authorColor.text}}
           >
             {profile.authorName}
           </div>
