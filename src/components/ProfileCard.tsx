@@ -235,7 +235,7 @@ export function ProfileCard({
         <div className={`relative z-20 ${isCompact ? 'p-2' : 'p-4'}`}>
           {/* compact: 사진 아래 슬래시 요약. detailed: 정보는 사진 위 오버레이에 표시됨 */}
           {isCompact ? (
-            <p className="line-clamp-2 h-[42px] break-keep rounded-[6px] border border-[var(--border)] bg-[var(--violet-50)] px-2 py-1 text-xs font-semibold leading-5 text-[var(--violet-900)]">
+            <p className="line-clamp-2 h-[42px] break-keep px-1 py-1 text-xs font-medium leading-5 text-[var(--foreground)]">
               {compactSummary}
             </p>
           ) : null}
