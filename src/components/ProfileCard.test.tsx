@@ -35,11 +35,13 @@ const defaultProps = {
   profile,
   authorName: 'Aiden',
   isSelected: false,
+  isEditMode: false,
   onSelectChange: vi.fn(),
   onEdit: vi.fn(),
   onDelete: vi.fn(),
   onStatusChange: vi.fn(),
   onToggleStar: vi.fn(),
+  onOpenDetail: vi.fn(),
 };
 
 describe('ProfileCard', () => {
@@ -52,16 +54,15 @@ describe('ProfileCard', () => {
     vi.useRealTimers();
   });
 
-  it('shows age, height, and residence as regular information rows without a visible gender label', () => {
-    render(<ProfileCard {...defaultProps} />);
+  it('overlays birthYear/height and residence·job on the photo in the detailed variant', () => {
+    render(<ProfileCard {...defaultProps} variant="detailed" />);
 
-    expect(screen.queryByText('여성 29세')).not.toBeInTheDocument();
-    expect(screen.getByText('나이')).toBeInTheDocument();
-    expect(screen.getByText('98년생')).toBeInTheDocument();
-    expect(screen.getByText('키')).toBeInTheDocument();
-    expect(screen.getByText('164cm')).toBeInTheDocument();
-    expect(screen.getByText('사는 곳')).toBeInTheDocument();
-    expect(screen.getByText('서울 강남구')).toBeInTheDocument();
+    // 사진 위 오버레이: "98년생 / 164cm" 와 "서울 강남구 거주 · ..."
+    expect(screen.getByText('98년생 / 164cm')).toBeInTheDocument();
+    expect(screen.getByText(/서울 강남구 거주/)).toBeInTheDocument();
+    // 라벨식 정보표는 더 이상 없음
+    expect(screen.queryByText('나이')).not.toBeInTheDocument();
+    expect(screen.queryByText('사는 곳')).not.toBeInTheDocument();
   });
 
   it('uses activation data to disable deactivated profile selection', () => {
@@ -73,5 +74,77 @@ describe('ProfileCard', () => {
     );
 
     expect(screen.getByLabelText('98년생 매물 선택')).toBeDisabled();
+  });
+
+  it('does not show secondary info (MBTI) on the detailed card', () => {
+    render(<ProfileCard {...defaultProps} variant="detailed" />);
+
+    // 부가 정보는 카드에 없음 — 상세 모달에서만 확인
+    expect(screen.queryByText('MBTI')).not.toBeInTheDocument();
+    // 오버레이 핵심 정보는 존재
+    expect(screen.getByText('98년생 / 164cm')).toBeInTheDocument();
+  });
+
+  it('summarizes the compact variant as a single slash-separated line', () => {
+    render(<ProfileCard {...defaultProps} variant="compact" />);
+
+    // birthYear / height / residence / job joined on one line, no separate labels
+    expect(
+      screen.getByText(/98년생 \/ 164cm \/ 서울 강남구 \/ IBK \/ 을지로 \/ 금융/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('나이')).not.toBeInTheDocument();
+    expect(screen.queryByText('사는 곳')).not.toBeInTheDocument();
+
+    // secondary info is dropped to keep the card compact
+    expect(screen.queryByText('MBTI')).not.toBeInTheDocument();
+
+    // 선택 체크박스는 조회 모드에서도 유지
+    expect(screen.getByLabelText('98년생 매물 선택')).toBeInTheDocument();
+  });
+
+  it('hides edit/delete/status controls when not in edit mode', () => {
+    render(<ProfileCard {...defaultProps} isEditMode={false} />);
+
+    // 조회 모드: 관리 버튼 숨김
+    expect(screen.queryByLabelText('98년생 매물 수정')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('98년생 매물 삭제')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('98년생 매물 비활성화')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('98년생 매물 활성화')).not.toBeInTheDocument();
+
+    // 조회 모드에서도 유지되는 것: 선택 체크박스
+    expect(screen.getByLabelText('98년생 매물 선택')).toBeInTheDocument();
+  });
+
+  it('shows edit/delete/deactivate controls in edit mode', () => {
+    render(<ProfileCard {...defaultProps} isEditMode />);
+
+    expect(screen.getByLabelText('98년생 매물 수정')).toBeInTheDocument();
+    expect(screen.getByLabelText('98년생 매물 삭제')).toBeInTheDocument();
+    // active 프로필 → 상태 버튼은 '비활성화'
+    expect(screen.getByLabelText('98년생 매물 비활성화')).toBeInTheDocument();
+    expect(screen.queryByLabelText('98년생 매물 활성화')).not.toBeInTheDocument();
+  });
+
+  it('labels the status button 활성화 for a blocked profile in edit mode', () => {
+    render(
+      <ProfileCard
+        {...defaultProps}
+        isEditMode
+        profile={{...profile, isActivated: false, status: 'blocked'}}
+      />,
+    );
+
+    expect(screen.getByLabelText('98년생 매물 활성화')).toBeInTheDocument();
+    expect(screen.queryByLabelText('98년생 매물 비활성화')).not.toBeInTheDocument();
+  });
+
+  it('shows a match badge when there are ongoing matches', () => {
+    render(<ProfileCard {...defaultProps} ongoingMatchCount={2} />);
+    expect(screen.getByText(/매칭 2/)).toBeInTheDocument();
+  });
+
+  it('shows no match badge when count is zero', () => {
+    render(<ProfileCard {...defaultProps} ongoingMatchCount={0} />);
+    expect(screen.queryByText(/매칭/)).not.toBeInTheDocument();
   });
 });

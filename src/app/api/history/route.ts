@@ -6,20 +6,27 @@ import type {HistoryEventType} from '@/types/history';
 
 export const runtime = 'nodejs';
 
-export async function GET() {
-  const supabase = await createSupabaseServerClient();
+const PAGE_SIZE = 30;
 
+export async function GET(request: Request) {
+  const supabase = await createSupabaseServerClient();
+  const offset = Math.max(0, Number(new URL(request.url).searchParams.get('offset') ?? 0) || 0);
+
+  // PAGE_SIZE + 1개를 요청해 "더 있는지(hasMore)"를 판단한 뒤, 초과분은 잘라낸다.
   const {data, error} = await supabase
     .from('history_events')
     .select('*')
     .order('created_at', {ascending: false})
-    .limit(200);
+    .range(offset, offset + PAGE_SIZE);
 
   if (error) {
     return NextResponse.json({message: error.message}, {status: 500});
   }
 
-  return NextResponse.json({events: data.map(rowToHistoryEvent)});
+  const hasMore = data.length > PAGE_SIZE;
+  const events = data.slice(0, PAGE_SIZE).map(rowToHistoryEvent);
+
+  return NextResponse.json({events, hasMore});
 }
 
 export async function POST(request: Request) {

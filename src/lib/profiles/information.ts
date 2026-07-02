@@ -4,13 +4,20 @@ import type {Profile} from '@/types/profile';
 
 export type ProfileInformationRow = [label: string, value: string];
 
-export function getProfileInformationRows(profile: Profile): ProfileInformationRow[] {
-  const rows: ProfileInformationRow[] = [
+// 주요 정보 = 나이 / 키 / 사는 곳 / 회사. 카드에 표시되고 폼의 주요 섹션을 구성한다.
+export const PRIMARY_INFO_LABELS = ['나이', '키', '사는 곳', '회사'] as const;
+
+export function getPrimaryInformationRows(profile: Profile): ProfileInformationRow[] {
+  return [
     ['나이', formatBirthYearLabel(profile.birthYear)],
     ['키', `${profile.height}cm`],
     ['사는 곳', profile.residence],
     ['회사', profile.job],
   ];
+}
+
+export function getAdditionalInformationRows(profile: Profile): ProfileInformationRow[] {
+  const rows: ProfileInformationRow[] = [];
 
   if (profile.religion !== 'not_selected') rows.push(['종교', religionLabels[profile.religion]]);
 
@@ -34,4 +41,9 @@ export function getProfileInformationRows(profile: Profile): ProfileInformationR
   if (profile.extra) rows.push(['기타', profile.extra]);
 
   return rows;
+}
+
+// 주요 + 추가를 합친 전체 정보. 공개 상세페이지·상세 모달에서 사용.
+export function getProfileInformationRows(profile: Profile): ProfileInformationRow[] {
+  return [...getPrimaryInformationRows(profile), ...getAdditionalInformationRows(profile)];
 }

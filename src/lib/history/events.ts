@@ -21,6 +21,8 @@ export const historyEventLabels: Record<HistoryEventType, string> = {
   profile_activated: '매물 활성화',
   admin_created: '관리자 추가',
   admin_removed: '관리자 제거',
+  match_created: '매칭 연결',
+  match_ended: '매칭 종료',
 };
 
 export const historyEventDescriptions: Record<ProfileEventType, string> = {

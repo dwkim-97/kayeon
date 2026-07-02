@@ -38,6 +38,20 @@ const profileSearchText = (profile: Profile) =>
     .map(normalize)
     .join(' ');
 
+// 정렬 우선순위: 집착매물 → 활성(active) → 최신 등록순(created_at desc).
+// 집착매물은 누가 찍었든(starredByName이 있으면) 항상 맨 앞으로 온다.
+function compareProfiles(left: Profile, right: Profile) {
+  const leftStarred = left.starredByName ? 1 : 0;
+  const rightStarred = right.starredByName ? 1 : 0;
+  if (rightStarred !== leftStarred) return rightStarred - leftStarred;
+
+  // 2순위: 활성화 여부
+  if (left.isActivated !== right.isActivated) return Number(right.isActivated) - Number(left.isActivated);
+
+  // 3순위: 최신 등록순. created_at은 ISO 8601 문자열이라 사전식 비교로 시간순이 보장된다.
+  return right.createdAt.localeCompare(left.createdAt);
+}
+
 export function filterProfiles(profiles: Profile[], filters: ProfileFilters) {
   const queryTerms = normalize(filters.query).split(/\s+/).filter(Boolean);
   const birthYearValue = toFilterNumber(filters.birthYearValue);
@@ -55,12 +69,5 @@ export function filterProfiles(profiles: Profile[], filters: ProfileFilters) {
       const searchText = profileSearchText(profile);
       return queryTerms.every(term => searchText.includes(term));
     })
-    .sort((left, right) => {
-      // 1순위: 별표 있음
-      const leftStarred = left.starredByName ? 1 : 0;
-      const rightStarred = right.starredByName ? 1 : 0;
-      if (rightStarred !== leftStarred) return rightStarred - leftStarred;
-      // 2순위: 활성화 여부
-      return Number(right.isActivated) - Number(left.isActivated);
-    });
+    .sort((left, right) => compareProfiles(left, right));
 }

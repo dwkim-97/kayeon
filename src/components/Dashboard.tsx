@@ -1,20 +1,23 @@
 'use client';
 
-import {ChevronDown, ChevronUp, Plus, SlidersHorizontal, Users} from 'lucide-react';
+import {Check, ChevronDown, ChevronUp, Grid3x3, LayoutGrid, Pencil, Plus, SlidersHorizontal, Users} from 'lucide-react';
 import Link from 'next/link';
 import {useEffect, useMemo, useState} from 'react';
 
 import {AppHeader} from '@/components/AppHeader';
 import {closedAlertState, CustomAlert, type CustomAlertState} from '@/components/CustomAlert';
 import {FilterBar} from '@/components/FilterBar';
-import {ProfileCard} from '@/components/ProfileCard';
+import {ProfileCard, type ProfileCardVariant} from '@/components/ProfileCard';
+import {ProfileDetailModal} from '@/components/ProfileDetailModal';
 import {ProfileFormModal} from '@/components/ProfileFormModal';
 import {ShareButton} from '@/components/ShareButton';
 import {historyEventDescriptions, recordHistory} from '@/lib/history/events';
+import {countOngoingByProfile} from '@/lib/matches/summary';
 import {formatBirthYearLabel} from '@/lib/profiles/age';
 import {filterProfiles} from '@/lib/profiles/filter';
 import {genderLabels} from '@/lib/profiles/options';
 import type {Gender, Profile, ProfileFilters, ProfileStatus} from '@/types/profile';
+import type {Match} from '@/types/match';
 import type {ProfileEventType} from '@/types/history';
 
 type ModalState =
@@ -22,13 +25,19 @@ type ModalState =
   | {kind: 'create'}
   | {kind: 'edit'; profile: Profile};
 
+const VIEW_MODE_STORAGE_KEY = 'kayeon_view_mode';
+
+function isViewMode(value: unknown): value is ProfileCardVariant {
+  return value === 'detailed' || value === 'compact';
+}
+
 const defaultFilters = (gender: Gender): ProfileFilters => ({
   gender,
   birthYearValue: '',
   birthYearComparison: 'gte',
   heightValue: '',
   heightComparison: 'gte',
-  activeOnly: true,
+  activeOnly: false,
   religion: '',
   smoking: '',
   query: '',
@@ -142,6 +151,13 @@ export function Dashboard({authorName}: DashboardProps) {
   const [modal, setModal] = useState<ModalState>({kind: 'closed'});
   const [alertState, setAlertState] = useState<CustomAlertState>(closedAlertState);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [detailProfileId, setDetailProfileId] = useState<string | null>(null);
+  // 첫 렌더는 항상 기본값 'detailed'로 시작(SSR/hydration 안전). localStorage는 브라우저에만
+  // 존재하므로 mount 후 effect에서 읽어 반영한다 — 초기값에서 읽으면 서버 HTML과
+  // 불일치하여 hydration 경고가 발생한다. 저장된 이력이 없으면 'detailed'가 기본.
+  const [viewMode, setViewMode] = useState<ProfileCardVariant>('detailed');
 
   useEffect(() => {
     fetch('/api/profiles')
@@ -150,6 +166,31 @@ export function Dashboard({authorName}: DashboardProps) {
       .catch(() => setProfiles([]))
       .finally(() => setIsLoading(false));
   }, []);
+
+  useEffect(() => {
+    fetch('/api/matches')
+      .then(res => res.json())
+      .then(({matches: loaded}) => setMatches(loaded ?? []))
+      .catch(() => setMatches([]));
+  }, []);
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem(VIEW_MODE_STORAGE_KEY);
+    // hydration-safe: 마운트 후 저장된 선호 뷰를 반영. 이 패턴에 한해 룰을 예외 처리.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (isViewMode(stored)) setViewMode(stored);
+  }, []);
+
+  const ongoingCounts = useMemo(() => countOngoingByProfile(matches), [matches]);
+  const detailProfile = useMemo(
+    () => profiles.find(p => p.id === detailProfileId) ?? null,
+    [profiles, detailProfileId],
+  );
+
+  const changeViewMode = (mode: ProfileCardVariant) => {
+    setViewMode(mode);
+    window.localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode);
+  };
 
   const visibleProfiles = useMemo(() => filterProfiles(profiles, filters), [profiles, filters]);
   const activeVisibleProfiles = useMemo(
@@ -311,6 +352,55 @@ export function Dashboard({authorName}: DashboardProps) {
     }
   };
 
+  const handleCreateMatch = async (femaleId: string, maleId: string) => {
+    const res = await fetch('/api/matches', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({femaleId, maleId}),
+    });
+    if (!res.ok) {
+      const {message} = (await res.json()) as {message: string};
+      setAlertState({kind: 'alert', title: '매칭 실패', message});
+      return;
+    }
+    const {match} = (await res.json()) as {match: Match};
+    setMatches(current => [match, ...current]);
+
+    const female = profiles.find(p => p.id === femaleId);
+    const male = profiles.find(p => p.id === maleId);
+    if (female && male) {
+      recordHistory({
+        type: 'match_created',
+        actorName: authorName,
+        targetLabel: `${formatBirthYearLabel(female.birthYear)} ↔ ${formatBirthYearLabel(male.birthYear)}`,
+        description: '매칭을 연결했습니다.',
+      });
+    }
+  };
+
+  const handleEndMatch = async (matchId: string) => {
+    const res = await fetch(`/api/matches/${matchId}`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({status: 'ended'}),
+    });
+    if (!res.ok) return;
+    const {match} = (await res.json()) as {match: Match};
+    setMatches(current => current.map(m => (m.id === matchId ? match : m)));
+    recordHistory({
+      type: 'match_ended',
+      actorName: authorName,
+      targetLabel: '매칭',
+      description: '매칭을 종료했습니다.',
+    });
+  };
+
+  const handleDeleteMatch = async (matchId: string) => {
+    const res = await fetch(`/api/matches/${matchId}`, {method: 'DELETE'});
+    if (!res.ok) return;
+    setMatches(current => current.filter(m => m.id !== matchId));
+  };
+
   const requestDelete = (profile: Profile) => {
     setAlertState({
       kind: 'confirm',
@@ -364,8 +454,33 @@ export function Dashboard({authorName}: DashboardProps) {
               ))}
             </div>
 
+            {/* 뷰 전환 토글: 상세보기 / 작게보기 */}
+            <div className="ml-auto inline-flex rounded-[8px] border border-[var(--violet-200)] bg-white p-1">
+              {([
+                ['detailed', LayoutGrid, '상세보기'],
+                ['compact', Grid3x3, '작게보기'],
+              ] as const).map(([mode, Icon, label]) => (
+                <button
+                  key={mode}
+                  className={`inline-flex h-7 items-center gap-1 rounded-[6px] px-2.5 text-xs font-extrabold transition ${
+                    viewMode === mode
+                      ? 'bg-[var(--violet-600)] text-white'
+                      : 'text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
+                  }`}
+                  type="button"
+                  onClick={() => changeViewMode(mode)}
+                  aria-pressed={viewMode === mode}
+                  aria-label={label}
+                  title={label}
+                >
+                  <Icon size={14} aria-hidden />
+                  <span className="hidden sm:inline">{label}</span>
+                </button>
+              ))}
+            </div>
+
             <button
-              className={`ml-auto inline-flex h-9 items-center gap-1.5 rounded-[8px] border px-3 text-sm font-bold transition ${
+              className={`inline-flex h-9 items-center gap-1.5 rounded-[8px] border px-3 text-sm font-bold transition ${
                 isFilterOpen
                   ? 'border-[var(--violet-600)] bg-[var(--violet-600)] text-white'
                   : 'border-[var(--violet-200)] bg-white text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
@@ -377,6 +492,21 @@ export function Dashboard({authorName}: DashboardProps) {
               <SlidersHorizontal size={15} aria-hidden />
               필터
               {isFilterOpen ? <ChevronUp size={14} aria-hidden /> : <ChevronDown size={14} aria-hidden />}
+            </button>
+
+            {/* 편집 모드 토글: 켜면 각 카드에 수정/삭제/비활성화 버튼 노출 */}
+            <button
+              className={`inline-flex h-9 items-center gap-1.5 rounded-[8px] border px-3 text-sm font-bold transition ${
+                isEditMode
+                  ? 'border-[var(--violet-600)] bg-[var(--violet-600)] text-white'
+                  : 'border-[var(--violet-200)] bg-white text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
+              }`}
+              type="button"
+              onClick={() => setIsEditMode(v => !v)}
+              aria-pressed={isEditMode}
+            >
+              {isEditMode ? <Check size={15} aria-hidden /> : <Pencil size={15} aria-hidden />}
+              {isEditMode ? '편집 완료' : '편집'}
             </button>
           </div>
 
@@ -413,18 +543,28 @@ export function Dashboard({authorName}: DashboardProps) {
           {isLoading ? (
             <div className="py-12 text-center text-sm font-semibold text-slate-400">프로필을 불러오는 중...</div>
           ) : (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-5">
+            <div
+              className={
+                viewMode === 'compact'
+                  ? 'grid grid-cols-[repeat(auto-fill,minmax(min(50%,160px),1fr))] gap-3'
+                  : 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-5'
+              }
+            >
               {visibleProfiles.map(profile => (
                 <ProfileCard
                   key={profile.id}
                   profile={profile}
                   authorName={authorName}
+                  variant={viewMode}
+                  isEditMode={isEditMode}
                   isSelected={selectedIdsSet.has(profile.id)}
+                  ongoingMatchCount={ongoingCounts.get(profile.id) ?? 0}
                   onSelectChange={handleSelectChange}
                   onEdit={selectedProfile => setModal({kind: 'edit', profile: selectedProfile})}
                   onDelete={requestDelete}
                   onStatusChange={handleStatusChange}
                   onToggleStar={handleToggleStar}
+                  onOpenDetail={selectedProfile => setDetailProfileId(selectedProfile.id)}
                 />
               ))}
             </div>
@@ -455,6 +595,20 @@ export function Dashboard({authorName}: DashboardProps) {
           onClose={() => setModal({kind: 'closed'})}
           onCreate={handleCreate}
           onUpdate={handleUpdate}
+        />
+      ) : null}
+
+      {detailProfile ? (
+        <ProfileDetailModal
+          key={detailProfile.id}
+          profile={detailProfile}
+          matches={matches}
+          allProfiles={profiles}
+          onCreateMatch={handleCreateMatch}
+          onEndMatch={handleEndMatch}
+          onDeleteMatch={handleDeleteMatch}
+          onOpenProfile={pid => setDetailProfileId(pid)}
+          onClose={() => setDetailProfileId(null)}
         />
       ) : null}
       <CustomAlert state={alertState} onClose={() => setAlertState(closedAlertState)} />
