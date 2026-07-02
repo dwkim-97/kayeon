@@ -28,7 +28,7 @@
 ### 1. 뷰 상태 & 전환 토글 (Dashboard.tsx)
 
 - `viewMode: 'detailed' | 'compact'` state 추가.
-- 초기값은 `'detailed'`(SSR/hydration 안전). mount 후 `useEffect`에서 `localStorage.getItem('kayeon_view_mode')`를 읽어 반영.
+- 초기값(기본값)은 `'compact'`(SSR/hydration 안전). 저장된 이력이 없으면 작게보기로 시작한다. mount 후 `useEffect`에서 `localStorage.getItem('kayeon_view_mode')`를 읽어 저장된 선호가 있으면 반영.
 - 변경 시 `localStorage`에 저장 → 새로고침해도 유지.
 - 전환 토글: 상단 툴바(성별 토글 줄)의 우측, "필터" 버튼 옆에 세그먼트 버튼 2개.
   - 상세보기 = `LayoutGrid` 아이콘, 작게보기 = `Grid3x3` 아이콘 (lucide-react).
@@ -40,10 +40,10 @@
 
 `compact`일 때:
 - 사진 영역 aspect `4/5` → `1/1`(정사각).
-- 정보표: 상위 핵심 줄만 노출. `getProfileInformationRows()` 결과를 compact에서 `slice(0, 3)`로 제한(나이/키/사는곳 등 앞쪽 3줄). detailed는 전체.
-- 별 버튼·상태 토글·수정/삭제 버튼·선택 체크박스: 모두 유지, 크기만 축소.
-- 등록자 뱃지, 집착매물 뱃지: 유지(폰트·패딩 축소).
-- 사진 슬라이더 화살표: 유지, 크기 축소.
+- 정보: 라벨 나눈 행 대신 **한 줄 요약** — `년생 / 키 / 사는 곳 / 회사`를 ` / `로 이어붙임(빈 값 제외). detailed는 기존 라벨 행 방식 유지.
+- 별 버튼·상태 토글·수정/삭제 버튼·선택 체크박스: 모두 유지, compact에서 크기 축소(체크박스 h-8/w-8, 상태토글 h-6/w-11 등).
+- 등록자 뱃지, 집착매물 뱃지, 사진 카운터: 유지(폰트·패딩 축소).
+- 사진 슬라이더 화살표: compact에서 크기 축소, 배경 투명도 상향(`bg-white/85` → `bg-white/65`, 양쪽 뷰 공통).
 
 ### 3. 그리드 밀도 (Dashboard.tsx)
 

@@ -74,4 +74,31 @@ describe('ProfileCard', () => {
 
     expect(screen.getByLabelText('98년생 매물 선택')).toBeDisabled();
   });
+
+  it('renders all information rows in the detailed variant', () => {
+    render(<ProfileCard {...defaultProps} variant="detailed" />);
+
+    // detailed shows secondary rows such as MBTI in addition to the core rows
+    expect(screen.getByText('MBTI')).toBeInTheDocument();
+    expect(screen.getByText('ENFJ')).toBeInTheDocument();
+  });
+
+  it('summarizes the compact variant as a single slash-separated line', () => {
+    render(<ProfileCard {...defaultProps} variant="compact" />);
+
+    // birthYear / height / residence / job joined on one line, no separate labels
+    expect(
+      screen.getByText(/98년생 \/ 164cm \/ 서울 강남구 \/ IBK \/ 을지로 \/ 금융/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('나이')).not.toBeInTheDocument();
+    expect(screen.queryByText('사는 곳')).not.toBeInTheDocument();
+
+    // secondary info is dropped to keep the card compact
+    expect(screen.queryByText('MBTI')).not.toBeInTheDocument();
+
+    // interactive controls are still present in compact mode
+    expect(screen.getByLabelText('98년생 매물 선택')).toBeInTheDocument();
+    expect(screen.getByLabelText('98년생 매물 수정')).toBeInTheDocument();
+    expect(screen.getByLabelText('98년생 매물 삭제')).toBeInTheDocument();
+  });
 });

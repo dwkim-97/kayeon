@@ -1,13 +1,13 @@
 'use client';
 
-import {ChevronDown, ChevronUp, Plus, SlidersHorizontal, Users} from 'lucide-react';
+import {ChevronDown, ChevronUp, Grid3x3, LayoutGrid, Plus, SlidersHorizontal, Users} from 'lucide-react';
 import Link from 'next/link';
 import {useEffect, useMemo, useState} from 'react';
 
 import {AppHeader} from '@/components/AppHeader';
 import {closedAlertState, CustomAlert, type CustomAlertState} from '@/components/CustomAlert';
 import {FilterBar} from '@/components/FilterBar';
-import {ProfileCard} from '@/components/ProfileCard';
+import {ProfileCard, type ProfileCardVariant} from '@/components/ProfileCard';
 import {ProfileFormModal} from '@/components/ProfileFormModal';
 import {ShareButton} from '@/components/ShareButton';
 import {historyEventDescriptions, recordHistory} from '@/lib/history/events';
@@ -21,6 +21,12 @@ type ModalState =
   | {kind: 'closed'}
   | {kind: 'create'}
   | {kind: 'edit'; profile: Profile};
+
+const VIEW_MODE_STORAGE_KEY = 'kayeon_view_mode';
+
+function isViewMode(value: unknown): value is ProfileCardVariant {
+  return value === 'detailed' || value === 'compact';
+}
 
 const defaultFilters = (gender: Gender): ProfileFilters => ({
   gender,
@@ -142,6 +148,10 @@ export function Dashboard({authorName}: DashboardProps) {
   const [modal, setModal] = useState<ModalState>({kind: 'closed'});
   const [alertState, setAlertState] = useState<CustomAlertState>(closedAlertState);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  // 첫 렌더는 항상 기본값 'compact'로 시작(SSR/hydration 안전). localStorage는 브라우저에만
+  // 존재하므로 mount 후 effect에서 읽어 반영한다 — 초기값에서 읽으면 서버 HTML과
+  // 불일치하여 hydration 경고가 발생한다. 저장된 이력이 없으면 'compact'가 기본.
+  const [viewMode, setViewMode] = useState<ProfileCardVariant>('compact');
 
   useEffect(() => {
     fetch('/api/profiles')
@@ -150,6 +160,18 @@ export function Dashboard({authorName}: DashboardProps) {
       .catch(() => setProfiles([]))
       .finally(() => setIsLoading(false));
   }, []);
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem(VIEW_MODE_STORAGE_KEY);
+    // hydration-safe: 마운트 후 저장된 선호 뷰를 반영. 이 패턴에 한해 룰을 예외 처리.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (isViewMode(stored)) setViewMode(stored);
+  }, []);
+
+  const changeViewMode = (mode: ProfileCardVariant) => {
+    setViewMode(mode);
+    window.localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode);
+  };
 
   const visibleProfiles = useMemo(() => filterProfiles(profiles, filters), [profiles, filters]);
   const activeVisibleProfiles = useMemo(
@@ -364,8 +386,33 @@ export function Dashboard({authorName}: DashboardProps) {
               ))}
             </div>
 
+            {/* 뷰 전환 토글: 상세보기 / 작게보기 */}
+            <div className="ml-auto inline-flex rounded-[8px] border border-[var(--violet-200)] bg-white p-1">
+              {([
+                ['detailed', LayoutGrid, '상세보기'],
+                ['compact', Grid3x3, '작게보기'],
+              ] as const).map(([mode, Icon, label]) => (
+                <button
+                  key={mode}
+                  className={`inline-flex h-7 items-center gap-1 rounded-[6px] px-2.5 text-xs font-extrabold transition ${
+                    viewMode === mode
+                      ? 'bg-[var(--violet-600)] text-white'
+                      : 'text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
+                  }`}
+                  type="button"
+                  onClick={() => changeViewMode(mode)}
+                  aria-pressed={viewMode === mode}
+                  aria-label={label}
+                  title={label}
+                >
+                  <Icon size={14} aria-hidden />
+                  <span className="hidden sm:inline">{label}</span>
+                </button>
+              ))}
+            </div>
+
             <button
-              className={`ml-auto inline-flex h-9 items-center gap-1.5 rounded-[8px] border px-3 text-sm font-bold transition ${
+              className={`inline-flex h-9 items-center gap-1.5 rounded-[8px] border px-3 text-sm font-bold transition ${
                 isFilterOpen
                   ? 'border-[var(--violet-600)] bg-[var(--violet-600)] text-white'
                   : 'border-[var(--violet-200)] bg-white text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
@@ -413,12 +460,19 @@ export function Dashboard({authorName}: DashboardProps) {
           {isLoading ? (
             <div className="py-12 text-center text-sm font-semibold text-slate-400">프로필을 불러오는 중...</div>
           ) : (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-5">
+            <div
+              className={
+                viewMode === 'compact'
+                  ? 'grid grid-cols-[repeat(auto-fill,minmax(min(50%,160px),1fr))] gap-3'
+                  : 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-5'
+              }
+            >
               {visibleProfiles.map(profile => (
                 <ProfileCard
                   key={profile.id}
                   profile={profile}
                   authorName={authorName}
+                  variant={viewMode}
                   isSelected={selectedIdsSet.has(profile.id)}
                   onSelectChange={handleSelectChange}
                   onEdit={selectedProfile => setModal({kind: 'edit', profile: selectedProfile})}
