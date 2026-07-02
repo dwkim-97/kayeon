@@ -81,37 +81,39 @@ function profileLink(profileId: string, origin: string): KakaoLink {
 function buildTemplate(profiles: Profile[], origin: string): KakaoTemplate {
   const originLink: KakaoLink = {mobileWebUrl: origin, webUrl: origin};
 
-  // 1명: 사진 1장씩 list 항목 (최대 3장), 각 항목·버튼 클릭 시 상세 페이지로
+  // 1명: 사진 1장씩 list 항목 (최대 3장)
   if (profiles.length === 1) {
     const profile = profiles[0];
     const photos = profile.photos.slice(0, 3);
     const title = formatBirthYearLabel(profile.birthYear);
     const description = buildProfileDescription(profile);
     const detailLink = profileLink(profile.id, origin);
-    const buttons = [{title: '자세히 보기', link: detailLink}];
 
-    if (photos.length >= 2) {
-      return {
-        objectType: 'list',
-        headerTitle: title,
-        headerLink: detailLink,
-        contents: photos.map((photo, i) => ({
+    // list 템플릿은 2~3개 필요 — 사진 없거나 1장이면 더미 항목으로 채움
+    const contents: KakaoContent[] = photos.length > 0
+      ? photos.map((photo, i) => ({
           title: i === 0 ? title : `사진 ${i + 1}`,
           description: i === 0 ? description : '',
           imageUrl: photo.url,
           link: detailLink,
-        })),
-        buttons,
-      };
+        }))
+      : [{title, description, link: detailLink}];
+
+    // 항목이 1개면 동일 내용으로 하나 더 추가해 list 최소 조건(2개) 충족
+    if (contents.length === 1) {
+      contents.push({...contents[0], description: ''});
     }
 
-    // 사진 1장 또는 없음: feed
-    const feedContent: KakaoContent = {title, description, link: detailLink};
-    if (photos[0]) feedContent.imageUrl = photos[0].url;
-    return {objectType: 'feed', content: feedContent, buttons};
+    return {
+      objectType: 'list',
+      headerTitle: title,
+      headerLink: detailLink,
+      contents,
+      buttons: [{title: '자세히 보기', link: detailLink}],
+    };
   }
 
-  // 2~3명: 프로필별 항목, 각 항목 클릭 시 해당 프로필 상세 페이지로
+  // 2명 이상: 프로필별 항목 1개씩, 각 항목 클릭 시 해당 프로필 상세 페이지로
   return {
     objectType: 'list',
     headerTitle: `소개 풀 (${profiles.length}명)`,
