@@ -454,11 +454,11 @@ export function Dashboard({authorName}: DashboardProps) {
               ))}
             </div>
 
-            {/* 뷰 전환 토글: 작게보기 / 상세보기 */}
-            <div className="inline-flex rounded-[8px] border border-[var(--violet-200)] bg-white p-1">
+            {/* 뷰 전환 토글: 상세보기 / 작게보기 */}
+            <div className="ml-auto inline-flex rounded-[8px] border border-[var(--violet-200)] bg-white p-1">
               {([
-                ['compact', Grid3x3, '작게보기'],
                 ['detailed', LayoutGrid, '상세보기'],
+                ['compact', Grid3x3, '작게보기'],
               ] as const).map(([mode, Icon, label]) => (
                 <button
                   key={mode}
