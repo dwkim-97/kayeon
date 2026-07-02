@@ -5,6 +5,7 @@ import {PhotoSlider} from './PhotoSlider';
 import {getProfileInformationRows} from '@/lib/profiles/information';
 import {createSupabaseServerClient, getStoragePublicBase} from '@/lib/supabase/server';
 import {rowToProfile} from '@/lib/supabase/mappers';
+import {formatBirthYearLabel} from '@/lib/profiles/age';
 
 type PageProps = {params: Promise<{id: string}>};
 
@@ -26,32 +27,61 @@ export default async function ProfileDetailPage({params}: PageProps) {
   const {profile_photos: photoRows, ...row} = data;
   const profile = rowToProfile(row, photoRows ?? [], getStoragePublicBase());
   const informationRows = getProfileInformationRows(profile);
+  const birthYearLabel = formatBirthYearLabel(profile.birthYear);
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
-      <header className="border-b border-[var(--border)] bg-white px-4 py-4">
-        <div className="mx-auto max-w-2xl">
-          <Image src="/logo.png" alt="카연" width={80} height={28} priority />
-        </div>
+    <div className="flex h-screen flex-col bg-black md:flex-row">
+      {/* 헤더 — 사진 위에 absolute (모바일) / 좌측 상단 absolute (PC) */}
+      <header className="absolute left-0 right-0 top-0 z-30 px-5 py-4 md:right-auto md:w-[55%]">
+        <Image src="/logo.png" alt="카연" width={72} height={26} priority />
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 py-8">
-        <PhotoSlider photos={profile.photos} />
+      {/* 좌측(PC) / 상단(모바일): 사진 슬라이더 */}
+      <div className="relative flex-1 md:h-screen md:w-[55%] md:flex-none">
+        {/* 모바일: 화면 높이의 65% */}
+        <div className="relative h-[65vh] md:h-full">
+          <PhotoSlider photos={profile.photos} infoRows={informationRows} />
+        </div>
+      </div>
 
-        <ul className="mt-4 space-y-2">
+      {/* 우측(PC): 정보 패널 / 모바일: 숨김 (오버레이로 대체) */}
+      <div className="hidden md:flex md:h-screen md:w-[45%] md:flex-col md:overflow-y-auto md:bg-white">
+        <div className="flex flex-1 flex-col px-8 pb-10 pt-24">
+          <h1 className="text-3xl font-black text-[var(--violet-950)]">{birthYearLabel}</h1>
+
+          <ul className="mt-6 space-y-2">
+            {informationRows.map(([label, value]) => (
+              <li
+                key={label}
+                className="grid grid-cols-[96px_1fr] overflow-hidden rounded-[8px] border border-[var(--violet-100)] text-sm"
+              >
+                <span className="border-r border-[var(--violet-100)] bg-[var(--violet-50)] px-3 py-2.5 font-bold text-[var(--violet-900)]">
+                  {label}
+                </span>
+                <span className="break-keep px-3 py-2.5 leading-6 text-slate-700">{value}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* 모바일: 정보가 가려졌을 때 아래로 스크롤해서 볼 수 있는 영역 */}
+      <div className="bg-white px-5 pb-10 pt-5 md:hidden">
+        <h1 className="text-xl font-black text-[var(--violet-950)]">{birthYearLabel}</h1>
+        <ul className="mt-3 space-y-2">
           {informationRows.map(([label, value]) => (
             <li
               key={label}
-              className="grid grid-cols-[96px_1fr] overflow-hidden rounded-[8px] border border-[var(--violet-100)] text-sm"
+              className="grid grid-cols-[80px_1fr] overflow-hidden rounded-[8px] border border-[var(--violet-100)] text-sm"
             >
-              <span className="border-r border-[var(--violet-100)] bg-[var(--violet-50)] px-3 py-2.5 font-bold text-[var(--violet-900)]">
+              <span className="border-r border-[var(--violet-100)] bg-[var(--violet-50)] px-2.5 py-2 font-bold text-[var(--violet-900)]">
                 {label}
               </span>
-              <span className="break-keep px-3 py-2.5 leading-6 text-slate-700">{value}</span>
+              <span className="break-keep px-2.5 py-2 leading-6 text-slate-700">{value}</span>
             </li>
           ))}
         </ul>
-      </main>
+      </div>
     </div>
   );
 }
