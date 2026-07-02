@@ -442,7 +442,7 @@ export function Dashboard({authorName}: DashboardProps) {
             <div className="inline-flex shrink-0 rounded-[8px] border border-[var(--border)] bg-white p-0.5">
               {(['female', 'male'] as Gender[]).map(gender => (
                 <button
-                  className={`h-7 whitespace-nowrap rounded-[6px] px-3 text-xs font-semibold ${
+                  className={`h-6 whitespace-nowrap rounded-[6px] px-2.5 text-[11px] font-semibold ${
                     filters.gender === gender ? 'bg-[var(--violet-600)] text-white' : 'text-[var(--violet-900)]'
                   }`}
                   key={gender}
@@ -462,7 +462,7 @@ export function Dashboard({authorName}: DashboardProps) {
               ] as const).map(([mode, Icon, label]) => (
                 <button
                   key={mode}
-                  className={`inline-flex h-7 items-center gap-1 rounded-[6px] px-2.5 text-xs font-semibold transition ${
+                  className={`inline-flex h-6 items-center gap-1 rounded-[6px] px-2 text-[11px] font-semibold transition ${
                     viewMode === mode
                       ? 'bg-[var(--violet-600)] text-white'
                       : 'text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
@@ -473,14 +473,14 @@ export function Dashboard({authorName}: DashboardProps) {
                   aria-label={label}
                   title={label}
                 >
-                  <Icon size={14} strokeWidth={1.75} aria-hidden />
+                  <Icon size={13} strokeWidth={1.75} aria-hidden />
                   <span className="hidden sm:inline">{label}</span>
                 </button>
               ))}
             </div>
 
             <button
-              className={`inline-flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[8px] border px-2.5 text-xs font-semibold transition ${
+              className={`inline-flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-[8px] border px-2 text-[11px] font-semibold transition ${
                 isFilterOpen
                   ? 'border-[var(--violet-600)] bg-[var(--violet-600)] text-white'
                   : 'border-[var(--border)] bg-white text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
@@ -489,14 +489,14 @@ export function Dashboard({authorName}: DashboardProps) {
               onClick={() => setIsFilterOpen(v => !v)}
               aria-expanded={isFilterOpen}
             >
-              <SlidersHorizontal size={15} strokeWidth={1.75} aria-hidden />
+              <SlidersHorizontal size={13} strokeWidth={1.75} aria-hidden />
               필터
-              {isFilterOpen ? <ChevronUp size={14} strokeWidth={1.75} aria-hidden /> : <ChevronDown size={14} strokeWidth={1.75} aria-hidden />}
+              {isFilterOpen ? <ChevronUp size={13} strokeWidth={1.75} aria-hidden /> : <ChevronDown size={13} strokeWidth={1.75} aria-hidden />}
             </button>
 
             {/* 편집 모드 토글: 켜면 각 카드에 수정/삭제/비활성화 버튼 노출 */}
             <button
-              className={`inline-flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[8px] border px-2.5 text-xs font-semibold transition ${
+              className={`inline-flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-[8px] border px-2 text-[11px] font-semibold transition ${
                 isEditMode
                   ? 'border-[var(--violet-600)] bg-[var(--violet-600)] text-white'
                   : 'border-[var(--border)] bg-white text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
@@ -505,7 +505,7 @@ export function Dashboard({authorName}: DashboardProps) {
               onClick={() => setIsEditMode(v => !v)}
               aria-pressed={isEditMode}
             >
-              {isEditMode ? <Check size={15} strokeWidth={1.75} aria-hidden /> : <Pencil size={15} strokeWidth={1.75} aria-hidden />}
+              {isEditMode ? <Check size={13} strokeWidth={1.75} aria-hidden /> : <Pencil size={13} strokeWidth={1.75} aria-hidden />}
               {isEditMode ? '편집 완료' : '편집'}
             </button>
           </div>
