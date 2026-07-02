@@ -344,7 +344,7 @@ export function Dashboard({authorName}: DashboardProps) {
       ) : null}
       <AppHeader page="dashboard" />
 
-      <div className="mx-auto max-w-7xl px-4 py-6">
+      <div className="mx-auto max-w-7xl px-4 py-6 pb-24">
         <section className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div className="inline-flex w-full rounded-[8px] border border-[var(--violet-200)] bg-white p-1 sm:w-auto">
             {(['female', 'male'] as Gender[]).map(gender => (
@@ -361,17 +361,6 @@ export function Dashboard({authorName}: DashboardProps) {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center">
-            <ShareButton profiles={selectedProfiles} />
-            <button
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[var(--violet-950)] px-4 font-bold text-white transition hover:bg-[var(--violet-900)]"
-              type="button"
-              onClick={() => setModal({kind: 'create'})}
-            >
-              <Plus size={18} aria-hidden />
-              매물 추가
-            </button>
-          </div>
         </section>
 
         <FilterBar filters={filters} onChange={setFilters} onReset={resetFilters} />
@@ -415,6 +404,21 @@ export function Dashboard({authorName}: DashboardProps) {
           )}
         </section>
       </div>
+
+      {/* 좌측 하단 고정: 카카오톡 공유 */}
+      <div className="fixed bottom-4 left-4 z-30">
+        <ShareButton profiles={selectedProfiles} />
+      </div>
+
+      {/* 우측 하단 고정: 매물 추가 */}
+      <button
+        className="fixed bottom-4 right-4 z-30 inline-flex h-14 items-center justify-center gap-2 rounded-full bg-[var(--violet-950)] px-5 font-bold text-white shadow-[0_12px_30px_rgba(47,13,104,0.24)] transition hover:bg-[var(--violet-900)]"
+        type="button"
+        onClick={() => setModal({kind: 'create'})}
+      >
+        <Plus size={20} aria-hidden />
+        매물 추가
+      </button>
 
       {modal.kind !== 'closed' ? (
         <ProfileFormModal
