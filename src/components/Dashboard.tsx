@@ -38,7 +38,9 @@ type UploadedPhotoId = {tempId: string; id: string; url: string};
 
 async function apiUploadPhotos(profileId: string, photos: Profile['photos']): Promise<UploadedPhotoId[]> {
   const newPhotos = photos.filter(p => p.url.startsWith('data:'));
-  const retainedPhotoIds = photos.filter(p => !p.url.startsWith('data:')).map(p => p.id);
+  const retainedPhotos = photos
+    .filter(p => !p.url.startsWith('data:'))
+    .map(p => ({id: p.id, order: p.order}));
 
   let uploadedPhotoIds: UploadedPhotoId[] = [];
 
@@ -83,7 +85,7 @@ async function apiUploadPhotos(profileId: string, photos: Profile['photos']): Pr
           const photo = newPhotos.find(p => p.id === s.tempId)!;
           return {tempId: s.tempId, id: s.id, storagePath: s.storagePath, alt: photo.alt, order: photo.order};
         }),
-        retainedPhotoIds,
+        retainedPhotos,
       }),
     });
 
@@ -96,11 +98,11 @@ async function apiUploadPhotos(profileId: string, photos: Profile['photos']): Pr
       };
     });
   } else {
-    // No new photos, just update retained list
+    // No new photos — still send retainedPhotos to update sort_order
     await fetch(`/api/profiles/${profileId}/photos`, {
       method: 'PUT',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({newPhotos: [], retainedPhotoIds}),
+      body: JSON.stringify({newPhotos: [], retainedPhotos}),
     });
   }
 

@@ -121,7 +121,8 @@ export function ShareButton({profiles}: ShareButtonProps) {
   const handleClick = () => {
     if (profiles.length === 0) return;
 
-    if (!hasKakao || !window.Kakao?.Share) {
+    // SDK 로드 여부를 런타임에 확인 (빌드타임 env 여부와 무관)
+    if (!window.Kakao?.Share) {
       alert('카카오 공유 기능을 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
       return;
     }
@@ -135,12 +136,10 @@ export function ShareButton({profiles}: ShareButtonProps) {
 
   return (
     <>
-      {hasKakao ? (
-        <Script
-          src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.5/kakao.min.js"
-          strategy="afterInteractive"
-        />
-      ) : null}
+      <Script
+        src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.5/kakao.min.js"
+        strategy="afterInteractive"
+      />
 
       <button
         className="inline-flex h-11 items-center gap-2 rounded-[8px] bg-[var(--violet-600)] px-4 font-bold text-white shadow-[0_12px_30px_rgba(127,34,254,0.24)] transition hover:bg-[var(--violet-700)] disabled:bg-[var(--violet-200)]"

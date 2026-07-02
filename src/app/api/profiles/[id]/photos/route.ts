@@ -34,18 +34,20 @@ export async function POST(request: Request, {params}: RouteParams) {
 }
 
 // Step 2: client calls PUT after uploading files directly to storage
-// Body: {newPhotos: [{tempId, storagePath, alt, order}], retainedPhotoIds: string[]}
+// Body: {newPhotos: [{tempId, storagePath, alt, order}], retainedPhotos: [{id, order}]}
 export async function PUT(request: Request, {params}: RouteParams) {
   const {id: profileId} = await params;
   const supabase = await createSupabaseServerClient();
 
   const {
     newPhotos,
-    retainedPhotoIds,
+    retainedPhotos,
   }: {
     newPhotos: {tempId: string; id: string; storagePath: string; alt: string; order: number}[];
-    retainedPhotoIds: string[];
+    retainedPhotos: {id: string; order: number}[];
   } = await request.json();
+
+  const retainedIds = retainedPhotos.map(p => p.id);
 
   const {data: existingPhotos, error: fetchError} = await supabase
     .from('profile_photos')
@@ -56,7 +58,7 @@ export async function PUT(request: Request, {params}: RouteParams) {
     return NextResponse.json({message: fetchError.message}, {status: 500});
   }
 
-  const photosToDelete = (existingPhotos ?? []).filter(photo => !retainedPhotoIds.includes(photo.id));
+  const photosToDelete = (existingPhotos ?? []).filter(photo => !retainedIds.includes(photo.id));
 
   if (photosToDelete.length > 0) {
     const {error: storageError} = await supabase.storage
@@ -75,6 +77,19 @@ export async function PUT(request: Request, {params}: RouteParams) {
     if (deleteError) {
       return NextResponse.json({message: deleteError.message}, {status: 500});
     }
+  }
+
+  // Update sort_order for retained photos (handles reordering)
+  if (retainedPhotos.length > 0) {
+    await Promise.all(
+      retainedPhotos.map(({id, order}) =>
+        supabase
+          .from('profile_photos')
+          .update({sort_order: order})
+          .eq('id', id)
+          .eq('profile_id', profileId),
+      ),
+    );
   }
 
   if (newPhotos.length > 0) {
