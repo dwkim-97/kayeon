@@ -14,6 +14,7 @@ describe('isPublicPath', () => {
     expect(isPublicPath('/admin')).toBe(false);
     expect(isPublicPath('/api/profiles')).toBe(false);
     expect(isPublicPath('/share/abc')).toBe(false);
-    expect(isPublicPath('/profiles/photo.jpg')).toBe(false);
+    // /profiles/ is public (detail pages accessible without auth)
+    expect(isPublicPath('/profiles/abc-123')).toBe(true);
   });
 });

@@ -15,6 +15,7 @@ const profile: Profile = {
   status: 'active',
   isActivated: true,
   authorName: 'Aiden',
+  starredByName: null,
   residence: '서울 강남구',
   birthYear: 1998,
   height: 164,

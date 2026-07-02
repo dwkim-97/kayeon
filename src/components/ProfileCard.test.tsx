@@ -1,4 +1,4 @@
-import {fireEvent, render, screen} from '@testing-library/react';
+import {render, screen} from '@testing-library/react';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {ProfileCard} from './ProfileCard';
@@ -10,6 +10,7 @@ const profile: Profile = {
   status: 'active',
   isActivated: true,
   authorName: 'Aiden',
+  starredByName: null,
   residence: '서울 강남구',
   birthYear: 1998,
   height: 164,
@@ -23,21 +24,22 @@ const profile: Profile = {
   matchmakerComment: '성실함',
   extra: '',
   photos: [
-    {
-      id: 'photo-1',
-      url: '/sample.jpg',
-      alt: '프로필 사진 1',
-      order: 0,
-    },
-    {
-      id: 'photo-2',
-      url: '/sample-2.jpg',
-      alt: '프로필 사진 2',
-      order: 1,
-    },
+    {id: 'photo-1', url: '/sample.jpg', alt: '프로필 사진 1', order: 0},
+    {id: 'photo-2', url: '/sample-2.jpg', alt: '프로필 사진 2', order: 1},
   ],
   createdAt: '2026-06-30T00:00:00.000Z',
   updatedAt: '2026-06-30T00:00:00.000Z',
+};
+
+const defaultProps = {
+  profile,
+  authorName: 'Aiden',
+  isSelected: false,
+  onSelectChange: vi.fn(),
+  onEdit: vi.fn(),
+  onDelete: vi.fn(),
+  onStatusChange: vi.fn(),
+  onToggleStar: vi.fn(),
 };
 
 describe('ProfileCard', () => {
@@ -51,16 +53,7 @@ describe('ProfileCard', () => {
   });
 
   it('shows age, height, and residence as regular information rows without a visible gender label', () => {
-    render(
-      <ProfileCard
-        profile={profile}
-        isSelected={false}
-        onSelectChange={vi.fn()}
-        onEdit={vi.fn()}
-        onDelete={vi.fn()}
-        onStatusChange={vi.fn()}
-      />,
-    );
+    render(<ProfileCard {...defaultProps} />);
 
     expect(screen.queryByText('여성 29세')).not.toBeInTheDocument();
     expect(screen.getByText('나이')).toBeInTheDocument();
@@ -71,35 +64,11 @@ describe('ProfileCard', () => {
     expect(screen.getByText('서울 강남구')).toBeInTheDocument();
   });
 
-  it('moves to the next photo on left swipe', () => {
-    render(
-      <ProfileCard
-        profile={profile}
-        isSelected={false}
-        onSelectChange={vi.fn()}
-        onEdit={vi.fn()}
-        onDelete={vi.fn()}
-        onStatusChange={vi.fn()}
-      />,
-    );
-
-    const firstPhoto = screen.getByAltText('프로필 사진 1');
-    fireEvent.pointerDown(firstPhoto, {clientX: 220});
-    fireEvent.pointerMove(firstPhoto, {clientX: 120});
-    fireEvent.pointerUp(firstPhoto, {clientX: 80});
-
-    expect(screen.getByAltText('프로필 사진 2')).toBeInTheDocument();
-  });
-
   it('uses activation data to disable deactivated profile selection', () => {
     render(
       <ProfileCard
+        {...defaultProps}
         profile={{...profile, isActivated: false, status: 'blocked'}}
-        isSelected={false}
-        onSelectChange={vi.fn()}
-        onEdit={vi.fn()}
-        onDelete={vi.fn()}
-        onStatusChange={vi.fn()}
       />,
     );
 

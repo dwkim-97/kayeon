@@ -208,6 +208,7 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
           status: 'active',
           isActivated: true,
           authorName,
+          starredByName: null,
           createdAt: now,
           updatedAt: now,
           ...normalized,

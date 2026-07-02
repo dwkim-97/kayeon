@@ -49,6 +49,7 @@ function normalizeStoredProfile(profile: Record<string, unknown>, index: number)
     status: isActivated ? 'active' : 'blocked',
     isActivated,
     authorName: stringField(profile, 'authorName', '미입력'),
+    starredByName: nullableStringField(profile, 'starredByName'),
     residence: stringField(profile, 'residence', '미입력'),
     birthYear: birthYearField(profile),
     height: numberField(profile, 'height', 0),
@@ -126,6 +127,11 @@ function photoField(profile: Record<string, unknown>, key: string) {
       },
     ];
   });
+}
+
+function nullableStringField(record: Record<string, unknown>, key: string): string | null {
+  const value = record[key];
+  return typeof value === 'string' ? value.trim() || null : null;
 }
 
 function stringField(record: Record<string, unknown>, key: string, fallback: string) {

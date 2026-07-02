@@ -55,5 +55,12 @@ export function filterProfiles(profiles: Profile[], filters: ProfileFilters) {
       const searchText = profileSearchText(profile);
       return queryTerms.every(term => searchText.includes(term));
     })
-    .sort((left, right) => Number(right.isActivated) - Number(left.isActivated));
+    .sort((left, right) => {
+      // 1순위: 별표 있음
+      const leftStarred = left.starredByName ? 1 : 0;
+      const rightStarred = right.starredByName ? 1 : 0;
+      if (rightStarred !== leftStarred) return rightStarred - leftStarred;
+      // 2순위: 활성화 여부
+      return Number(right.isActivated) - Number(left.isActivated);
+    });
 }

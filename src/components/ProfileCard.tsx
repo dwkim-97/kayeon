@@ -12,20 +12,73 @@ import type {Profile} from '@/types/profile';
 
 type ProfileCardProps = {
   profile: Profile;
+  authorName: string;
   isSelected: boolean;
   onSelectChange: (profileId: string, selected: boolean) => void;
   onEdit: (profile: Profile) => void;
   onDelete: (profile: Profile) => void;
   onStatusChange: (profileId: string, status: Profile['status']) => void;
+  onToggleStar: (profile: Profile) => void;
 };
+
+function StarButton({
+  profile,
+  authorName,
+  onClick,
+}: {
+  profile: Profile;
+  authorName: string;
+  onClick: () => void;
+}) {
+  const {starredByName} = profile;
+  const isMystar = starredByName === authorName;
+  const isOtherStar = !!starredByName && !isMystar;
+
+  if (isOtherStar) {
+    return (
+      <button
+        className="absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-full bg-white/90 px-2 py-1 shadow-sm"
+        type="button"
+        disabled
+        title={`${starredByName}님의 집착매물`}
+        aria-label="다른 사람이 지정한 집착매물"
+      >
+        <StarIcon filled color="gray" />
+      </button>
+    );
+  }
+
+  return (
+    <button
+      className="absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-full bg-white/90 px-2 py-1 shadow-sm transition hover:scale-110"
+      type="button"
+      onClick={onClick}
+      aria-label={isMystar ? '집착매물 해제' : '집착매물 지정'}
+    >
+      <StarIcon filled={isMystar} color={isMystar ? 'yellow' : 'gray'} />
+    </button>
+  );
+}
+
+function StarIcon({filled, color}: {filled: boolean; color: 'yellow' | 'gray'}) {
+  const fill = filled ? (color === 'yellow' ? '#FBBF24' : '#9CA3AF') : 'none';
+  const stroke = color === 'yellow' ? '#F59E0B' : '#9CA3AF';
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={fill} stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  );
+}
 
 export function ProfileCard({
   profile,
+  authorName,
   isSelected,
   onSelectChange,
   onEdit,
   onDelete,
   onStatusChange,
+  onToggleStar,
 }: ProfileCardProps) {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -62,10 +115,25 @@ export function ProfileCard({
       >
         {isBlocked ? <div className="absolute inset-0 z-10 bg-slate-200/65" aria-hidden /> : null}
 
+        {/* 좌측 상단: 등록자 */}
         <div className="absolute left-3 top-3 z-20 rounded-full bg-white/92 px-3 py-1 text-xs font-bold text-[var(--violet-800)] shadow-sm">
           {profile.authorName}
         </div>
 
+        {/* 중앙 상단: 집착매물 뱃지 or 별 버튼 */}
+        {profile.starredByName ? (
+          <div className="absolute left-1/2 top-3 z-20 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-yellow-400/90 px-2.5 py-1 text-xs font-black text-yellow-900 shadow-sm">
+            ⭐️ {profile.starredByName}의 집착매물 ⭐️
+          </div>
+        ) : null}
+
+        <StarButton
+          profile={profile}
+          authorName={authorName}
+          onClick={() => onToggleStar(profile)}
+        />
+
+        {/* 우측 상단: 상태 토글 */}
         <button
           className={`absolute right-3 top-3 z-30 h-8 w-14 rounded-full p-1 transition ${
             isBlocked ? 'bg-slate-300' : 'bg-[var(--violet-600)]'
@@ -94,7 +162,6 @@ export function ProfileCard({
                   style={{opacity: i === photoIndex ? 1 : 0}}
                 />
               ))}
-              {/* 이미지 클릭 → 라이트박스 */}
               <button
                 className="absolute inset-0 z-10 cursor-zoom-in"
                 type="button"

@@ -18,6 +18,7 @@ export type Profile = {
   status: ProfileStatus;
   isActivated: boolean;
   authorName: string;
+  starredByName: string | null;
   residence: string;
   birthYear: number;
   height: number;

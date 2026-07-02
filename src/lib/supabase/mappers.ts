@@ -23,6 +23,7 @@ export function rowToProfile(row: ProfileRow, photoRows: ProfilePhotoRow[], publ
     status: row.status,
     isActivated: row.status === 'active',
     authorName: row.author_name,
+    starredByName: row.starred_by_name ?? null,
     residence: row.residence,
     birthYear: row.birth_year,
     height: row.height,
@@ -95,6 +96,7 @@ const profileFieldMap: [keyof UpdatableProfile, keyof UpdateRow][] = [
   ['idealType', 'ideal_type'],
   ['matchmakerComment', 'matchmaker_comment'],
   ['extra', 'extra'],
+  ['starredByName', 'starred_by_name'],
 ];
 
 export function profileToUpdateRow(profile: UpdatableProfile): UpdateRow {

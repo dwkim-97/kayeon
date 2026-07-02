@@ -252,6 +252,40 @@ export function Dashboard({authorName}: DashboardProps) {
     }
   };
 
+  const handleToggleStar = async (profile: Profile) => {
+    const isMyStar = profile.starredByName === authorName;
+
+    if (!isMyStar) {
+      // 추가 전 client-side 한도 체크
+      const starredSameGender = profiles.filter(
+        p => p.starredByName === authorName && p.gender === profile.gender,
+      );
+      if (starredSameGender.length >= 2) {
+        setAlertState({
+          kind: 'alert',
+          title: '집착매물 한도 초과',
+          message: `${profile.gender === 'female' ? '여성' : '남성'} 매물은 최대 2명까지 집착매물로 지정할 수 있습니다.`,
+        });
+        return;
+      }
+    }
+
+    setIsMutating(true);
+    try {
+      const method = isMyStar ? 'DELETE' : 'POST';
+      const res = await fetch(`/api/profiles/${profile.id}/star`, {method});
+      if (!res.ok) {
+        const {message} = (await res.json()) as {message: string};
+        setAlertState({kind: 'alert', title: '오류', message});
+        return;
+      }
+      const {profile: updated} = (await res.json()) as {profile: Profile};
+      setProfiles(current => current.map(p => (p.id === profile.id ? updated : p)));
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
   const requestDelete = (profile: Profile) => {
     setAlertState({
       kind: 'confirm',
@@ -344,11 +378,13 @@ export function Dashboard({authorName}: DashboardProps) {
                 <ProfileCard
                   key={profile.id}
                   profile={profile}
+                  authorName={authorName}
                   isSelected={selectedIdsSet.has(profile.id)}
                   onSelectChange={handleSelectChange}
                   onEdit={selectedProfile => setModal({kind: 'edit', profile: selectedProfile})}
                   onDelete={requestDelete}
                   onStatusChange={handleStatusChange}
+                  onToggleStar={handleToggleStar}
                 />
               ))}
             </div>
