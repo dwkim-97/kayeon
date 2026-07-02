@@ -122,4 +122,38 @@ describe('filterProfiles', () => {
     const result = filterProfiles([deactivatedProfile, baseProfile], {...noFilter, gender: 'female'});
     expect(result.map(p => p.id)).toEqual(['profile-1', 'profile-2']);
   });
+
+  it('sorts by newest createdAt within the same active/starred group', () => {
+    const older: Profile = {...baseProfile, id: 'older', createdAt: '2026-06-01T00:00:00.000Z'};
+    const newer: Profile = {...baseProfile, id: 'newer', createdAt: '2026-06-30T00:00:00.000Z'};
+    const result = filterProfiles([older, newer], {...noFilter, gender: 'female'});
+    expect(result.map(p => p.id)).toEqual(['newer', 'older']);
+  });
+
+  it('places a starred profile first, even when older or deactivated', () => {
+    const newestActive: Profile = {...baseProfile, id: 'newest', createdAt: '2026-07-02T00:00:00.000Z'};
+    const oldStar: Profile = {
+      ...baseProfile,
+      id: 'star',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      isActivated: false,
+      status: 'blocked',
+      starredByName: 'Aiden',
+    };
+    const result = filterProfiles([newestActive, oldStar], {...noFilter, gender: 'female'});
+    expect(result.map(p => p.id)).toEqual(['star', 'newest']);
+  });
+
+  it('prioritizes any starred profile regardless of who starred it', () => {
+    const newest: Profile = {...baseProfile, id: 'newest', createdAt: '2026-07-02T00:00:00.000Z'};
+    const otherStar: Profile = {
+      ...baseProfile,
+      id: 'other-star',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      starredByName: 'Joy',
+    };
+    // Joy가 찍은 별이지만 집착매물은 누가 찍었든 앞으로 온다
+    const result = filterProfiles([newest, otherStar], {...noFilter, gender: 'female'});
+    expect(result.map(p => p.id)).toEqual(['other-star', 'newest']);
+  });
 });

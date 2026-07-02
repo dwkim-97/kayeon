@@ -356,103 +356,116 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <RadioGroup<Gender>
-                label="성별"
-                required={true}
-                value={values.gender}
-                options={genderOptions}
-                onChange={value => updateField('gender', value)}
-              />
-              <TextField
-                label="사는 곳"
-                required={true}
-                type="text"
-                placeholder="서울 강남구"
-                value={values.residence}
-                onChange={value => updateField('residence', value)}
-              />
-              <SelectField
-                label="년생"
-                required={true}
-                value={values.birthYear}
-                options={birthYearOptions}
-                onChange={value => updateField('birthYear', value)}
-              />
-              <TextField
-                label="키"
-                required={true}
-                type="number"
-                placeholder="164"
-                value={values.height}
-                onChange={value => updateField('height', value)}
-              />
-              <TextField
-                label="회사명/위치/업종"
-                required={true}
-                type="text"
-                placeholder="카카오 / 판교 / IT"
-                value={values.job}
-                onChange={value => updateField('job', value)}
-              />
-              <RadioGroup<Religion>
-                label="종교"
-                required={false}
-                value={values.religion}
-                options={religionOptions.map(value => [value, religionLabels[value]])}
-                onChange={value => updateField('religion', value)}
-              />
-              <TextField
-                label="MBTI"
-                required={false}
-                type="text"
-                placeholder="ENFJ"
-                value={values.mbti}
-                onChange={value => updateField('mbti', value.toUpperCase())}
-              />
-              <TextField
-                label="취미"
-                required={false}
-                type="text"
-                placeholder="독서, 러닝"
-                value={values.hobbies}
-                onChange={value => updateField('hobbies', value)}
-              />
-              <RadioGroup<Smoking>
-                label="흡연"
-                required={false}
-                value={values.smoking}
-                options={smokingOptions.map(value => [value, smokingLabels[value]])}
-                onChange={value => updateField('smoking', value)}
-              />
-              <RadioGroup<Drinking>
-                label="음주"
-                required={false}
-                value={values.drinking}
-                options={drinkingOptions.map(value => [value, drinkingLabels[value]])}
-                onChange={value => updateField('drinking', value)}
-              />
-              <TextArea
-                label="이상형"
-                required={false}
-                placeholder="다정한 사람, 대화가 잘 통하는 사람"
-                value={values.idealType}
-                onChange={value => updateField('idealType', value)}
-              />
-              <TextArea
-                label="주선자 코멘트"
-                required={false}
-                placeholder="예의 있음, 일정 조율 빠름"
-                value={values.matchmakerComment}
-                onChange={value => updateField('matchmakerComment', value)}
-              />
-              <TextArea
-                label="기타"
-                required={false}
-                placeholder="해외 거주 경험"
-                value={values.extra}
-                onChange={value => updateField('extra', value)}
-              />
+            <div className="space-y-5">
+              {/* 주요 정보: 카드/목록에 노출되는 핵심 항목 */}
+              <fieldset className="rounded-[10px] border border-[var(--violet-200)] p-4">
+                <legend className="px-2 text-sm font-extrabold text-[var(--violet-700)]">주요 정보</legend>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <RadioGroup<Gender>
+                    label="성별"
+                    required={true}
+                    value={values.gender}
+                    options={genderOptions}
+                    onChange={value => updateField('gender', value)}
+                  />
+                  <SelectField
+                    label="년생"
+                    required={true}
+                    value={values.birthYear}
+                    options={birthYearOptions}
+                    onChange={value => updateField('birthYear', value)}
+                  />
+                  <TextField
+                    label="키"
+                    required={true}
+                    type="number"
+                    placeholder="164"
+                    value={values.height}
+                    onChange={value => updateField('height', value)}
+                  />
+                  <TextField
+                    label="사는 곳"
+                    required={true}
+                    type="text"
+                    placeholder="서울 강남구"
+                    value={values.residence}
+                    onChange={value => updateField('residence', value)}
+                  />
+                  <TextField
+                    label="회사명/위치/업종"
+                    required={true}
+                    type="text"
+                    placeholder="카카오 / 판교 / IT"
+                    value={values.job}
+                    onChange={value => updateField('job', value)}
+                  />
+                </div>
+              </fieldset>
+
+              {/* 추가 정보: 상세 모달에서만 노출되는 부가 항목 */}
+              <fieldset className="rounded-[10px] border border-[var(--border)] p-4">
+                <legend className="px-2 text-sm font-extrabold text-slate-500">추가 정보</legend>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <RadioGroup<Religion>
+                    label="종교"
+                    required={false}
+                    value={values.religion}
+                    options={religionOptions.map(value => [value, religionLabels[value]])}
+                    onChange={value => updateField('religion', value)}
+                  />
+                  <TextField
+                    label="MBTI"
+                    required={false}
+                    type="text"
+                    placeholder="ENFJ"
+                    value={values.mbti}
+                    onChange={value => updateField('mbti', value.toUpperCase())}
+                  />
+                  <TextField
+                    label="취미"
+                    required={false}
+                    type="text"
+                    placeholder="독서, 러닝"
+                    value={values.hobbies}
+                    onChange={value => updateField('hobbies', value)}
+                  />
+                  <RadioGroup<Smoking>
+                    label="흡연"
+                    required={false}
+                    value={values.smoking}
+                    options={smokingOptions.map(value => [value, smokingLabels[value]])}
+                    onChange={value => updateField('smoking', value)}
+                  />
+                  <RadioGroup<Drinking>
+                    label="음주"
+                    required={false}
+                    value={values.drinking}
+                    options={drinkingOptions.map(value => [value, drinkingLabels[value]])}
+                    onChange={value => updateField('drinking', value)}
+                  />
+                  <TextArea
+                    label="이상형"
+                    required={false}
+                    placeholder="다정한 사람, 대화가 잘 통하는 사람"
+                    value={values.idealType}
+                    onChange={value => updateField('idealType', value)}
+                  />
+                  <TextArea
+                    label="주선자 코멘트"
+                    required={false}
+                    placeholder="예의 있음, 일정 조율 빠름"
+                    value={values.matchmakerComment}
+                    onChange={value => updateField('matchmakerComment', value)}
+                  />
+                  <TextArea
+                    label="기타"
+                    required={false}
+                    placeholder="해외 거주 경험"
+                    value={values.extra}
+                    onChange={value => updateField('extra', value)}
+                  />
+                </div>
+              </fieldset>
             </div>
           </div>
 
