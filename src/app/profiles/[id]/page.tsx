@@ -38,8 +38,7 @@ export default async function ProfileDetailPage({params}: PageProps) {
 
       {/* 좌측(PC) / 상단(모바일): 사진 슬라이더 */}
       <div className="relative flex-1 md:h-screen md:w-[55%] md:flex-none">
-        {/* 모바일: 화면 높이의 65% */}
-        <div className="relative h-[65vh] md:h-full">
+        <div className="relative h-screen md:h-full">
           <PhotoSlider photos={profile.photos} infoRows={informationRows} />
         </div>
       </div>
@@ -65,23 +64,6 @@ export default async function ProfileDetailPage({params}: PageProps) {
         </div>
       </div>
 
-      {/* 모바일: 정보가 가려졌을 때 아래로 스크롤해서 볼 수 있는 영역 */}
-      <div className="bg-white px-5 pb-10 pt-5 md:hidden">
-        <h1 className="text-xl font-black text-[var(--violet-950)]">{birthYearLabel}</h1>
-        <ul className="mt-3 space-y-2">
-          {informationRows.map(([label, value]) => (
-            <li
-              key={label}
-              className="grid grid-cols-[80px_1fr] overflow-hidden rounded-[8px] border border-[var(--violet-100)] text-sm"
-            >
-              <span className="border-r border-[var(--violet-100)] bg-[var(--violet-50)] px-2.5 py-2 font-bold text-[var(--violet-900)]">
-                {label}
-              </span>
-              <span className="break-keep px-2.5 py-2 leading-6 text-slate-700">{value}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
     </div>
   );
 }
