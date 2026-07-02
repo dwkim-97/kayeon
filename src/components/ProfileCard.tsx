@@ -117,9 +117,11 @@ export function ProfileCard({
       ) : null}
 
       <div
-        className={`relative overflow-hidden rounded-[8px] border border-[var(--border)] bg-white shadow-[0_18px_45px_rgba(47,13,104,0.10)] transition ${
-          isBlocked ? 'grayscale' : ''
-        }`}
+        className={`relative overflow-hidden rounded-[8px] bg-white shadow-[0_18px_45px_rgba(47,13,104,0.10)] transition ${
+          !isBlocked && isSelected
+            ? 'border-4 border-[var(--violet-600)]'
+            : 'border border-[var(--border)]'
+        } ${isBlocked ? 'grayscale' : ''}`}
       >
         {isBlocked ? <div className="absolute inset-0 z-10 bg-slate-200/65" aria-hidden /> : null}
 
