@@ -3,14 +3,15 @@ import {notFound} from 'next/navigation';
 
 import {PhotoSlider} from './PhotoSlider';
 import {getProfileInformationRows} from '@/lib/profiles/information';
-import {createSupabasePublicClient, getStoragePublicBase} from '@/lib/supabase/server';
+import {createSupabaseAdminClient} from '@/lib/supabase/admin';
+import {getStoragePublicBase} from '@/lib/supabase/server';
 import {rowToProfile} from '@/lib/supabase/mappers';
 
 type PageProps = {params: Promise<{id: string}>};
 
 export default async function ProfileDetailPage({params}: PageProps) {
   const {id} = await params;
-  const supabase = createSupabasePublicClient();
+  const supabase = createSupabaseAdminClient();
 
   const {data, error} = await supabase
     .from('profiles')
