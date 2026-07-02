@@ -161,13 +161,8 @@ export function ShareButton({profiles}: ShareButtonProps) {
   const shareGroup = (group: Profile[]) => {
     initKakao();
     const template = buildTemplate(group, window.location.origin);
-    try {
-      window.Kakao.Share.sendDefault(template);
-    } catch {
-      // PC 환경 등 앱 미설치 시 웹 공유 URL로 fallback
-      const url = window.Kakao.Share.createDefaultUrl(template);
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
+    const url = window.Kakao.Share.createDefaultUrl(template);
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const handleClick = () => {
