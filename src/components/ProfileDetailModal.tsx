@@ -7,7 +7,7 @@ import {PhotoSlider} from '@/app/profiles/[id]/PhotoSlider';
 import {useBodyScrollLock} from '@/hooks/useBodyScrollLock';
 import {formatBirthYearLabel} from '@/lib/profiles/age';
 import {getMatchCandidates, getProfileMatches} from '@/lib/matches/summary';
-import {getAdditionalInformationRows} from '@/lib/profiles/information';
+import {getProfileInformationRows} from '@/lib/profiles/information';
 import {genderLabels} from '@/lib/profiles/options';
 import type {Match} from '@/types/match';
 import type {Profile} from '@/types/profile';
@@ -34,10 +34,10 @@ export function ProfileDetailModal({
   onClose,
 }: ProfileDetailModalProps) {
   const [showCandidates, setShowCandidates] = useState(false);
+  const informationRows = getProfileInformationRows(profile);
   const title = `${genderLabels[profile.gender]} · ${formatBirthYearLabel(profile.birthYear)}`;
   const profileMatches = getProfileMatches(profile.id, matches);
   const candidates = getMatchCandidates(profile, allProfiles);
-  const additionalRows = getAdditionalInformationRows(profile);
 
   useBodyScrollLock(true);
 
@@ -68,33 +68,21 @@ export function ProfileDetailModal({
         className="flex h-full w-full max-w-4xl flex-col overflow-hidden bg-white shadow-2xl sm:h-[90vh] sm:rounded-[12px] md:flex-row"
         onClick={event => event.stopPropagation()}
       >
-        {/* 좌측(PC) / 상단(모바일): 사진 + 정보 오버레이 */}
-        <div className="relative h-[52vh] w-full shrink-0 bg-black sm:h-[58vh] md:h-full md:w-[58%]">
+        {/* 좌측(PC) / 상단(모바일): 사진 슬라이더 */}
+        <div className="relative h-[45vh] w-full shrink-0 bg-black sm:h-[52vh] md:h-full md:w-[55%]">
+          {/* infoRows는 우측 패널에서 보여주므로 슬라이더 내부 오버레이는 비운다 */}
           <PhotoSlider photos={profile.photos} infoRows={[]} />
 
-          {/* 상단 우측: 주선자(등록자) */}
-          <div className="pointer-events-none absolute right-4 top-4 z-30 rounded-full bg-black/45 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">
-            주선자 · {profile.authorName}
-          </div>
-
-          {/* 하단: 그라데이션 + 핵심 정보 오버레이 */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-5 pb-6 pt-24">
-            <p className="text-2xl font-black leading-tight text-white drop-shadow">
-              {formatBirthYearLabel(profile.birthYear)} / {profile.height}cm
-            </p>
-            <p className="mt-1 break-keep text-base font-semibold text-white/90 drop-shadow">
-              {profile.residence} 거주 · {profile.job}
-            </p>
-            {profile.starredByName ? (
-              <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-yellow-400/95 px-2.5 py-1 text-xs font-black text-yellow-900">
-                ⭐️ {profile.starredByName}의 집착매물
-              </span>
-            ) : null}
-          </div>
+          {/* 하단 우측: 집착매물 뱃지 */}
+          {profile.starredByName ? (
+            <div className="pointer-events-none absolute bottom-4 right-4 z-30 flex items-center gap-1 whitespace-nowrap rounded-full bg-yellow-400/95 px-3 py-1.5 text-xs font-black text-yellow-900 shadow-md">
+              ⭐️ {profile.starredByName}의 집착매물
+            </div>
+          ) : null}
         </div>
 
-        {/* 우측(PC) / 하단(모바일): 추가 정보 + 매칭 허브 */}
-        <div className="flex min-h-0 flex-1 flex-col md:w-[42%]">
+        {/* 우측(PC) / 하단(모바일): 전체 정보 + 매칭 허브 */}
+        <div className="flex min-h-0 flex-1 flex-col md:w-[45%]">
           <header className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
             <h2 className="text-lg font-black text-[var(--violet-950)]">{title}</h2>
             <button
@@ -108,23 +96,20 @@ export function ProfileDetailModal({
           </header>
 
           <div className="min-h-0 flex-1 overflow-y-auto">
-            {/* 추가 정보 */}
+            {/* 전체 정보 */}
             <div className="border-b border-[var(--border)] px-5 py-4">
               <ul className="space-y-2">
-                {additionalRows.map(([label, value]) => (
+                {informationRows.map(([label, value]) => (
                   <li
                     key={label}
-                    className="grid grid-cols-[88px_1fr] overflow-hidden rounded-[8px] border border-[var(--violet-100)] text-sm"
+                    className="grid grid-cols-[96px_1fr] overflow-hidden rounded-[8px] border border-[var(--violet-100)] text-sm"
                   >
-                    <span className="border-r border-[var(--violet-100)] bg-[var(--violet-50)] px-3 py-2 font-bold text-[var(--violet-900)]">
+                    <span className="border-r border-[var(--violet-100)] bg-[var(--violet-50)] px-3 py-2.5 font-bold text-[var(--violet-900)]">
                       {label}
                     </span>
-                    <span className="break-keep px-3 py-2 leading-6 text-slate-700">{value}</span>
+                    <span className="break-keep px-3 py-2.5 leading-6 text-slate-700">{value}</span>
                   </li>
                 ))}
-                {additionalRows.length === 0 ? (
-                  <li className="list-none text-sm text-slate-400">추가 정보가 없습니다.</li>
-                ) : null}
               </ul>
             </div>
 

@@ -6,7 +6,6 @@ import {ChevronLeft, ChevronRight, Eye, EyeOff, Pencil, Trash2} from 'lucide-rea
 import {useState} from 'react';
 
 import {formatBirthYearLabel} from '@/lib/profiles/age';
-import {getPrimaryInformationRows} from '@/lib/profiles/information';
 import type {Profile} from '@/types/profile';
 
 export type ProfileCardVariant = 'detailed' | 'compact';
@@ -95,8 +94,6 @@ export function ProfileCard({
   const isCompact = variant === 'compact';
   const birthYearLabel = formatBirthYearLabel(profile.birthYear);
   const isStarred = !!profile.starredByName;
-  // 카드에는 주요 정보(나이/키/사는 곳/회사)만 표시. 전체 정보는 상세 모달에서 확인.
-  const informationRows = getPrimaryInformationRows(profile);
   // compact: 년생 / 키 / 사는 곳 / 회사 를 한 줄로 요약 (빈 값은 제외)
   const compactSummary = [birthYearLabel, `${profile.height}cm`, profile.residence, profile.job]
     .filter(part => part && part.trim().length > 0)
@@ -159,13 +156,13 @@ export function ProfileCard({
             <div className="grid h-full place-items-center text-sm text-slate-500">사진 없음</div>
           )}
 
-          {/* 좌측 하단: 등록자 뱃지 */}
+          {/* 등록자 뱃지 — compact: 좌하단 / detailed: 좌상단(오버레이 정보와 겹치지 않게) */}
           <div
-            className={`absolute bottom-3 left-3 z-20 rounded-full bg-white/92 font-bold text-[var(--violet-800)] shadow-sm ${
-              isCompact ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1 text-xs'
+            className={`absolute left-3 z-20 rounded-full bg-white/92 font-bold text-[var(--violet-800)] shadow-sm ${
+              isCompact ? 'bottom-3 px-2 py-0.5 text-[10px]' : 'top-3 px-3 py-1 text-xs'
             }`}
           >
-            {profile.authorName}
+            주선자 · {profile.authorName}
           </div>
 
           {/* 우측 상단: 진행중 매칭 배지 */}
@@ -176,6 +173,18 @@ export function ProfileCard({
               }`}
             >
               💞 매칭 {ongoingMatchCount}
+            </div>
+          ) : null}
+
+          {/* detailed: 사진 하단에 핵심 정보 오버레이 (그라데이션 위) */}
+          {!isCompact ? (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-4 pb-3 pt-16">
+              <p className="text-lg font-black leading-tight text-white drop-shadow">
+                {birthYearLabel} / {profile.height}cm
+              </p>
+              <p className="mt-0.5 break-keep text-sm font-semibold text-white/90 drop-shadow">
+                {profile.residence} 거주 · {profile.job}
+              </p>
             </div>
           ) : null}
 
@@ -222,22 +231,12 @@ export function ProfileCard({
         </div>
 
         <div className={`relative z-20 ${isCompact ? 'p-2' : 'p-4'}`}>
+          {/* compact: 사진 아래 슬래시 요약. detailed: 정보는 사진 위 오버레이에 표시됨 */}
           {isCompact ? (
             <p className="line-clamp-2 h-[42px] break-keep rounded-[6px] border border-[var(--violet-100)] bg-[var(--violet-50)] px-2 py-1 text-xs font-semibold leading-5 text-[var(--violet-900)]">
               {compactSummary}
             </p>
-          ) : (
-            <ul className="space-y-1.5 text-sm leading-6 text-slate-700">
-              {informationRows.map(([label, value]) => (
-                <li className="grid grid-cols-[88px_1fr] overflow-hidden rounded-[6px] border border-[var(--violet-100)]" key={label}>
-                  <span className="border-r border-[var(--violet-100)] bg-[var(--violet-50)] px-2 py-1 font-bold text-[var(--violet-900)]">
-                    {label}
-                  </span>
-                  <span className="truncate px-2 py-1 text-slate-700" title={value}>{value}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+          ) : null}
 
           {isEditMode ? (
             <div className={`flex items-center justify-end ${isCompact ? 'mt-1.5 gap-1.5' : 'mt-2 gap-2'}`}>
