@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import {GripVertical, ImagePlus, X} from 'lucide-react';
+import {GripVertical, ImagePlus, Sparkles, X} from 'lucide-react';
 import {ChangeEvent, DragEvent, FormEvent, useState} from 'react';
 
 import {closedAlertState, CustomAlert, type CustomAlertState} from '@/components/CustomAlert';
@@ -60,6 +60,9 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
   );
   const [alertState, setAlertState] = useState<CustomAlertState>(closedAlertState);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
+  const [parseText, setParseText] = useState('');
+  const [showParseInput, setShowParseInput] = useState(false);
   const [draggingPhotoId, setDraggingPhotoId] = useState('');
   const [isUploadDragActive, setIsUploadDragActive] = useState(false);
   const isEdit = mode.kind === 'edit';
@@ -137,6 +140,44 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
     );
   };
 
+  const handleParse = async () => {
+    if (!parseText.trim()) return;
+    setIsParsing(true);
+    try {
+      const res = await fetch('/api/profiles/parse', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({text: parseText}),
+      });
+      const data = (await res.json()) as {parsed?: Record<string, unknown>; message?: string};
+      if (!res.ok) {
+        setAlertState({kind: 'alert', title: '파싱 실패', message: data.message ?? '오류가 발생했습니다.'});
+        return;
+      }
+      const p = data.parsed ?? {};
+      setValues(current => ({
+        ...current,
+        ...(typeof p.gender === 'string' ? {gender: p.gender as typeof current.gender} : {}),
+        ...(typeof p.birthYear === 'number' ? {birthYear: String(p.birthYear)} : {}),
+        ...(typeof p.height === 'number' ? {height: String(p.height)} : {}),
+        ...(typeof p.residence === 'string' ? {residence: p.residence} : {}),
+        ...(typeof p.job === 'string' ? {job: p.job} : {}),
+        ...(typeof p.religion === 'string' ? {religion: p.religion as typeof current.religion} : {}),
+        ...(typeof p.mbti === 'string' ? {mbti: p.mbti} : {}),
+        ...(typeof p.hobbies === 'string' ? {hobbies: p.hobbies} : {}),
+        ...(typeof p.smoking === 'string' ? {smoking: p.smoking as typeof current.smoking} : {}),
+        ...(typeof p.drinking === 'string' ? {drinking: p.drinking as typeof current.drinking} : {}),
+        ...(typeof p.idealType === 'string' ? {idealType: p.idealType} : {}),
+        ...(typeof p.matchmakerComment === 'string' ? {matchmakerComment: p.matchmakerComment} : {}),
+        ...(typeof p.extra === 'string' ? {extra: p.extra} : {}),
+      }));
+      setShowParseInput(false);
+      setParseText('');
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const validation = validateProfileFormValues(values);
@@ -180,21 +221,68 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-[var(--violet-950)]/45 p-3 sm:p-4">
       <section className="max-h-[94vh] w-full max-w-4xl overflow-hidden rounded-[8px] bg-white shadow-[0_28px_90px_rgba(47,13,104,0.26)]">
-        <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] px-4 py-4 sm:px-5">
-          <div>
-            <h2 className="text-xl font-extrabold text-[var(--violet-950)]">
-              {isEdit ? '매물 정보 수정' : '매물 정보 추가'}
-            </h2>
-            <p className="mt-1 text-sm text-slate-500">사진은 최대 4장까지 등록할 수 있습니다.</p>
+        <div className="border-b border-[var(--border)] px-4 py-4 sm:px-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-extrabold text-[var(--violet-950)]">
+                {isEdit ? '매물 정보 수정' : '매물 정보 추가'}
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">사진은 최대 4장까지 등록할 수 있습니다.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                className="inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-[var(--violet-200)] bg-[var(--violet-50)] px-3 text-sm font-bold text-[var(--violet-700)] hover:bg-[var(--violet-100)]"
+                type="button"
+                onClick={() => setShowParseInput(v => !v)}
+              >
+                <Sparkles size={15} aria-hidden />
+                AI 자동입력
+              </button>
+              <button
+                className="grid h-9 w-9 place-items-center rounded-[8px] text-slate-500 hover:bg-[var(--violet-50)]"
+                type="button"
+                onClick={onClose}
+                aria-label="닫기"
+              >
+                <X size={20} aria-hidden />
+              </button>
+            </div>
           </div>
-          <button
-            className="grid h-9 w-9 place-items-center rounded-[8px] text-slate-500 hover:bg-[var(--violet-50)]"
-            type="button"
-            onClick={onClose}
-            aria-label="닫기"
-          >
-            <X size={20} aria-hidden />
-          </button>
+
+          {showParseInput ? (
+            <div className="mt-3 rounded-[8px] border border-[var(--violet-200)] bg-[var(--violet-50)] p-3">
+              <p className="mb-2 text-xs font-bold text-[var(--violet-700)]">
+                텍스트를 붙여넣으면 AI가 폼을 자동으로 채워줍니다.
+              </p>
+              <textarea
+                className="w-full resize-none rounded-[6px] border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--violet-500)]"
+                rows={5}
+                placeholder={'나이: 96년생\n키: 161cm\n직장: 고등학교 교사\n거주: 하남 미사'}
+                value={parseText}
+                onChange={e => setParseText(e.target.value)}
+              />
+              <div className="mt-2 flex justify-end">
+                <button
+                  className="inline-flex h-9 items-center gap-1.5 rounded-[8px] bg-[var(--violet-600)] px-4 text-sm font-bold text-white hover:bg-[var(--violet-700)] disabled:bg-[var(--violet-300)]"
+                  type="button"
+                  disabled={isParsing || !parseText.trim()}
+                  onClick={handleParse}
+                >
+                  {isParsing ? (
+                    <>
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                      분석 중
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={14} aria-hidden />
+                      폼 채우기
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <form className="max-h-[calc(94vh-80px)] overflow-y-auto p-4 sm:p-5" onSubmit={handleSubmit}>
