@@ -524,16 +524,26 @@ export function Dashboard({authorName}: DashboardProps) {
       <div className="mx-auto max-w-7xl px-4 py-6 pb-24">
         <section className="mt-2 rounded-[8px] border border-[var(--border)] bg-white p-4">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-            <label className="inline-flex items-center gap-3 text-sm font-semibold text-slate-700">
-              <input
-                className="h-8 w-8 accent-[var(--violet-600)]"
-                type="checkbox"
-                checked={allVisibleSelected}
-                disabled={activeVisibleProfiles.length === 0}
-                onChange={event => handleSelectAll(event.target.checked)}
-              />
-              전체 선택
-            </label>
+            <div className="flex items-center gap-3">
+              <label className="inline-flex items-center gap-3 text-sm font-semibold text-slate-700">
+                <input
+                  className="h-8 w-8 accent-[var(--violet-600)]"
+                  type="checkbox"
+                  checked={allVisibleSelected}
+                  disabled={activeVisibleProfiles.length === 0}
+                  onChange={event => handleSelectAll(event.target.checked)}
+                />
+                전체 선택
+              </label>
+              <button
+                className="inline-flex h-8 items-center rounded-[6px] border border-[var(--violet-200)] bg-white px-3 text-xs font-bold text-[var(--violet-700)] transition hover:bg-[var(--violet-50)] disabled:cursor-not-allowed disabled:opacity-50"
+                type="button"
+                disabled={selectedIds.length === 0}
+                onClick={() => setSelectedIds([])}
+              >
+                선택 초기화
+              </button>
+            </div>
             <div className="inline-flex items-center gap-2 rounded-full bg-[var(--violet-50)] px-3 py-1.5 text-sm font-semibold text-[var(--violet-900)]">
               <Users size={16} strokeWidth={1.75} aria-hidden />
               {isLoading ? '로딩 중...' : `${visibleProfiles.length}명 표시 · ${selectedProfiles.length}명 공유 선택`}

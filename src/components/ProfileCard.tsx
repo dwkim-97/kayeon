@@ -124,12 +124,15 @@ export function ProfileCard({
       </label>
 
       <div
-        className={`relative overflow-hidden rounded-[8px] bg-white transition ${
+        className={`relative overflow-hidden rounded-[8px] bg-white shadow-sm transition ${
           isStarred
-            ? 'border-4 border-yellow-400 shadow-sm'
+            ? 'border-4 border-yellow-400'
             : !isBlocked && isSelected
-              ? 'border-4 border-[var(--violet-600)] shadow-sm'
-              : 'border border-[var(--border)] shadow-sm'
+              ? 'border-4 border-[var(--violet-600)]'
+              : 'border border-[var(--border)]'
+        } ${
+          // 별표 매물이 선택된 경우 별표 border 위에 select outline 추가
+          !isBlocked && isSelected && isStarred ? 'outline outline-4 outline-offset-[-8px] outline-[var(--violet-600)]' : ''
         } ${isBlocked ? 'grayscale' : ''}`}
       >
         {isBlocked ? <div className="absolute inset-0 z-10 bg-slate-200/65" aria-hidden /> : null}
@@ -204,23 +207,23 @@ export function ProfileCard({
             <>
               <button
                 className={`absolute left-2 top-1/2 z-20 grid -translate-y-1/2 place-items-center rounded-full bg-white/65 text-[var(--violet-900)] ${
-                  isCompact ? 'h-6 w-6' : 'h-8 w-8'
+                  isCompact ? 'h-9 w-9' : 'h-12 w-12'
                 }`}
                 type="button"
                 onClick={e => { e.stopPropagation(); movePhoto(-1); }}
                 aria-label="이전 사진"
               >
-                <ChevronLeft size={isCompact ? 14 : 18} strokeWidth={1.75} aria-hidden />
+                <ChevronLeft size={isCompact ? 20 : 26} strokeWidth={1.75} aria-hidden />
               </button>
               <button
                 className={`absolute right-2 top-1/2 z-20 grid -translate-y-1/2 place-items-center rounded-full bg-white/65 text-[var(--violet-900)] ${
-                  isCompact ? 'h-6 w-6' : 'h-8 w-8'
+                  isCompact ? 'h-9 w-9' : 'h-12 w-12'
                 }`}
                 type="button"
                 onClick={e => { e.stopPropagation(); movePhoto(1); }}
                 aria-label="다음 사진"
               >
-                <ChevronRight size={isCompact ? 14 : 18} strokeWidth={1.75} aria-hidden />
+                <ChevronRight size={isCompact ? 20 : 26} strokeWidth={1.75} aria-hidden />
               </button>
               <div
                 className={`absolute bottom-3 right-3 z-20 rounded-full bg-black/55 font-semibold text-white ${

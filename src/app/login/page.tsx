@@ -41,13 +41,13 @@ function LoginForm() {
       body,
     });
 
-    setIsSubmitting(false);
-
     if (!response.ok) {
+      setIsSubmitting(false);
       setError('아이디 또는 비밀번호를 확인해 주세요.');
       return;
     }
 
+    // 성공 시 disabled 유지한 채로 즉시 페이지 이동 (버튼이 '로그인'으로 잠깐 되돌아가는 것 방지)
     router.replace(nextPath);
     router.refresh();
   };
