@@ -1,24 +1,38 @@
 'use client';
 
-import {History, LogOut, ShieldCheck, Users} from 'lucide-react';
+import {ClipboardList, History, LogOut, ShieldCheck, Users} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
 import {logout} from '@/lib/auth/logout';
 
-type NavPage = 'dashboard' | 'admin' | 'history';
+type NavPage = 'dashboard' | 'admin' | 'history' | 'pending';
+
+const pendingLink = {
+  href: '/pending',
+  label: '대기 매물',
+  icon: <ClipboardList size={14} strokeWidth={1.75} aria-hidden />,
+};
 
 const NAV_LINKS: Record<NavPage, {href: string; label: string; icon: React.ReactNode}[]> = {
   dashboard: [
+    pendingLink,
     {href: '/history', label: '히스토리', icon: <History size={14} strokeWidth={1.75} aria-hidden />},
     {href: '/admin', label: '관리자', icon: <ShieldCheck size={14} strokeWidth={1.75} aria-hidden />},
   ],
   admin: [
     {href: '/', label: '대시보드', icon: <Users size={14} strokeWidth={1.75} aria-hidden />},
+    pendingLink,
     {href: '/history', label: '히스토리', icon: <History size={14} strokeWidth={1.75} aria-hidden />},
   ],
   history: [
     {href: '/', label: '대시보드', icon: <Users size={14} strokeWidth={1.75} aria-hidden />},
+    pendingLink,
+    {href: '/admin', label: '관리자', icon: <ShieldCheck size={14} strokeWidth={1.75} aria-hidden />},
+  ],
+  pending: [
+    {href: '/', label: '대시보드', icon: <Users size={14} strokeWidth={1.75} aria-hidden />},
+    {href: '/history', label: '히스토리', icon: <History size={14} strokeWidth={1.75} aria-hidden />},
     {href: '/admin', label: '관리자', icon: <ShieldCheck size={14} strokeWidth={1.75} aria-hidden />},
   ],
 };
