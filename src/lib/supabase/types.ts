@@ -168,6 +168,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      pending_profiles: {
+        Row: {
+          id: string;
+          gender: Gender;
+          birth_year: number;
+          height: number;
+          residence: string;
+          job: string;
+          religion: Religion;
+          mbti: string;
+          hobbies: string;
+          smoking: Smoking;
+          drinking: Drinking;
+          ideal_type: string;
+          matchmaker_comment: string;
+          extra: string;
+          photo_paths: string[];
+          submitted_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gender: Gender;
+          birth_year: number;
+          height: number;
+          residence: string;
+          job: string;
+          religion?: Religion;
+          mbti?: string;
+          hobbies?: string;
+          smoking?: Smoking;
+          drinking?: Drinking;
+          ideal_type?: string;
+          matchmaker_comment?: string;
+          extra?: string;
+          photo_paths?: string[];
+          submitted_by?: string;
+          created_at?: string;
+        };
+        Update: {[key: string]: never};
+        Relationships: [];
+      };
     };
   };
 };
