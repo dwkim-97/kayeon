@@ -22,6 +22,7 @@ export const sampleProfiles: Profile[] = [
     idealType: '차분하고 대화가 잘 통하는 사람',
     matchmakerComment: '예의 있고 성실한 인상. 운동을 꾸준히 해요.',
     extra: '주말에는 전시 보러 가는 걸 좋아합니다.',
+    adminMemo: '',
     photos: [
       {
         id: 'female-1-photo-1',
@@ -58,6 +59,7 @@ export const sampleProfiles: Profile[] = [
     idealType: '자기 일에 책임감 있는 사람',
     matchmakerComment: '처음엔 조용하지만 친해지면 유쾌합니다.',
     extra: '',
+    adminMemo: '',
     photos: [
       {
         id: 'female-2-photo-1',
@@ -88,6 +90,7 @@ export const sampleProfiles: Profile[] = [
     idealType: '밝고 독립적인 사람',
     matchmakerComment: '일정 조율 빠르고 매너가 좋습니다.',
     extra: '해외 근무 경험 있음',
+    adminMemo: '',
     photos: [
       {
         id: 'male-1-photo-1',

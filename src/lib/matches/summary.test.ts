@@ -35,6 +35,7 @@ const profile = (over: Partial<Profile>): Profile => ({
   idealType: '',
   matchmakerComment: '',
   extra: '',
+  adminMemo: '',
   photos: [],
   createdAt: '2026-07-01T00:00:00Z',
   updatedAt: '2026-07-01T00:00:00Z',

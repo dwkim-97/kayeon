@@ -28,6 +28,7 @@ export type Database = {
           ideal_type: string;
           matchmaker_comment: string;
           extra: string;
+          admin_memo: string;
           starred_by_name: string | null;
           created_at: string;
           updated_at: string;
@@ -49,6 +50,7 @@ export type Database = {
           ideal_type: string;
           matchmaker_comment: string;
           extra: string;
+          admin_memo?: string;
           starred_by_name?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -70,6 +72,7 @@ export type Database = {
           ideal_type?: string;
           matchmaker_comment?: string;
           extra?: string;
+          admin_memo?: string;
           starred_by_name?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -166,6 +169,48 @@ export type Database = {
           memo?: string;
           ended_at?: string | null;
         };
+        Relationships: [];
+      };
+      pending_profiles: {
+        Row: {
+          id: string;
+          gender: Gender;
+          birth_year: number;
+          height: number;
+          residence: string;
+          job: string;
+          religion: Religion;
+          mbti: string;
+          hobbies: string;
+          smoking: Smoking;
+          drinking: Drinking;
+          ideal_type: string;
+          matchmaker_comment: string;
+          extra: string;
+          photo_paths: string[];
+          submitted_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gender: Gender;
+          birth_year: number;
+          height: number;
+          residence: string;
+          job: string;
+          religion?: Religion;
+          mbti?: string;
+          hobbies?: string;
+          smoking?: Smoking;
+          drinking?: Drinking;
+          ideal_type?: string;
+          matchmaker_comment?: string;
+          extra?: string;
+          photo_paths?: string[];
+          submitted_by?: string;
+          created_at?: string;
+        };
+        Update: {[key: string]: never};
         Relationships: [];
       };
     };

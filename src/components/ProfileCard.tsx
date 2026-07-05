@@ -161,14 +161,30 @@ export function ProfileCard({
             <div className="grid h-full place-items-center text-sm text-slate-500">사진 없음</div>
           )}
 
-          {/* 주선자 뱃지 — compact: 좌하단 / detailed: 우상단. 주선자별 고정 색 */}
+          {/* 주선자 뱃지 (+ 집착매물 뱃지) — compact: 좌하단 / detailed: 우상단. 주선자별 고정 색 */}
           <div
-            className={`absolute z-20 rounded-full font-semibold shadow-sm ${
-              isCompact ? 'bottom-3 left-3 px-2 py-0.5 text-[10px]' : 'right-3 top-3 px-3 py-1 text-xs'
+            className={`absolute z-20 flex items-center gap-1 ${
+              isCompact ? 'bottom-3 left-3' : 'right-3 top-3'
             }`}
-            style={{backgroundColor: authorColor.bg, color: authorColor.text}}
           >
-            {profile.authorName}
+            {isStarred ? (
+              <span
+                className={`inline-flex items-center gap-0.5 whitespace-nowrap rounded-full bg-yellow-400 font-bold text-yellow-900 shadow-sm ${
+                  isCompact ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1 text-xs'
+                }`}
+              >
+                <span aria-hidden>⭐️</span>
+                <span>집착매물</span>
+              </span>
+            ) : null}
+            <span
+              className={`whitespace-nowrap rounded-full font-semibold shadow-sm ${
+                isCompact ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1 text-xs'
+              }`}
+              style={{backgroundColor: authorColor.bg, color: authorColor.text}}
+            >
+              {profile.authorName}
+            </span>
           </div>
 
           {/* 진행중 매칭 배지 — compact: 우상단 / detailed: 좌상단(주선자와 겹치지 않게) */}

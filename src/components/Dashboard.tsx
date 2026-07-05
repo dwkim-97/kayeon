@@ -11,6 +11,7 @@ import {ProfileCard, type ProfileCardVariant} from '@/components/ProfileCard';
 import {ProfileDetailModal} from '@/components/ProfileDetailModal';
 import {ProfileFormModal} from '@/components/ProfileFormModal';
 import {ShareButton} from '@/components/ShareButton';
+import {SortMenu} from '@/components/SortMenu';
 import {historyEventDescriptions, recordHistory} from '@/lib/history/events';
 import {countOngoingByProfile} from '@/lib/matches/summary';
 import {formatBirthYearLabel} from '@/lib/profiles/age';
@@ -41,6 +42,8 @@ const defaultFilters = (gender: Gender): ProfileFilters => ({
   religion: '',
   smoking: '',
   query: '',
+  sortField: 'default',
+  sortDirection: 'desc',
 });
 
 type UploadedPhotoId = {tempId: string; id: string; url: string};
@@ -69,7 +72,8 @@ async function apiUploadPhotos(profileId: string, photos: Profile['photos']): Pr
       signed: {tempId: string; uploadUrl: string; storagePath: string; id: string}[];
     };
 
-    // Step 2: upload each file directly to Supabase Storage
+    // Step 2: upload each file directly to Supabase Storage.
+    // PUT 실패(용량 초과·형식 거부 등)를 조용히 넘기지 않고 사유를 드러낸다.
     await Promise.all(
       signed.map(async ({uploadUrl, tempId}) => {
         const photo = newPhotos.find(p => p.id === tempId)!;
@@ -77,11 +81,19 @@ async function apiUploadPhotos(profileId: string, photos: Profile['photos']): Pr
         const mimeMatch = photo.url.match(/^data:([^;]+);base64,/);
         const mimeType = mimeMatch?.[1] ?? 'image/jpeg';
         const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-        await fetch(uploadUrl, {
+        const uploadRes = await fetch(uploadUrl, {
           method: 'PUT',
           headers: {'Content-Type': mimeType},
           body: binary,
         });
+        if (!uploadRes.ok) {
+          const detail = await uploadRes.text().catch(() => '');
+          throw new Error(
+            `사진 업로드 실패 (${uploadRes.status}). 용량이 너무 크거나 형식이 허용되지 않을 수 있습니다.${
+              detail ? ` [${detail.slice(0, 200)}]` : ''
+            }`,
+          );
+        }
       }),
     );
 
@@ -206,7 +218,12 @@ export function Dashboard({authorName}: DashboardProps) {
     activeVisibleProfiles.length > 0 && activeVisibleProfiles.every(profile => selectedIdsSet.has(profile.id));
 
   const switchGender = (gender: Gender) => {
-    setFilters(current => ({...defaultFilters(gender), query: current.query}));
+    setFilters(current => ({
+      ...defaultFilters(gender),
+      query: current.query,
+      sortField: current.sortField,
+      sortDirection: current.sortDirection,
+    }));
     setSelectedIds([]);
   };
 
@@ -434,7 +451,7 @@ export function Dashboard({authorName}: DashboardProps) {
         </div>
       ) : null}
       <div className="sticky top-0 z-40 bg-white/95 backdrop-blur">
-        <AppHeader page="dashboard" sticky={false} />
+        <AppHeader page="dashboard" sticky={false} authorName={authorName} />
 
         {/* 성별 토글 + 필터 토글 (relative — 필터가 아래에 absolute로 겹침) */}
         <div className="relative border-b border-[var(--border)]">
@@ -493,6 +510,9 @@ export function Dashboard({authorName}: DashboardProps) {
               필터
               {isFilterOpen ? <ChevronUp size={13} strokeWidth={1.75} aria-hidden /> : <ChevronDown size={13} strokeWidth={1.75} aria-hidden />}
             </button>
+
+            {/* 정렬: 필터 버튼 옆의 독립 팝오버 */}
+            <SortMenu filters={filters} onChange={setFilters} />
 
             {/* 편집 모드 토글: 켜면 각 카드에 수정/삭제/비활성화 버튼 노출 */}
             <button

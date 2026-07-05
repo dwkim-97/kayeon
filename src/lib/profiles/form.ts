@@ -14,6 +14,7 @@ export type ProfileFormValues = {
   idealType: string;
   matchmakerComment: string;
   extra: string;
+  adminMemo: string;
   photos: ProfilePhoto[];
 };
 
@@ -67,6 +68,7 @@ export const emptyProfileFormValues: ProfileFormValues = {
   idealType: '',
   matchmakerComment: '',
   extra: '',
+  adminMemo: '',
   photos: [],
 };
 
@@ -85,6 +87,7 @@ export function profileToFormValues(profile: Profile): ProfileFormValues {
     idealType: profile.idealType,
     matchmakerComment: profile.matchmakerComment,
     extra: profile.extra,
+    adminMemo: profile.adminMemo,
     photos: profile.photos,
   };
 }
@@ -101,6 +104,7 @@ export function normalizeProfileFormValues(values: ProfileFormValues): Normalize
     idealType: values.idealType.trim(),
     matchmakerComment: values.matchmakerComment.trim(),
     extra: values.extra.trim(),
+    adminMemo: values.adminMemo.trim(),
     photos: values.photos.map((photo, order) => ({...photo, order})),
   };
 }

@@ -1,16 +1,21 @@
 // 주선자 이름을 결정론적으로 색에 매핑한다. 같은 이름은 항상 같은 색.
-// 브랜드 핑크와 어울리는 부드러운 파스텔 팔레트 (배경 + 텍스트 대비 쌍).
+// 색상환(hue)을 고르게 도는 12색 — 인접 항목끼리도 hue가 크게 벌어져 서로
+// 헷갈리지 않는다. 각 항목은 옅은 배경 + 진한 텍스트 대비 쌍(가독성 확보).
 export type AuthorColor = {bg: string; text: string};
 
-const AUTHOR_COLORS: AuthorColor[] = [
-  {bg: '#ffe0e5', text: '#9f1239'}, // rose
-  {bg: '#ffedd5', text: '#9a3412'}, // orange
-  {bg: '#fef3c7', text: '#92400e'}, // amber
-  {bg: '#dcfce7', text: '#166534'}, // green
-  {bg: '#cffafe', text: '#155e75'}, // cyan
-  {bg: '#dbeafe', text: '#1e40af'}, // blue
-  {bg: '#ede9fe', text: '#5b21b6'}, // violet
-  {bg: '#fce7f3', text: '#9d174d'}, // pink
+export const AUTHOR_COLORS: AuthorColor[] = [
+  {bg: '#ffe0e5', text: '#9f1239'}, // rose (0°)
+  {bg: '#dcfce7', text: '#166534'}, // green (140°)
+  {bg: '#dbeafe', text: '#1e40af'}, // blue (220°)
+  {bg: '#ffedd5', text: '#9a3412'}, // orange (30°)
+  {bg: '#e0e7ff', text: '#3730a3'}, // indigo (245°)
+  {bg: '#ccfbf1', text: '#115e59'}, // teal (170°)
+  {bg: '#fef9c3', text: '#854d0e'}, // yellow (55°)
+  {bg: '#f3e8ff', text: '#6b21a8'}, // purple (275°)
+  {bg: '#d1fae5', text: '#065f46'}, // emerald (155°)
+  {bg: '#fce7f3', text: '#9d174d'}, // pink (330°)
+  {bg: '#cffafe', text: '#155e75'}, // cyan (190°)
+  {bg: '#ecfccb', text: '#3f6212'}, // lime (85°)
 ];
 
 // 문자열을 안정적인 양수 해시로 변환.
@@ -30,8 +35,17 @@ function hashString(value: string): number {
   return hash >>> 0;
 }
 
+// 지정된 주선자는 고정 색을 쓴다. 그 외에는 이름 해시로 팔레트에서 고른다.
+const FIXED_AUTHOR_COLORS: Record<string, AuthorColor> = {
+  조이: {bg: '#fce7f3', text: '#9d174d'}, // 분홍(pink)
+  에드: {bg: '#fef9c3', text: '#854d0e'}, // 노랑(yellow)
+  에이든: {bg: '#f3e8ff', text: '#6b21a8'}, // 보라(purple)
+};
+
 export function getAuthorColor(name: string): AuthorColor {
   const key = name.trim();
   if (key === '') return AUTHOR_COLORS[0];
+  const fixed = FIXED_AUTHOR_COLORS[key];
+  if (fixed) return fixed;
   return AUTHOR_COLORS[hashString(key) % AUTHOR_COLORS.length];
 }

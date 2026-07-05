@@ -15,6 +15,8 @@ const filters: ProfileFilters = {
   religion: 'not_selected',
   smoking: 'non_smoker',
   query: '강남',
+  sortField: 'default',
+  sortDirection: 'desc',
 };
 
 describe('FilterBar', () => {

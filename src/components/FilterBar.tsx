@@ -147,6 +147,7 @@ export function FilterBar({filters, onChange, onReset}: FilterBarProps) {
           />
           활성화된 매물만 보기
         </label>
+
         <button
           className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[var(--border)] bg-white px-3 text-sm font-semibold text-[var(--violet-900)] transition hover:bg-[var(--violet-50)]"
           type="button"

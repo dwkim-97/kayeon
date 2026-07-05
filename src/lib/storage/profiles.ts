@@ -62,6 +62,7 @@ function normalizeStoredProfile(profile: Record<string, unknown>, index: number)
     idealType: stringField(profile, 'idealType', ''),
     matchmakerComment: stringField(profile, 'matchmakerComment', ''),
     extra: stringField(profile, 'extra', ''),
+    adminMemo: stringField(profile, 'adminMemo', ''),
     photos: photoField(profile, 'photos'),
     createdAt: stringField(profile, 'createdAt', now),
     updatedAt: stringField(profile, 'updatedAt', now),

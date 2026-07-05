@@ -22,6 +22,7 @@ const baseProfile: Profile = {
   idealType: '다정한 사람',
   matchmakerComment: '성실하고 밝음',
   extra: '반려견 좋아함',
+  adminMemo: '',
   photos: [
     {
       id: 'photo-1',
@@ -43,6 +44,8 @@ const noFilter = {
   religion: '' as const,
   smoking: '' as const,
   query: '',
+  sortField: 'default' as const,
+  sortDirection: 'desc' as const,
 };
 
 describe('filterProfiles', () => {
@@ -72,6 +75,8 @@ describe('filterProfiles', () => {
       religion: 'not_selected',
       smoking: 'non_smoker',
       query: 'ibk enfj 강남',
+      sortField: 'default',
+      sortDirection: 'desc',
     });
 
     expect(result.map(profile => profile.id)).toEqual(['profile-1']);
@@ -155,5 +160,54 @@ describe('filterProfiles', () => {
     // Joy가 찍은 별이지만 집착매물은 누가 찍었든 앞으로 온다
     const result = filterProfiles([newest, otherStar], {...noFilter, gender: 'female'});
     expect(result.map(p => p.id)).toEqual(['other-star', 'newest']);
+  });
+
+  describe('sorting', () => {
+    const y1990: Profile = {...baseProfile, id: 'y1990', birthYear: 1990, height: 170, createdAt: '2026-01-01T00:00:00.000Z'};
+    const y1995: Profile = {...baseProfile, id: 'y1995', birthYear: 1995, height: 160, createdAt: '2026-03-01T00:00:00.000Z'};
+    const y2000: Profile = {...baseProfile, id: 'y2000', birthYear: 2000, height: 180, createdAt: '2026-02-01T00:00:00.000Z'};
+    const input = [y1995, y2000, y1990];
+
+    it('age ascending puts the youngest (largest birthYear) first', () => {
+      const result = filterProfiles(input, {...noFilter, gender: 'female', sortField: 'age', sortDirection: 'asc'});
+      expect(result.map(p => p.id)).toEqual(['y2000', 'y1995', 'y1990']);
+    });
+
+    it('age descending puts the oldest (smallest birthYear) first', () => {
+      const result = filterProfiles(input, {...noFilter, gender: 'female', sortField: 'age', sortDirection: 'desc'});
+      expect(result.map(p => p.id)).toEqual(['y1990', 'y1995', 'y2000']);
+    });
+
+    it('height ascending puts the shortest first', () => {
+      const result = filterProfiles(input, {...noFilter, gender: 'female', sortField: 'height', sortDirection: 'asc'});
+      expect(result.map(p => p.id)).toEqual(['y1995', 'y1990', 'y2000']);
+    });
+
+    it('height descending puts the tallest first', () => {
+      const result = filterProfiles(input, {...noFilter, gender: 'female', sortField: 'height', sortDirection: 'desc'});
+      expect(result.map(p => p.id)).toEqual(['y2000', 'y1990', 'y1995']);
+    });
+
+    it('createdAt ascending puts the oldest registration first', () => {
+      const result = filterProfiles(input, {...noFilter, gender: 'female', sortField: 'createdAt', sortDirection: 'asc'});
+      expect(result.map(p => p.id)).toEqual(['y1990', 'y2000', 'y1995']);
+    });
+
+    it('createdAt descending puts the newest registration first', () => {
+      const result = filterProfiles(input, {...noFilter, gender: 'female', sortField: 'createdAt', sortDirection: 'desc'});
+      expect(result.map(p => p.id)).toEqual(['y1995', 'y2000', 'y1990']);
+    });
+
+    it('keeps starred profiles on top even with an explicit sort', () => {
+      const star: Profile = {...baseProfile, id: 'star', birthYear: 1985, height: 150, starredByName: 'Aiden'};
+      const result = filterProfiles([y2000, star, y1990], {
+        ...noFilter,
+        gender: 'female',
+        sortField: 'height',
+        sortDirection: 'asc',
+      });
+      // star는 키가 가장 작지만 집착매물이라 항상 맨 앞. 나머지는 키 오름차순.
+      expect(result.map(p => p.id)).toEqual(['star', 'y1990', 'y2000']);
+    });
   });
 });

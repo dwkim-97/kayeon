@@ -4,6 +4,8 @@ export type Religion = 'christian' | 'buddhist' | 'catholic' | 'not_selected';
 export type Smoking = 'smoker' | 'non_smoker' | 'not_selected';
 export type Drinking = 'drinker' | 'non_drinker' | 'not_selected';
 export type NumericComparison = 'gte' | 'lte';
+export type SortField = 'default' | 'age' | 'height' | 'createdAt';
+export type SortDirection = 'asc' | 'desc';
 
 export type ProfilePhoto = {
   id: string;
@@ -31,6 +33,7 @@ export type Profile = {
   idealType: string;
   matchmakerComment: string;
   extra: string;
+  adminMemo: string;
   photos: ProfilePhoto[];
   createdAt: string;
   updatedAt: string;
@@ -46,4 +49,6 @@ export type ProfileFilters = {
   religion: Religion | '';
   smoking: Smoking | '';
   query: string;
+  sortField: SortField;
+  sortDirection: SortDirection;
 };

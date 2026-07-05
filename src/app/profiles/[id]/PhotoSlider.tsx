@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import {ChevronLeft, ChevronRight} from 'lucide-react';
-import {useState} from 'react';
+import {useRef, useState, type TouchEvent} from 'react';
 
 import type {ProfileInformationRow} from '@/lib/profiles/information';
 import type {ProfilePhoto} from '@/types/profile';
@@ -13,12 +13,34 @@ type PhotoSliderProps = {
   infoRows: ProfileInformationRow[];
 };
 
+// 이 거리(px) 이상 수평으로 밀어야 사진을 넘긴다. 세로 스크롤과 헷갈리지 않도록.
+const SWIPE_THRESHOLD = 40;
+
 export function PhotoSlider({photos, infoRows}: PhotoSliderProps) {
   const [index, setIndex] = useState(0);
   const hasMultiple = photos.length > 1;
+  // 스와이프 시작 좌표. 수평 이동이 수직보다 크고 임계값을 넘을 때만 사진을 넘긴다.
+  const touchStart = useRef<{x: number; y: number} | null>(null);
 
   const move = (dir: -1 | 1) => {
     setIndex(i => (i + dir + photos.length) % photos.length);
+  };
+
+  const onTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    const touch = event.changedTouches[0];
+    touchStart.current = {x: touch.clientX, y: touch.clientY};
+  };
+
+  const onTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start || !hasMultiple) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    // 수평 스와이프로 판단되는 경우만 처리(세로 스크롤 오작동 방지)
+    if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) < Math.abs(dy)) return;
+    move(dx < 0 ? 1 : -1);
   };
 
   if (photos.length === 0) {
@@ -30,7 +52,11 @@ export function PhotoSlider({photos, infoRows}: PhotoSliderProps) {
   }
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-black">
+    <div
+      className="relative h-full w-full overflow-hidden bg-black"
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
       {/* 사진 */}
       {photos.map((photo, i) => (
         <img
