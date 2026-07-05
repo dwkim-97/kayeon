@@ -23,6 +23,7 @@ const profile: Profile = {
   idealType: '다정한 사람',
   matchmakerComment: '성실함',
   extra: '',
+  adminMemo: '',
   photos: [
     {id: 'photo-1', url: '/sample.jpg', alt: '프로필 사진 1', order: 0},
     {id: 'photo-2', url: '/sample-2.jpg', alt: '프로필 사진 2', order: 1},
@@ -146,5 +147,15 @@ describe('ProfileCard', () => {
   it('shows no match badge when count is zero', () => {
     render(<ProfileCard {...defaultProps} ongoingMatchCount={0} />);
     expect(screen.queryByText(/매칭/)).not.toBeInTheDocument();
+  });
+
+  it('shows a 집착매물 badge when the profile is starred', () => {
+    render(<ProfileCard {...defaultProps} profile={{...profile, starredByName: '조이'}} />);
+    expect(screen.getByText('집착매물')).toBeInTheDocument();
+  });
+
+  it('shows no 집착매물 badge when the profile is not starred', () => {
+    render(<ProfileCard {...defaultProps} profile={{...profile, starredByName: null}} />);
+    expect(screen.queryByText('집착매물')).not.toBeInTheDocument();
   });
 });

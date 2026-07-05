@@ -130,7 +130,7 @@ export function AdminPageClient({authorName}: AdminPageClientProps) {
 
   return (
     <main className="min-h-screen bg-[var(--background)]">
-      <AppHeader page="admin" />
+      <AppHeader page="admin" authorName={authorName} />
 
       <div className="mx-auto max-w-5xl px-4 py-6">
         <header className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

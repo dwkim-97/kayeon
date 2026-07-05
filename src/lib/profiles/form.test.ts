@@ -17,6 +17,7 @@ const validValues: ProfileFormValues = {
   idealType: '다정한 사람',
   matchmakerComment: '성실함',
   extra: '',
+  adminMemo: '',
   photos: [
     {
       id: 'photo-1',

@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @next/next/no-img-element */
+
 import {X} from 'lucide-react';
 import {useEffect, useState} from 'react';
 
@@ -115,6 +117,20 @@ export function ProfileDetailModal({
               </ul>
             </div>
 
+            {/* 관리자 메모: 주선자 전용. 눈에 띄도록 amber 톤으로 구분. 값 있을 때만. */}
+            {profile.adminMemo ? (
+              <div className="border-b border-[var(--border)] px-5 py-4">
+                <div className="rounded-[8px] border border-amber-300 bg-amber-50 px-4 py-3">
+                  <h3 className="mb-1 flex items-center gap-1 text-xs font-bold text-amber-700">
+                    <span aria-hidden>📝</span> 관리자 메모
+                  </h3>
+                  <p className="whitespace-pre-wrap break-keep text-sm leading-6 text-amber-900">
+                    {profile.adminMemo}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
             {/* 매칭 현황 */}
             <div className="px-5 py-4">
               <h3 className="mb-2 text-sm font-bold text-[var(--violet-900)]">매칭 현황</h3>
@@ -130,6 +146,7 @@ export function ProfileDetailModal({
                         key={m.id}
                         className="flex items-center gap-2 rounded-[8px] border border-[var(--border)] px-3 py-2 text-sm"
                       >
+                        <PartnerThumb partner={partner} />
                         <button
                           className="min-w-0 flex-1 truncate text-left font-semibold text-[var(--violet-900)] hover:underline disabled:no-underline"
                           type="button"
@@ -181,10 +198,13 @@ export function ProfileDetailModal({
                       <button
                         key={c.id}
                         type="button"
-                        className="block w-full truncate rounded-[6px] px-2 py-1.5 text-left text-sm hover:bg-[var(--violet-50)]"
+                        className="flex w-full items-center gap-2 rounded-[6px] px-2 py-1.5 text-left text-sm hover:bg-[var(--violet-50)]"
                         onClick={() => handleCreate(c)}
                       >
-                        {formatBirthYearLabel(c.birthYear)} · {c.residence} · {c.job}
+                        <PartnerThumb partner={c} />
+                        <span className="min-w-0 flex-1 truncate">
+                          {formatBirthYearLabel(c.birthYear)} · {c.residence} · {c.job}
+                        </span>
                       </button>
                     ))
                   )}
@@ -203,5 +223,19 @@ export function ProfileDetailModal({
         </div>
       </section>
     </div>
+  );
+}
+
+// 매칭 상대 대표사진(첫 장) 썸네일. 사진이 없거나 삭제된 매물이면 플레이스홀더.
+function PartnerThumb({partner}: {partner: Profile | undefined}) {
+  const photo = partner?.photos[0];
+  return (
+    <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-[6px] bg-[var(--violet-100)]">
+      {photo ? (
+        <img className="h-full w-full object-cover" src={photo.url} alt={photo.alt} draggable={false} />
+      ) : (
+        <span className="text-[9px] font-semibold text-slate-400">없음</span>
+      )}
+    </span>
   );
 }

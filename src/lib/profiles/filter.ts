@@ -1,4 +1,4 @@
-import type {NumericComparison, Profile, ProfileFilters} from '@/types/profile';
+import type {NumericComparison, Profile, ProfileFilters, SortDirection, SortField} from '@/types/profile';
 
 const normalize = (value: string) => value.trim().toLowerCase();
 const toFilterNumber = (value: string) => {
@@ -38,18 +38,44 @@ const profileSearchText = (profile: Profile) =>
     .map(normalize)
     .join(' ');
 
-// 정렬 우선순위: 집착매물 → 활성(active) → 최신 등록순(created_at desc).
+// 기본 정렬(정렬 옵션 미지정): 활성(active) → 최신 등록순(created_at desc).
+function compareDefault(left: Profile, right: Profile) {
+  if (left.isActivated !== right.isActivated) return Number(right.isActivated) - Number(left.isActivated);
+  // created_at은 ISO 8601 문자열이라 사전식 비교로 시간순이 보장된다.
+  return right.createdAt.localeCompare(left.createdAt);
+}
+
+// 사용자가 고른 정렬 기준. asc는 "작은 값/어린 나이/오래된 등록"이 먼저 온다.
+// 나이(age) asc = 어린 순 → birthYear는 큰 값이 먼저이므로 부호를 뒤집는다.
+function compareBySort(left: Profile, right: Profile, field: SortField, direction: SortDirection): number {
+  let base: number;
+  switch (field) {
+    case 'age':
+      base = left.birthYear - right.birthYear; // birthYear asc = 나이 desc
+      return direction === 'asc' ? -base : base;
+    case 'height':
+      base = left.height - right.height;
+      return direction === 'asc' ? base : -base;
+    case 'createdAt':
+      base = left.createdAt.localeCompare(right.createdAt);
+      return direction === 'asc' ? base : -base;
+    default:
+      return 0;
+  }
+}
+
+// 정렬 우선순위: 집착매물 → (정렬 옵션 또는 기본 정렬).
 // 집착매물은 누가 찍었든(starredByName이 있으면) 항상 맨 앞으로 온다.
-function compareProfiles(left: Profile, right: Profile) {
+function compareProfiles(left: Profile, right: Profile, sortField: SortField, sortDirection: SortDirection) {
   const leftStarred = left.starredByName ? 1 : 0;
   const rightStarred = right.starredByName ? 1 : 0;
   if (rightStarred !== leftStarred) return rightStarred - leftStarred;
 
-  // 2순위: 활성화 여부
-  if (left.isActivated !== right.isActivated) return Number(right.isActivated) - Number(left.isActivated);
+  if (sortField === 'default') return compareDefault(left, right);
 
-  // 3순위: 최신 등록순. created_at은 ISO 8601 문자열이라 사전식 비교로 시간순이 보장된다.
-  return right.createdAt.localeCompare(left.createdAt);
+  const sorted = compareBySort(left, right, sortField, sortDirection);
+  // 동점이면 등록 최신순으로 안정적 타이브레이크
+  return sorted !== 0 ? sorted : right.createdAt.localeCompare(left.createdAt);
 }
 
 export function filterProfiles(profiles: Profile[], filters: ProfileFilters) {
@@ -69,5 +95,5 @@ export function filterProfiles(profiles: Profile[], filters: ProfileFilters) {
       const searchText = profileSearchText(profile);
       return queryTerms.every(term => searchText.includes(term));
     })
-    .sort((left, right) => compareProfiles(left, right));
+    .sort((left, right) => compareProfiles(left, right, filters.sortField, filters.sortDirection));
 }

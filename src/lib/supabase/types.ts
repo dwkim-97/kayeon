@@ -28,6 +28,7 @@ export type Database = {
           ideal_type: string;
           matchmaker_comment: string;
           extra: string;
+          admin_memo: string;
           starred_by_name: string | null;
           created_at: string;
           updated_at: string;
@@ -49,6 +50,7 @@ export type Database = {
           ideal_type: string;
           matchmaker_comment: string;
           extra: string;
+          admin_memo?: string;
           starred_by_name?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -70,6 +72,7 @@ export type Database = {
           ideal_type?: string;
           matchmaker_comment?: string;
           extra?: string;
+          admin_memo?: string;
           starred_by_name?: string | null;
           created_at?: string;
           updated_at?: string;

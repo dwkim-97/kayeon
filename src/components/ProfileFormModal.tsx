@@ -15,6 +15,7 @@ import {
   validateProfileFormValues,
   type ProfileFormValues,
 } from '@/lib/profiles/form';
+import {resizeImageFile} from '@/lib/profiles/image-resize';
 import {drinkingLabels, genderLabels, religionLabels, smokingLabels} from '@/lib/profiles/options';
 import type {Drinking, Gender, Profile, ProfilePhoto, Religion, Smoking} from '@/types/profile';
 
@@ -46,15 +47,6 @@ const birthYearOptions = Array.from({length: youngestBirthYear - oldestBirthYear
   return [year.toString(), `${year}년생`] as [string, string];
 });
 
-function readFileAsDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
 export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}: ProfileFormModalProps) {
   const [values, setValues] = useState<ProfileFormValues>(() =>
     mode.kind === 'edit' ? profileToFormValues(mode.profile) : emptyProfileFormValues,
@@ -80,27 +72,51 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
 
     const remainingPhotoCount = 4 - values.photos.length;
 
-    if (uploadedFiles.length > remainingPhotoCount) {
+    if (remainingPhotoCount <= 0) {
       setAlertState({
         kind: 'alert',
         title: '사진은 최대 4장까지 등록할 수 있습니다.',
-        message: '이미 등록된 사진을 포함해 최대 4장만 저장됩니다.',
+        message: '기존 사진을 삭제한 뒤 다시 추가해주세요.',
       });
-    }
-
-    if (remainingPhotoCount <= 0) {
       return;
     }
 
+    const overflowFiles = uploadedFiles.slice(remainingPhotoCount);
     const files = uploadedFiles.slice(0, remainingPhotoCount);
-    const urls = await Promise.all(files.map(readFileAsDataUrl));
-    const nextPhotos: ProfilePhoto[] = urls.map((url, index) => ({
-      id: crypto.randomUUID(),
-      url,
-      alt: `프로필 사진 ${values.photos.length + index + 1}`,
-      order: values.photos.length + index,
-    }));
-    updateField('photos', [...values.photos, ...nextPhotos]);
+
+    // 각 파일을 리사이즈/재인코딩. 실패한 파일은 사유를 모아 사용자에게 보여준다.
+    const results = await Promise.all(files.map(file => resizeImageFile(file)));
+    const failures: string[] = [];
+    const nextPhotos: ProfilePhoto[] = [];
+    results.forEach(result => {
+      if (result.ok) {
+        nextPhotos.push({
+          id: crypto.randomUUID(),
+          url: result.dataUrl,
+          alt: `프로필 사진 ${values.photos.length + nextPhotos.length + 1}`,
+          order: values.photos.length + nextPhotos.length,
+        });
+      } else {
+        failures.push(result.reason);
+      }
+    });
+
+    if (nextPhotos.length > 0) {
+      updateField('photos', [...values.photos, ...nextPhotos]);
+    }
+
+    // 실패 사유 + (4장 초과로) 잘린 파일 안내를 함께 표시.
+    const messages = [...failures];
+    if (overflowFiles.length > 0) {
+      messages.push(`사진은 최대 4장까지만 저장되어 ${overflowFiles.length}장은 제외되었습니다.`);
+    }
+    if (messages.length > 0) {
+      setAlertState({
+        kind: 'alert',
+        title: failures.length > 0 ? '일부 사진을 추가하지 못했습니다' : '사진 개수 안내',
+        message: messages.join('\n'),
+      });
+    }
   };
 
   const handlePhotoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -488,6 +504,18 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
                     onChange={value => updateField('extra', value)}
                   />
                 </div>
+              </fieldset>
+
+              {/* 관리자 메모: 주선자 전용 내부 메모. 상세보기에서만 다른 색으로 노출된다. */}
+              <fieldset className="rounded-[10px] border border-amber-300 bg-amber-50/60 p-4">
+                <legend className="px-2 text-sm font-semibold text-amber-700">관리자 메모</legend>
+                <p className="mb-2 text-xs text-amber-700/80">주선자만 보는 내부 메모입니다. 공유 화면에는 나오지 않습니다.</p>
+                <textarea
+                  className="min-h-24 w-full resize-y rounded-[8px] border border-amber-300 bg-white px-3 py-2 outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-100"
+                  placeholder="예: 연락 느림, 사진 실물과 차이, 소개 시 주의사항"
+                  value={values.adminMemo}
+                  onChange={event => updateField('adminMemo', event.target.value)}
+                />
               </fieldset>
             </div>
           </div>

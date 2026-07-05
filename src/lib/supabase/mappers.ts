@@ -51,6 +51,7 @@ export function rowToProfile(row: ProfileRow, photoRows: ProfilePhotoRow[], publ
     idealType: row.ideal_type,
     matchmakerComment: row.matchmaker_comment,
     extra: row.extra,
+    adminMemo: row.admin_memo ?? '',
     photos,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -88,6 +89,7 @@ export function profileToInsertRow(
     ideal_type: profile.idealType,
     matchmaker_comment: profile.matchmakerComment,
     extra: profile.extra,
+    admin_memo: profile.adminMemo,
   };
 }
 
@@ -111,6 +113,7 @@ const profileFieldMap: [keyof UpdatableProfile, keyof UpdateRow][] = [
   ['idealType', 'ideal_type'],
   ['matchmakerComment', 'matchmaker_comment'],
   ['extra', 'extra'],
+  ['adminMemo', 'admin_memo'],
   ['starredByName', 'starred_by_name'],
 ];
 
