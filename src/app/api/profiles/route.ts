@@ -1,6 +1,7 @@
 import {NextResponse} from 'next/server';
 
 import {getSessionUserName} from '@/lib/auth/session';
+import {isMissingColumnError, stripAdminColumns} from '@/lib/supabase/admin-columns';
 import {profileToInsertRow, rowToProfile} from '@/lib/supabase/mappers';
 import {createSupabaseServerClient, getStoragePublicBase} from '@/lib/supabase/server';
 import type {Profile} from '@/types/profile';
@@ -36,10 +37,19 @@ export async function POST(request: Request) {
 
   const insertRow = profileToInsertRow({...body, authorName: actorName});
 
-  const {data: profileRow, error} = await supabase.from('profiles').insert(insertRow).select().single();
+  let {data: profileRow, error} = await supabase.from('profiles').insert(insertRow).select().single();
 
-  if (error) {
-    return NextResponse.json({message: error.message}, {status: 500});
+  // 관리자 전용 컬럼이 아직 DB에 없으면 그 컬럼들을 빼고 재시도(등록이 깨지지 않게).
+  if (error && isMissingColumnError(error)) {
+    ({data: profileRow, error} = await supabase
+      .from('profiles')
+      .insert(stripAdminColumns(insertRow))
+      .select()
+      .single());
+  }
+
+  if (error || !profileRow) {
+    return NextResponse.json({message: error?.message ?? '매물을 등록하지 못했습니다.'}, {status: 500});
   }
 
   const profile = rowToProfile(profileRow, [], getStoragePublicBase());

@@ -23,6 +23,9 @@ export const sampleProfiles: Profile[] = [
     matchmakerComment: '예의 있고 성실한 인상. 운동을 꾸준히 해요.',
     extra: '주말에는 전시 보러 가는 걸 좋아합니다.',
     adminMemo: '',
+    probe: 'not_selected',
+    rejectionTolerance: 'not_selected',
+    responseSpeed: 'not_selected',
     photos: [
       {
         id: 'female-1-photo-1',
@@ -60,6 +63,9 @@ export const sampleProfiles: Profile[] = [
     matchmakerComment: '처음엔 조용하지만 친해지면 유쾌합니다.',
     extra: '',
     adminMemo: '',
+    probe: 'not_selected',
+    rejectionTolerance: 'not_selected',
+    responseSpeed: 'not_selected',
     photos: [
       {
         id: 'female-2-photo-1',
@@ -91,6 +97,9 @@ export const sampleProfiles: Profile[] = [
     matchmakerComment: '일정 조율 빠르고 매너가 좋습니다.',
     extra: '해외 근무 경험 있음',
     adminMemo: '',
+    probe: 'not_selected',
+    rejectionTolerance: 'not_selected',
+    responseSpeed: 'not_selected',
     photos: [
       {
         id: 'male-1-photo-1',

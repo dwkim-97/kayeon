@@ -1,13 +1,27 @@
 import {sampleProfiles} from '@/lib/profiles/sample-data';
 import {birthYearFromAge} from '@/lib/profiles/age';
-import type {Drinking, Gender, Profile, ProfilePhoto, ProfileStatus, Religion, Smoking} from '@/types/profile';
+import type {
+  Drinking,
+  Gender,
+  Probe,
+  RejectionTolerance,
+  Profile,
+  ProfilePhoto,
+  ProfileStatus,
+  Religion,
+  ResponseSpeed,
+  Smoking,
+} from '@/types/profile';
 
 const STORAGE_KEY = 'kayeon_profiles_v1';
 const genderValues: Gender[] = ['female', 'male'];
 const statusValues: ProfileStatus[] = ['active', 'blocked'];
-const religionValues: Religion[] = ['christian', 'buddhist', 'catholic', 'not_selected', 'not_selected'];
+const religionValues: Religion[] = ['christian', 'buddhist', 'catholic', 'none', 'not_selected'];
 const smokingValues: Smoking[] = ['smoker', 'non_smoker', 'not_selected'];
 const drinkingValues: Drinking[] = ['drinker', 'non_drinker', 'not_selected'];
+const probeValues: Probe[] = ['possible', 'impossible', 'not_selected'];
+const rejectionToleranceValues: RejectionTolerance[] = ['high', 'mid', 'low', 'not_selected'];
+const responseSpeedValues: ResponseSpeed[] = ['fast', 'normal', 'slow', 'not_selected'];
 
 export function loadProfiles() {
   if (typeof window === 'undefined') {
@@ -63,6 +77,9 @@ function normalizeStoredProfile(profile: Record<string, unknown>, index: number)
     matchmakerComment: stringField(profile, 'matchmakerComment', ''),
     extra: stringField(profile, 'extra', ''),
     adminMemo: stringField(profile, 'adminMemo', ''),
+    probe: enumField(profile, 'probe', probeValues, 'not_selected'),
+    rejectionTolerance: enumField(profile, 'rejectionTolerance', rejectionToleranceValues, 'not_selected'),
+    responseSpeed: enumField(profile, 'responseSpeed', responseSpeedValues, 'not_selected'),
     photos: photoField(profile, 'photos'),
     createdAt: stringField(profile, 'createdAt', now),
     updatedAt: stringField(profile, 'updatedAt', now),

@@ -1,5 +1,6 @@
 import {NextResponse} from 'next/server';
 
+import {isMissingColumnError, stripAdminColumns} from '@/lib/supabase/admin-columns';
 import {profileToUpdateRow, rowToProfile, type UpdatableProfile} from '@/lib/supabase/mappers';
 import {createSupabaseServerClient, getStoragePublicBase, PROFILE_PHOTOS_BUCKET} from '@/lib/supabase/server';
 
@@ -13,15 +14,25 @@ export async function PATCH(request: Request, {params}: RouteParams) {
   const body = (await request.json()) as UpdatableProfile;
   const updateRow = profileToUpdateRow(body);
 
-  const {data: profileRow, error} = await supabase
+  let {data: profileRow, error} = await supabase
     .from('profiles')
     .update(updateRow)
     .eq('id', id)
     .select('*, profile_photos(*)')
     .single();
 
-  if (error) {
-    return NextResponse.json({message: error.message}, {status: 500});
+  // 관리자 전용 컬럼이 아직 DB에 없으면 그 컬럼들을 빼고 재시도(수정이 깨지지 않게).
+  if (error && isMissingColumnError(error)) {
+    ({data: profileRow, error} = await supabase
+      .from('profiles')
+      .update(stripAdminColumns(updateRow))
+      .eq('id', id)
+      .select('*, profile_photos(*)')
+      .single());
+  }
+
+  if (error || !profileRow) {
+    return NextResponse.json({message: error?.message ?? '수정할 매물을 찾지 못했습니다.'}, {status: 500});
   }
 
   const {profile_photos: photoRows, ...row} = profileRow;

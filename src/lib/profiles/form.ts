@@ -1,4 +1,14 @@
-import type {Drinking, Gender, Profile, ProfilePhoto, Religion, Smoking} from '@/types/profile';
+import type {
+  Drinking,
+  Gender,
+  Probe,
+  RejectionTolerance,
+  Religion,
+  ResponseSpeed,
+  Profile,
+  ProfilePhoto,
+  Smoking,
+} from '@/types/profile';
 
 export type ProfileFormValues = {
   gender: Gender;
@@ -15,6 +25,9 @@ export type ProfileFormValues = {
   matchmakerComment: string;
   extra: string;
   adminMemo: string;
+  probe: Probe;
+  rejectionTolerance: RejectionTolerance;
+  responseSpeed: ResponseSpeed;
   photos: ProfilePhoto[];
 };
 
@@ -69,6 +82,9 @@ export const emptyProfileFormValues: ProfileFormValues = {
   matchmakerComment: '',
   extra: '',
   adminMemo: '',
+  probe: 'not_selected',
+  rejectionTolerance: 'not_selected',
+  responseSpeed: 'not_selected',
   photos: [],
 };
 
@@ -88,6 +104,9 @@ export function profileToFormValues(profile: Profile): ProfileFormValues {
     matchmakerComment: profile.matchmakerComment,
     extra: profile.extra,
     adminMemo: profile.adminMemo,
+    probe: profile.probe,
+    rejectionTolerance: profile.rejectionTolerance,
+    responseSpeed: profile.responseSpeed,
     photos: profile.photos,
   };
 }

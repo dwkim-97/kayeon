@@ -23,6 +23,9 @@ const baseProfile: Profile = {
   matchmakerComment: '성실하고 밝음',
   extra: '반려견 좋아함',
   adminMemo: '',
+  probe: 'not_selected',
+  rejectionTolerance: 'not_selected',
+  responseSpeed: 'not_selected',
   photos: [
     {
       id: 'photo-1',

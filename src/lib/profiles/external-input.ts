@@ -6,7 +6,7 @@ const schema = z.object({
   height: z.number().int().min(120).max(230),
   residence: z.string().trim().min(1),
   job: z.string().trim().min(1),
-  religion: z.enum(['christian', 'buddhist', 'catholic', 'not_selected']).default('not_selected'),
+  religion: z.enum(['christian', 'buddhist', 'catholic', 'none', 'not_selected']).default('not_selected'),
   mbti: z.string().trim().default(''),
   hobbies: z.string().trim().default(''),
   smoking: z.enum(['smoker', 'non_smoker', 'not_selected']).default('not_selected'),

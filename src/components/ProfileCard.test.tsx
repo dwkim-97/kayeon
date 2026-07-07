@@ -24,6 +24,9 @@ const profile: Profile = {
   matchmakerComment: '성실함',
   extra: '',
   adminMemo: '',
+  probe: 'not_selected',
+  rejectionTolerance: 'not_selected',
+  responseSpeed: 'not_selected',
   photos: [
     {id: 'photo-1', url: '/sample.jpg', alt: '프로필 사진 1', order: 0},
     {id: 'photo-2', url: '/sample-2.jpg', alt: '프로필 사진 2', order: 1},

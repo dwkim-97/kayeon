@@ -9,7 +9,7 @@ import {PhotoSlider} from '@/app/profiles/[id]/PhotoSlider';
 import {useBodyScrollLock} from '@/hooks/useBodyScrollLock';
 import {formatBirthYearLabel} from '@/lib/profiles/age';
 import {getMatchCandidates, getProfileMatches} from '@/lib/matches/summary';
-import {getProfileInformationRows} from '@/lib/profiles/information';
+import {getAdminInformationRows, getProfileInformationRows} from '@/lib/profiles/information';
 import {genderLabels} from '@/lib/profiles/options';
 import {PARTNER_THUMB_WIDTH, photoThumbnailUrl} from '@/lib/profiles/photo-url';
 import type {Match} from '@/types/match';
@@ -38,6 +38,7 @@ export function ProfileDetailModal({
 }: ProfileDetailModalProps) {
   const [showCandidates, setShowCandidates] = useState(false);
   const informationRows = getProfileInformationRows(profile);
+  const adminRows = getAdminInformationRows(profile);
   const title = `${genderLabels[profile.gender]} · ${formatBirthYearLabel(profile.birthYear)}`;
   const profileMatches = getProfileMatches(profile.id, matches);
   const candidates = getMatchCandidates(profile, allProfiles);
@@ -117,6 +118,28 @@ export function ProfileDetailModal({
                 ))}
               </ul>
             </div>
+
+            {/* 관리자 전용 항목: 떠보기/거절내성/응답속도. 값 있을 때만. */}
+            {adminRows.length > 0 ? (
+              <div className="border-b border-[var(--border)] px-5 py-4">
+                <div className="rounded-[8px] border border-amber-300 bg-amber-50 px-4 py-3">
+                  <h3 className="mb-2 flex items-center gap-1 text-xs font-bold text-amber-700">
+                    <span aria-hidden>🔒</span> 관리자 전용
+                  </h3>
+                  <ul className="flex flex-wrap gap-2">
+                    {adminRows.map(([label, value]) => (
+                      <li
+                        key={label}
+                        className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-white px-2.5 py-1 text-xs font-semibold text-amber-900"
+                      >
+                        <span className="text-amber-600">{label}</span>
+                        <span>{value}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ) : null}
 
             {/* 관리자 메모: 주선자 전용. 눈에 띄도록 amber 톤으로 구분. 값 있을 때만. */}
             {profile.adminMemo ? (

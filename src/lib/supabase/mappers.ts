@@ -52,6 +52,10 @@ export function rowToProfile(row: ProfileRow, photoRows: ProfilePhotoRow[], publ
     matchmakerComment: row.matchmaker_comment,
     extra: row.extra,
     adminMemo: row.admin_memo ?? '',
+    // 관리자 전용 항목 — DB 컬럼 미적용 환경 방어(?? 'not_selected')
+    probe: row.probe ?? 'not_selected',
+    rejectionTolerance: row.rejection_tolerance ?? 'not_selected',
+    responseSpeed: row.response_speed ?? 'not_selected',
     photos,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -90,6 +94,9 @@ export function profileToInsertRow(
     matchmaker_comment: profile.matchmakerComment,
     extra: profile.extra,
     admin_memo: profile.adminMemo,
+    probe: profile.probe,
+    rejection_tolerance: profile.rejectionTolerance,
+    response_speed: profile.responseSpeed,
   };
 }
 
@@ -114,6 +121,9 @@ const profileFieldMap: [keyof UpdatableProfile, keyof UpdateRow][] = [
   ['matchmakerComment', 'matchmaker_comment'],
   ['extra', 'extra'],
   ['adminMemo', 'admin_memo'],
+  ['probe', 'probe'],
+  ['rejectionTolerance', 'rejection_tolerance'],
+  ['responseSpeed', 'response_speed'],
   ['starredByName', 'starred_by_name'],
 ];
 

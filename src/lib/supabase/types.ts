@@ -1,5 +1,14 @@
 import type {HistoryEventType} from '@/types/history';
-import type {Drinking, Gender, Religion, Smoking, ProfileStatus} from '@/types/profile';
+import type {
+  Drinking,
+  Gender,
+  Probe,
+  RejectionTolerance,
+  Religion,
+  ResponseSpeed,
+  Smoking,
+  ProfileStatus,
+} from '@/types/profile';
 
 export type Json = string | number | boolean | null | {[key: string]: Json | undefined} | Json[];
 
@@ -29,6 +38,10 @@ export type Database = {
           matchmaker_comment: string;
           extra: string;
           admin_memo: string;
+          // 관리자 전용 컬럼 — DB 미적용 환경에서는 undefined일 수 있어 optional
+          probe?: Probe;
+          rejection_tolerance?: RejectionTolerance;
+          response_speed?: ResponseSpeed;
           starred_by_name: string | null;
           created_at: string;
           updated_at: string;
@@ -51,6 +64,9 @@ export type Database = {
           matchmaker_comment: string;
           extra: string;
           admin_memo?: string;
+          probe?: Probe;
+          rejection_tolerance?: RejectionTolerance;
+          response_speed?: ResponseSpeed;
           starred_by_name?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -73,6 +89,9 @@ export type Database = {
           matchmaker_comment?: string;
           extra?: string;
           admin_memo?: string;
+          probe?: Probe;
+          rejection_tolerance?: RejectionTolerance;
+          response_speed?: ResponseSpeed;
           starred_by_name?: string | null;
           created_at?: string;
           updated_at?: string;
