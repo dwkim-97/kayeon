@@ -147,7 +147,7 @@ export function ProfileCard({
             <>
               <img
                 key={activePhoto.id}
-                className="absolute inset-0 h-full w-full select-none object-cover"
+                className="absolute inset-0 h-full w-full select-none object-contain"
                 src={photoThumbnailUrl(activePhoto.url, thumbWidth)}
                 alt={activePhoto.alt}
                 draggable={false}

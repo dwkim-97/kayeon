@@ -460,7 +460,7 @@ export function Dashboard({authorName}: DashboardProps) {
   };
 
   return (
-    <main className={`min-h-screen bg-[var(--background)] ${officeMode ? 'office-mode' : ''}`}>
+    <main className="min-h-screen bg-[var(--background)]">
       {isMutating ? (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm" aria-label="처리 중">
           <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-8 py-6 shadow-sm">
@@ -472,6 +472,9 @@ export function Dashboard({authorName}: DashboardProps) {
       {newArrivalCount > 0 ? (
         <NewArrivalToast count={newArrivalCount} onClose={() => setNewArrivalCount(0)} />
       ) : null}
+      {/* 오피스 모드는 흐름상 콘텐츠(헤더+카드)에만 적용. fixed 요소/모달을 감싸면
+          filter가 그들의 containing block이 되어 위치가 어긋나므로 밖에 둔다. */}
+      <div className={officeMode ? 'office-mode' : ''}>
       <div className="sticky top-0 z-40 bg-white/95 backdrop-blur">
         <AppHeader page="dashboard" sticky={false} authorName={authorName} />
 
@@ -628,6 +631,7 @@ export function Dashboard({authorName}: DashboardProps) {
             </div>
           )}
         </section>
+      </div>
       </div>
 
       {/* 좌측 하단 고정: 카카오톡 공유 */}
