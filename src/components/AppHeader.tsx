@@ -6,6 +6,7 @@ import Link from 'next/link';
 import {useEffect, useState} from 'react';
 import {createPortal} from 'react-dom';
 
+import {PatchNotesButton} from '@/components/PatchNotesButton';
 import {useBodyScrollLock} from '@/hooks/useBodyScrollLock';
 import {logout} from '@/lib/auth/logout';
 
@@ -88,6 +89,7 @@ export function AppHeader({
 
         {/* Desktop / tablet inline nav (sm and up) */}
         <div className="hidden items-center gap-2.5 sm:flex">
+          <PatchNotesButton className={`${linkClass} flex-none`} />
           {links.map(link => (
             <Link key={link.href} className={`${linkClass} flex-none`} href={link.href}>
               {link.icon}
@@ -163,6 +165,7 @@ export function AppHeader({
                   </span>
                 </div>
               ) : null}
+              <PatchNotesButton className={`${linkClass} w-full justify-start`} />
               {links.map(link => (
                 <Link
                   key={link.href}
