@@ -11,6 +11,7 @@ import {formatBirthYearLabel} from '@/lib/profiles/age';
 import {getMatchCandidates, getProfileMatches} from '@/lib/matches/summary';
 import {getProfileInformationRows} from '@/lib/profiles/information';
 import {genderLabels} from '@/lib/profiles/options';
+import {PARTNER_THUMB_WIDTH, photoThumbnailUrl} from '@/lib/profiles/photo-url';
 import type {Match} from '@/types/match';
 import type {Profile} from '@/types/profile';
 
@@ -232,7 +233,7 @@ function PartnerThumb({partner}: {partner: Profile | undefined}) {
   return (
     <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-[6px] bg-[var(--violet-100)]">
       {photo ? (
-        <img className="h-full w-full object-cover" src={photo.url} alt={photo.alt} draggable={false} />
+        <img className="h-full w-full object-cover" src={photoThumbnailUrl(photo.url, PARTNER_THUMB_WIDTH)} alt={photo.alt} draggable={false} />
       ) : (
         <span className="text-[9px] font-semibold text-slate-400">없음</span>
       )}

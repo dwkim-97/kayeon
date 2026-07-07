@@ -6,6 +6,7 @@ import {ChevronLeft, ChevronRight} from 'lucide-react';
 import {useRef, useState, type TouchEvent} from 'react';
 
 import type {ProfileInformationRow} from '@/lib/profiles/information';
+import {DETAIL_IMAGE_WIDTH, photoThumbnailUrl} from '@/lib/profiles/photo-url';
 import type {ProfilePhoto} from '@/types/profile';
 
 type PhotoSliderProps = {
@@ -62,7 +63,7 @@ export function PhotoSlider({photos, infoRows}: PhotoSliderProps) {
         <img
           key={photo.id}
           className="absolute inset-0 h-full w-full object-contain transition-opacity duration-300"
-          src={photo.url}
+          src={photoThumbnailUrl(photo.url, DETAIL_IMAGE_WIDTH)}
           alt={photo.alt}
           style={{opacity: i === index ? 1 : 0}}
           draggable={false}
