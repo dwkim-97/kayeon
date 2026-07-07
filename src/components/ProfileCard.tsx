@@ -7,6 +7,11 @@ import {useState} from 'react';
 
 import {formatBirthYearLabel} from '@/lib/profiles/age';
 import {getAuthorColor} from '@/lib/profiles/author-color';
+import {
+  CARD_THUMB_WIDTH_COMPACT,
+  CARD_THUMB_WIDTH_DETAILED,
+  photoThumbnailUrl,
+} from '@/lib/profiles/photo-url';
 import type {Profile} from '@/types/profile';
 
 export type ProfileCardVariant = 'detailed' | 'compact';
@@ -105,6 +110,9 @@ export function ProfileCard({
     setPhotoIndex(current => (current + direction + profile.photos.length) % profile.photos.length);
   };
 
+  const thumbWidth = isCompact ? CARD_THUMB_WIDTH_COMPACT : CARD_THUMB_WIDTH_DETAILED;
+  const activePhoto = profile.photos[photoIndex];
+
   return (
     <article className="relative">
       {/* 좌측 상단: 체크박스 */}
@@ -135,18 +143,17 @@ export function ProfileCard({
         {isBlocked ? <div className="absolute inset-0 z-10 bg-slate-200/65" aria-hidden /> : null}
 
         <div className={`relative ${isCompact ? 'aspect-square' : 'aspect-[4/5]'} bg-[var(--violet-100)]`}>
-          {profile.photos.length > 0 ? (
+          {activePhoto ? (
             <>
-              {profile.photos.map((p, i) => (
-                <img
-                  key={p.id}
-                  className="absolute inset-0 h-full w-full select-none object-cover"
-                  src={p.url}
-                  alt={p.alt}
-                  draggable={false}
-                  style={{opacity: i === photoIndex ? 1 : 0}}
-                />
-              ))}
+              <img
+                key={activePhoto.id}
+                className="absolute inset-0 h-full w-full select-none object-cover"
+                src={photoThumbnailUrl(activePhoto.url, thumbWidth)}
+                alt={activePhoto.alt}
+                draggable={false}
+                loading="lazy"
+                decoding="async"
+              />
               <button
                 className="absolute inset-0 z-10 cursor-pointer"
                 type="button"

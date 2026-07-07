@@ -158,4 +158,32 @@ describe('ProfileCard', () => {
     render(<ProfileCard {...defaultProps} profile={{...profile, starredByName: null}} />);
     expect(screen.queryByText('집착매물')).not.toBeInTheDocument();
   });
+
+  it('renders only the active photo, not every photo (avoids loading all images)', () => {
+    const {container} = render(<ProfileCard {...defaultProps} variant="detailed" />);
+    // 사진이 2장이어도 카드 이미지 영역에는 현재 사진 1장만 존재
+    const imgs = container.querySelectorAll('img');
+    expect(imgs.length).toBe(1);
+  });
+
+  it('lazy-loads the card image via a render/image thumbnail URL', () => {
+    const withStorageUrl: Profile = {
+      ...profile,
+      photos: [
+        {
+          id: 'photo-1',
+          url: 'https://proj.supabase.co/storage/v1/object/public/profile-photos/a/b.png',
+          alt: '프로필 사진 1',
+          order: 0,
+        },
+      ],
+    };
+    const {container} = render(
+      <ProfileCard {...defaultProps} profile={withStorageUrl} variant="detailed" />,
+    );
+    const img = container.querySelector('img')!;
+    expect(img.getAttribute('loading')).toBe('lazy');
+    expect(img.getAttribute('src')).toContain('/render/image/public/');
+    expect(img.getAttribute('src')).toContain('width=520');
+  });
 });
