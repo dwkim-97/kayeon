@@ -160,3 +160,20 @@ button:disabled {
     animation: none;
   }
 }
+
+/* 오피스 모드 — 사무실에서 봐도 티 안 나도록 화면을 차분한 무채색으로.
+   전체를 흑백/저채도로 낮추고, 사람 사진은 블러 처리한다.
+   개별 사진은 마우스를 올리면 잠깐 선명해져 작업은 계속 가능. */
+.office-mode {
+  filter: grayscale(1) contrast(0.92) brightness(1.02);
+}
+
+/* 매물 카드 사진(article 내부)만 블러 처리 — 로고/아이콘은 흑백만 적용 */
+.office-mode article img {
+  filter: blur(7px) grayscale(1);
+  transition: filter 160ms ease;
+}
+
+.office-mode article img:hover {
+  filter: blur(0) grayscale(1);
+}

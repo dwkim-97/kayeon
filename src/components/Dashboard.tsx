@@ -1,9 +1,10 @@
 'use client';
 
-import {Check, ChevronDown, ChevronUp, Grid3x3, LayoutGrid, Pencil, Plus, SlidersHorizontal, Users} from 'lucide-react';
+import {Briefcase, Check, ChevronDown, ChevronUp, Grid3x3, LayoutGrid, Pencil, Plus, SlidersHorizontal, Users} from 'lucide-react';
 import Link from 'next/link';
 import {useEffect, useMemo, useState} from 'react';
 
+import {useOfficeMode} from '@/hooks/useOfficeMode';
 import {AppHeader} from '@/components/AppHeader';
 import {closedAlertState, CustomAlert, type CustomAlertState} from '@/components/CustomAlert';
 import {FilterBar} from '@/components/FilterBar';
@@ -173,6 +174,7 @@ export function Dashboard({authorName}: DashboardProps) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [detailProfileId, setDetailProfileId] = useState<string | null>(null);
   const [newArrivalCount, setNewArrivalCount] = useState(0);
+  const {officeMode, toggleOfficeMode} = useOfficeMode();
   // 첫 렌더는 항상 기본값 'detailed'로 시작(SSR/hydration 안전). localStorage는 브라우저에만
   // 존재하므로 mount 후 effect에서 읽어 반영한다 — 초기값에서 읽으면 서버 HTML과
   // 불일치하여 hydration 경고가 발생한다. 저장된 이력이 없으면 'detailed'가 기본.
@@ -458,7 +460,7 @@ export function Dashboard({authorName}: DashboardProps) {
   };
 
   return (
-    <main className="min-h-screen bg-[var(--background)]">
+    <main className={`min-h-screen bg-[var(--background)] ${officeMode ? 'office-mode' : ''}`}>
       {isMutating ? (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm" aria-label="처리 중">
           <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-8 py-6 shadow-sm">
@@ -533,6 +535,22 @@ export function Dashboard({authorName}: DashboardProps) {
 
             {/* 정렬: 필터 버튼 옆의 독립 팝오버 */}
             <SortMenu filters={filters} onChange={setFilters} />
+
+            {/* 오피스 모드 토글: 켜면 화면을 흑백+블러로 위장(사진은 hover 시 선명) */}
+            <button
+              className={`inline-flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-[8px] border px-2 text-[11px] font-semibold transition ${
+                officeMode
+                  ? 'border-slate-700 bg-slate-700 text-white'
+                  : 'border-[var(--border)] bg-white text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
+              }`}
+              type="button"
+              onClick={toggleOfficeMode}
+              aria-pressed={officeMode}
+              title="오피스 모드 — 사무실에서 티 안 나게"
+            >
+              <Briefcase size={13} strokeWidth={1.75} aria-hidden />
+              <span className="hidden sm:inline">오피스</span>
+            </button>
 
             {/* 편집 모드 토글: 켜면 각 카드에 수정/삭제/비활성화 버튼 노출 */}
             <button
