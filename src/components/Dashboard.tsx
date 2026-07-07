@@ -7,6 +7,7 @@ import {useEffect, useMemo, useState} from 'react';
 import {AppHeader} from '@/components/AppHeader';
 import {closedAlertState, CustomAlert, type CustomAlertState} from '@/components/CustomAlert';
 import {FilterBar} from '@/components/FilterBar';
+import {NewArrivalToast} from '@/components/NewArrivalToast';
 import {ProfileCard, type ProfileCardVariant} from '@/components/ProfileCard';
 import {ProfileDetailModal} from '@/components/ProfileDetailModal';
 import {ProfileFormModal} from '@/components/ProfileFormModal';
@@ -16,6 +17,11 @@ import {historyEventDescriptions, recordHistory} from '@/lib/history/events';
 import {countOngoingByProfile} from '@/lib/matches/summary';
 import {formatBirthYearLabel} from '@/lib/profiles/age';
 import {filterProfiles} from '@/lib/profiles/filter';
+import {
+  countNewArrivals,
+  latestCreatedAt,
+  NEW_ARRIVAL_STORAGE_KEY,
+} from '@/lib/profiles/new-arrivals';
 import {genderLabels} from '@/lib/profiles/options';
 import type {Gender, Profile, ProfileFilters, ProfileStatus} from '@/types/profile';
 import type {Match} from '@/types/match';
@@ -166,6 +172,7 @@ export function Dashboard({authorName}: DashboardProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [matches, setMatches] = useState<Match[]>([]);
   const [detailProfileId, setDetailProfileId] = useState<string | null>(null);
+  const [newArrivalCount, setNewArrivalCount] = useState(0);
   // 첫 렌더는 항상 기본값 'detailed'로 시작(SSR/hydration 안전). localStorage는 브라우저에만
   // 존재하므로 mount 후 effect에서 읽어 반영한다 — 초기값에서 읽으면 서버 HTML과
   // 불일치하여 hydration 경고가 발생한다. 저장된 이력이 없으면 'detailed'가 기본.
@@ -174,7 +181,17 @@ export function Dashboard({authorName}: DashboardProps) {
   useEffect(() => {
     fetch('/api/profiles')
       .then(res => res.json())
-      .then(({profiles: loaded}) => setProfiles(loaded ?? []))
+      .then(({profiles: loaded}: {profiles?: Profile[]}) => {
+        const list = loaded ?? [];
+        setProfiles(list);
+
+        // 마지막 방문 이후 새로 등록된 매물 감지 → 알림. 확인 시점을 최신 등록일로 갱신.
+        const lastSeen = window.localStorage.getItem(NEW_ARRIVAL_STORAGE_KEY);
+        const newCount = countNewArrivals(list, lastSeen);
+        if (newCount > 0) setNewArrivalCount(newCount);
+        const latest = latestCreatedAt(list);
+        if (latest) window.localStorage.setItem(NEW_ARRIVAL_STORAGE_KEY, latest);
+      })
       .catch(() => setProfiles([]))
       .finally(() => setIsLoading(false));
   }, []);
@@ -449,6 +466,9 @@ export function Dashboard({authorName}: DashboardProps) {
             <p className="text-sm font-semibold text-[var(--violet-950)]">처리 중...</p>
           </div>
         </div>
+      ) : null}
+      {newArrivalCount > 0 ? (
+        <NewArrivalToast count={newArrivalCount} onClose={() => setNewArrivalCount(0)} />
       ) : null}
       <div className="sticky top-0 z-40 bg-white/95 backdrop-blur">
         <AppHeader page="dashboard" sticky={false} authorName={authorName} />
