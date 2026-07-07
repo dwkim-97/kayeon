@@ -168,12 +168,16 @@ button:disabled {
   filter: grayscale(1) contrast(0.92) brightness(1.02);
 }
 
-/* 매물 카드 사진(article 내부)만 블러 처리 — 로고/아이콘은 흑백만 적용 */
-.office-mode article img {
+/* 매물 카드 사진(article 내부)과 상세 모달(role=dialog) 사진을 블러 처리 —
+   로고/아이콘은 흑백만 적용. 모달 루트가 office-mode 클래스를 직접 가지므로
+   `.office-mode[role="dialog"]`로 그 안의 사진만 대상으로 한다. */
+.office-mode article img,
+.office-mode[role='dialog'] img {
   filter: blur(7px) grayscale(1);
   transition: filter 160ms ease;
 }
 
-.office-mode article img:hover {
+.office-mode article img:hover,
+.office-mode[role='dialog'] img:hover {
   filter: blur(0) grayscale(1);
 }

@@ -19,6 +19,7 @@ type ProfileDetailModalProps = {
   profile: Profile;
   matches: Match[];
   allProfiles: Profile[];
+  officeMode?: boolean;
   onCreateMatch: (femaleId: string, maleId: string) => void;
   onEndMatch: (matchId: string) => void;
   onDeleteMatch: (matchId: string) => void;
@@ -30,6 +31,7 @@ export function ProfileDetailModal({
   profile,
   matches,
   allProfiles,
+  officeMode = false,
   onCreateMatch,
   onEndMatch,
   onDeleteMatch,
@@ -62,7 +64,9 @@ export function ProfileDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-[60] grid place-items-center bg-black/70 p-0 sm:p-4"
+      className={`fixed inset-0 z-[60] grid place-items-center bg-black/70 p-0 sm:p-4 ${
+        officeMode ? 'office-mode' : ''
+      }`}
       role="dialog"
       aria-modal="true"
       aria-label={`${title} 상세 정보`}

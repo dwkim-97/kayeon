@@ -666,6 +666,7 @@ export function Dashboard({authorName}: DashboardProps) {
           profile={detailProfile}
           matches={matches}
           allProfiles={profiles}
+          officeMode={officeMode}
           onCreateMatch={handleCreateMatch}
           onEndMatch={handleEndMatch}
           onDeleteMatch={handleDeleteMatch}
