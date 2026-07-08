@@ -9,6 +9,7 @@ import {useOfficeMode} from '@/hooks/useOfficeMode';
 import {AppHeader} from '@/components/AppHeader';
 import {closedAlertState, CustomAlert, type CustomAlertState} from '@/components/CustomAlert';
 import {FilterBar} from '@/components/FilterBar';
+import {NaturalShareButton} from '@/components/NaturalShareButton';
 import {NewArrivalToast} from '@/components/NewArrivalToast';
 import {ProfileCard, type ProfileCardVariant} from '@/components/ProfileCard';
 import {ProfileDetailModal} from '@/components/ProfileDetailModal';
@@ -641,9 +642,12 @@ export function Dashboard({authorName}: DashboardProps) {
       </div>
       </div>
 
-      {/* 좌측 하단 고정: 카카오톡 공유 */}
-      <div className="fixed bottom-4 left-4 z-30">
+      {/* 좌측 하단 고정: 공유 버튼들 (1명 선택 시 자연스러운 공유 추가 노출) */}
+      <div className="fixed bottom-4 left-4 z-30 flex items-center gap-2">
         <ShareButton profiles={selectedProfiles} />
+        {selectedProfiles.length === 1 ? (
+          <NaturalShareButton profile={selectedProfiles[0]} />
+        ) : null}
       </div>
 
       {/* 우측 하단 고정: 매물 추가 */}
