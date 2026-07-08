@@ -67,15 +67,15 @@ export function NaturalShareButton({profile}: {profile: Profile}) {
   return (
     <>
       <button
-        className="inline-flex h-11 items-center gap-2 rounded-[8px] border border-[var(--violet-200)] bg-white px-4 font-bold text-[var(--violet-700)] shadow-sm transition hover:bg-[var(--violet-50)] disabled:opacity-60"
+        className="inline-flex h-10 items-center gap-1.5 rounded-[8px] border border-[var(--violet-200)] bg-white px-3.5 text-sm font-bold text-[var(--violet-700)] shadow-sm transition hover:bg-[var(--violet-50)] disabled:opacity-60"
         type="button"
         onClick={handleClick}
         disabled={isBusy}
       >
         {isBusy ? (
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--violet-300)] border-t-[var(--violet-600)]" />
+          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--violet-300)] border-t-[var(--violet-600)]" />
         ) : (
-          <Send size={17} aria-hidden />
+          <Send size={15} aria-hidden />
         )}
         자연스러운 공유
       </button>

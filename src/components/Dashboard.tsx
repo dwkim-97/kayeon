@@ -642,22 +642,22 @@ export function Dashboard({authorName}: DashboardProps) {
       </div>
       </div>
 
-      {/* 좌측 하단 고정: 공유 버튼들 (1명 선택 시 자연스러운 공유 추가 노출) */}
-      <div className="fixed bottom-4 left-4 z-30 flex items-center gap-2">
-        <ShareButton profiles={selectedProfiles} />
+      {/* 좌측 하단 고정: 공유 버튼들 — 위에서 아래로 자연스러운 공유 → 카카오톡 공유 */}
+      <div className="fixed bottom-4 left-4 z-30 flex flex-col items-start gap-2">
         {selectedProfiles.length === 1 ? (
           <NaturalShareButton profile={selectedProfiles[0]} />
         ) : null}
+        <ShareButton profiles={selectedProfiles} />
       </div>
 
-      {/* 우측 하단 고정: 매물 추가 */}
+      {/* 우측 하단 고정: 매물 추가 (모바일은 + 아이콘만, sm 이상에서 텍스트) */}
       <button
-        className="fixed bottom-4 right-4 z-30 inline-flex h-14 items-center justify-center gap-2 rounded-full bg-[var(--violet-950)] px-5 font-semibold text-white shadow-sm transition hover:bg-[var(--violet-900)]"
+        className="fixed bottom-4 right-4 z-30 inline-flex h-14 w-14 items-center justify-center gap-2 rounded-full bg-[var(--violet-950)] px-0 font-semibold text-white shadow-sm transition hover:bg-[var(--violet-900)] sm:w-auto sm:px-5"
         type="button"
         onClick={() => setModal({kind: 'create'})}
       >
         <Plus size={20} strokeWidth={1.75} aria-hidden />
-        매물 추가
+        <span className="hidden sm:inline">매물 추가</span>
       </button>
 
       {modal.kind !== 'closed' ? (
