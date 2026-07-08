@@ -2,9 +2,10 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import {X} from 'lucide-react';
+import {Pencil, X} from 'lucide-react';
 import {useEffect, useState} from 'react';
 
+import {NaturalShareButton} from '@/components/NaturalShareButton';
 import {PhotoSlider} from '@/app/profiles/[id]/PhotoSlider';
 import {useBodyScrollLock} from '@/hooks/useBodyScrollLock';
 import {formatBirthYearLabel} from '@/lib/profiles/age';
@@ -24,6 +25,7 @@ type ProfileDetailModalProps = {
   onEndMatch: (matchId: string) => void;
   onDeleteMatch: (matchId: string) => void;
   onOpenProfile: (profileId: string) => void;
+  onEdit: (profile: Profile) => void;
   onClose: () => void;
 };
 
@@ -36,6 +38,7 @@ export function ProfileDetailModal({
   onEndMatch,
   onDeleteMatch,
   onOpenProfile,
+  onEdit,
   onClose,
 }: ProfileDetailModalProps) {
   const [showCandidates, setShowCandidates] = useState(false);
@@ -101,8 +104,20 @@ export function ProfileDetailModal({
 
         {/* 우측(PC) / 하단(모바일): 전체 정보 + 매칭 허브 */}
         <div className="flex min-h-0 flex-1 flex-col md:w-[38%]">
-          <header className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
+          <header className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] px-5 py-4">
             <h2 className="text-lg font-bold text-[var(--violet-950)]">{title}</h2>
+            {/* 상세보기에서 바로 수정 / 자연스러운 공유 */}
+            <div className="flex items-center gap-2">
+              <button
+                className="inline-flex h-10 items-center gap-1.5 rounded-[8px] border border-[var(--border)] bg-white px-3.5 text-sm font-bold text-[var(--violet-800)] shadow-sm transition hover:bg-[var(--violet-50)]"
+                type="button"
+                onClick={() => onEdit(profile)}
+              >
+                <Pencil size={15} strokeWidth={1.75} aria-hidden />
+                수정
+              </button>
+              <NaturalShareButton profile={profile} />
+            </div>
           </header>
 
           <div className="min-h-0 flex-1 md:overflow-y-auto">
