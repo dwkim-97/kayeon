@@ -6,23 +6,50 @@ import {createPortal} from 'react-dom';
 
 import {useBodyScrollLock} from '@/hooks/useBodyScrollLock';
 import {PATCH_NOTES, type PatchNote} from '@/lib/patch-notes/data';
+import {
+  hasUnseenPatchNotes,
+  latestPatchDate,
+  PATCH_NOTES_SEEN_STORAGE_KEY,
+} from '@/lib/patch-notes/unseen';
 
 // 상단 메뉴의 패치노트 버튼. 누르면 업데이트 내역 목록을 모달로 띄우고,
 // 각 항목을 누르면 상세 내용을 펼쳐 보여준다.
+// 안 읽은 새 패치가 있으면 버튼에 빨간 알림 점을 띄우고, 열면 사라진다.
 export function PatchNotesButton({className = ''}: {className?: string}) {
   const [open, setOpen] = useState(false);
+  const [hasUnseen, setHasUnseen] = useState(false);
+
+  useEffect(() => {
+    const lastSeen = window.localStorage.getItem(PATCH_NOTES_SEEN_STORAGE_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (hasUnseenPatchNotes(PATCH_NOTES, lastSeen)) setHasUnseen(true);
+  }, []);
+
+  const handleOpen = () => {
+    setOpen(true);
+    // 최신 패치 날짜를 "확인함"으로 저장 → 알림 점 제거
+    const latest = latestPatchDate(PATCH_NOTES);
+    if (latest) window.localStorage.setItem(PATCH_NOTES_SEEN_STORAGE_KEY, latest);
+    setHasUnseen(false);
+  };
 
   return (
     <>
       <button
-        className={className}
+        className={`relative ${className}`}
         type="button"
-        onClick={() => setOpen(true)}
-        aria-label="패치노트"
+        onClick={handleOpen}
+        aria-label={hasUnseen ? '패치노트 (새 업데이트 있음)' : '패치노트'}
         title="패치노트"
       >
         <Megaphone size={14} strokeWidth={1.75} aria-hidden />
         패치노트
+        {hasUnseen ? (
+          <span className="absolute -right-1 -top-1 flex h-2.5 w-2.5" aria-hidden>
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--violet-500)] opacity-75" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--violet-600)]" />
+          </span>
+        ) : null}
       </button>
       {open ? <PatchNotesModal notes={PATCH_NOTES} onClose={() => setOpen(false)} /> : null}
     </>
