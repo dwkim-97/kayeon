@@ -133,11 +133,9 @@ export function ProfileCard({
 
       <div
         className={`relative overflow-hidden rounded-[8px] bg-white transition ${
-          isStarred
-            ? 'border-4 border-yellow-400 shadow-sm'
-            : !isBlocked && isSelected
-              ? 'border-4 border-[var(--violet-600)] shadow-sm'
-              : 'border border-[var(--border)] shadow-sm'
+          !isBlocked && isSelected
+            ? 'border-4 border-[var(--violet-600)] shadow-sm'
+            : 'border border-[var(--border)] shadow-sm'
         } ${isBlocked ? 'grayscale' : ''}`}
       >
         {isBlocked ? <div className="absolute inset-0 z-10 bg-slate-200/65" aria-hidden /> : null}
