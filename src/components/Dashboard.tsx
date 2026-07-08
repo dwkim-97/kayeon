@@ -695,6 +695,10 @@ export function Dashboard({authorName}: DashboardProps) {
           onEndMatch={handleEndMatch}
           onDeleteMatch={handleDeleteMatch}
           onOpenProfile={pid => setDetailProfileId(pid)}
+          onEdit={selectedProfile => {
+            setDetailProfileId(null);
+            setModal({kind: 'edit', profile: selectedProfile});
+          }}
           onClose={() => setDetailProfileId(null)}
         />
       ) : null}
