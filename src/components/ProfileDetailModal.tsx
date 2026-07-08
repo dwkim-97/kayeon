@@ -73,7 +73,7 @@ export function ProfileDetailModal({
       onClick={onClose}
     >
       <section
-        className="relative flex h-full w-full max-w-4xl flex-col overflow-y-auto bg-white shadow-sm sm:h-[90vh] sm:rounded-[12px] md:flex-row md:overflow-hidden"
+        className="relative flex h-full w-full max-w-6xl flex-col overflow-y-auto bg-white shadow-sm sm:h-[90vh] sm:rounded-[12px] md:flex-row md:overflow-hidden"
         onClick={event => event.stopPropagation()}
       >
         {/* 항상 보이는 닫기 버튼 (좌상단 오버레이) — 모바일/PC 공통 */}
@@ -87,7 +87,7 @@ export function ProfileDetailModal({
         </button>
 
         {/* 좌측(PC) / 상단(모바일): 사진 슬라이더 — 모바일에서는 고정하지 않고 함께 스크롤 */}
-        <div className="relative aspect-[4/5] w-full shrink-0 bg-black sm:aspect-auto sm:h-[52vh] md:h-full md:w-[55%]">
+        <div className="relative aspect-[4/5] w-full shrink-0 bg-black sm:aspect-auto sm:h-[52vh] md:h-full md:w-[62%]">
           {/* infoRows는 우측 패널에서 보여주므로 슬라이더 내부 오버레이는 비운다 */}
           <PhotoSlider photos={profile.photos} infoRows={[]} />
 
@@ -100,7 +100,7 @@ export function ProfileDetailModal({
         </div>
 
         {/* 우측(PC) / 하단(모바일): 전체 정보 + 매칭 허브 */}
-        <div className="flex min-h-0 flex-1 flex-col md:w-[45%]">
+        <div className="flex min-h-0 flex-1 flex-col md:w-[38%]">
           <header className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
             <h2 className="text-lg font-bold text-[var(--violet-950)]">{title}</h2>
           </header>

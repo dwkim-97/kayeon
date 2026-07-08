@@ -225,23 +225,23 @@ export function ProfileCard({
             <>
               <button
                 className={`absolute left-2 top-1/2 z-20 grid -translate-y-1/2 place-items-center rounded-full bg-white/65 text-[var(--violet-900)] ${
-                  isCompact ? 'h-6 w-6' : 'h-8 w-8'
+                  isCompact ? 'h-9 w-9' : 'h-12 w-12'
                 }`}
                 type="button"
                 onClick={e => { e.stopPropagation(); movePhoto(-1); }}
                 aria-label="이전 사진"
               >
-                <ChevronLeft size={isCompact ? 14 : 18} strokeWidth={1.75} aria-hidden />
+                <ChevronLeft size={isCompact ? 20 : 26} strokeWidth={1.75} aria-hidden />
               </button>
               <button
                 className={`absolute right-2 top-1/2 z-20 grid -translate-y-1/2 place-items-center rounded-full bg-white/65 text-[var(--violet-900)] ${
-                  isCompact ? 'h-6 w-6' : 'h-8 w-8'
+                  isCompact ? 'h-9 w-9' : 'h-12 w-12'
                 }`}
                 type="button"
                 onClick={e => { e.stopPropagation(); movePhoto(1); }}
                 aria-label="다음 사진"
               >
-                <ChevronRight size={isCompact ? 14 : 18} strokeWidth={1.75} aria-hidden />
+                <ChevronRight size={isCompact ? 20 : 26} strokeWidth={1.75} aria-hidden />
               </button>
               <div
                 className={`absolute bottom-3 right-3 z-20 rounded-full bg-black/55 font-semibold text-white ${

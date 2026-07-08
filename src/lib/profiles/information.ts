@@ -23,7 +23,15 @@ export function getPrimaryInformationRows(profile: Profile): ProfileInformationR
   ];
 }
 
-export function getAdditionalInformationRows(profile: Profile): ProfileInformationRow[] {
+type InformationOptions = {
+  // 공유·공개용 페이지에서는 이상형·주선자 코멘트를 노출하지 않는다.
+  hidePrivateNotes?: boolean;
+};
+
+export function getAdditionalInformationRows(
+  profile: Profile,
+  options: InformationOptions = {},
+): ProfileInformationRow[] {
   const rows: ProfileInformationRow[] = [];
 
   if (profile.religion !== 'not_selected') rows.push(['종교', religionLabels[profile.religion]]);
@@ -43,16 +51,21 @@ export function getAdditionalInformationRows(profile: Profile): ProfileInformati
     rows.push(['흡연/음주', value]);
   }
 
-  if (profile.idealType) rows.push(['이상형', profile.idealType]);
-  if (profile.matchmakerComment) rows.push(['코멘트', profile.matchmakerComment]);
+  if (!options.hidePrivateNotes) {
+    if (profile.idealType) rows.push(['이상형', profile.idealType]);
+    if (profile.matchmakerComment) rows.push(['주선자 코멘트', profile.matchmakerComment]);
+  }
   if (profile.extra) rows.push(['기타', profile.extra]);
 
   return rows;
 }
 
 // 주요 + 추가를 합친 전체 정보. 공개 상세페이지·상세 모달에서 사용.
-export function getProfileInformationRows(profile: Profile): ProfileInformationRow[] {
-  return [...getPrimaryInformationRows(profile), ...getAdditionalInformationRows(profile)];
+export function getProfileInformationRows(
+  profile: Profile,
+  options: InformationOptions = {},
+): ProfileInformationRow[] {
+  return [...getPrimaryInformationRows(profile), ...getAdditionalInformationRows(profile, options)];
 }
 
 // 관리자 전용 항목(떠보기/거절내성/응답속도). 주선자만 보는 상세 모달에서만 노출.

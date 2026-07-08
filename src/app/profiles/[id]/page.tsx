@@ -26,7 +26,8 @@ export default async function ProfileDetailPage({params}: PageProps) {
 
   const {profile_photos: photoRows, ...row} = data;
   const profile = rowToProfile(row, photoRows ?? [], getStoragePublicBase());
-  const informationRows = getProfileInformationRows(profile);
+  // 공유 페이지는 이상형·주선자 코멘트를 숨긴다.
+  const informationRows = getProfileInformationRows(profile, {hidePrivateNotes: true});
 
   return (
     <div className="flex h-screen flex-col bg-black md:flex-row">
