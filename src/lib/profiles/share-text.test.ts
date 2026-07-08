@@ -62,6 +62,13 @@ describe('buildShareText', () => {
     expect(text).not.toContain('응답속도');
   });
 
+  it('excludes 이상형 but keeps 주선자 코멘트', () => {
+    const text = buildShareText(makeProfile({idealType: '다정한 사람', matchmakerComment: '성실함'}));
+    expect(text).not.toContain('이상형');
+    expect(text).not.toContain('다정한 사람');
+    expect(text).toContain('주선자 코멘트: 성실함');
+  });
+
   it('omits empty optional values', () => {
     const text = buildShareText(makeProfile({mbti: '', hobbies: '', religion: 'not_selected'}));
     expect(text).not.toContain('MBTI');
