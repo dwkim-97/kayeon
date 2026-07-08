@@ -9,8 +9,9 @@ import {PhotoSlider} from '@/app/profiles/[id]/PhotoSlider';
 import {useBodyScrollLock} from '@/hooks/useBodyScrollLock';
 import {formatBirthYearLabel} from '@/lib/profiles/age';
 import {getMatchCandidates, getProfileMatches} from '@/lib/matches/summary';
-import {getProfileInformationRows} from '@/lib/profiles/information';
+import {getAdminInformationRows, getProfileInformationRows} from '@/lib/profiles/information';
 import {genderLabels} from '@/lib/profiles/options';
+import {PARTNER_THUMB_WIDTH, photoThumbnailUrl} from '@/lib/profiles/photo-url';
 import type {Match} from '@/types/match';
 import type {Profile} from '@/types/profile';
 
@@ -18,6 +19,7 @@ type ProfileDetailModalProps = {
   profile: Profile;
   matches: Match[];
   allProfiles: Profile[];
+  officeMode?: boolean;
   onCreateMatch: (femaleId: string, maleId: string) => void;
   onEndMatch: (matchId: string) => void;
   onDeleteMatch: (matchId: string) => void;
@@ -29,6 +31,7 @@ export function ProfileDetailModal({
   profile,
   matches,
   allProfiles,
+  officeMode = false,
   onCreateMatch,
   onEndMatch,
   onDeleteMatch,
@@ -37,6 +40,7 @@ export function ProfileDetailModal({
 }: ProfileDetailModalProps) {
   const [showCandidates, setShowCandidates] = useState(false);
   const informationRows = getProfileInformationRows(profile);
+  const adminRows = getAdminInformationRows(profile);
   const title = `${genderLabels[profile.gender]} · ${formatBirthYearLabel(profile.birthYear)}`;
   const profileMatches = getProfileMatches(profile.id, matches);
   const candidates = getMatchCandidates(profile, allProfiles);
@@ -60,7 +64,9 @@ export function ProfileDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-[60] grid place-items-center bg-black/70 p-0 sm:p-4"
+      className={`fixed inset-0 z-[60] grid place-items-center bg-black/70 p-0 sm:p-4 ${
+        officeMode ? 'office-mode' : ''
+      }`}
       role="dialog"
       aria-modal="true"
       aria-label={`${title} 상세 정보`}
@@ -116,6 +122,28 @@ export function ProfileDetailModal({
                 ))}
               </ul>
             </div>
+
+            {/* 관리자 전용 항목: 떠보기/거절내성/응답속도. 값 있을 때만. */}
+            {adminRows.length > 0 ? (
+              <div className="border-b border-[var(--border)] px-5 py-4">
+                <div className="rounded-[8px] border border-amber-300 bg-amber-50 px-4 py-3">
+                  <h3 className="mb-2 flex items-center gap-1 text-xs font-bold text-amber-700">
+                    <span aria-hidden>🔒</span> 관리자 전용
+                  </h3>
+                  <ul className="flex flex-wrap gap-2">
+                    {adminRows.map(([label, value]) => (
+                      <li
+                        key={label}
+                        className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-white px-2.5 py-1 text-xs font-semibold text-amber-900"
+                      >
+                        <span className="text-amber-600">{label}</span>
+                        <span>{value}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ) : null}
 
             {/* 관리자 메모: 주선자 전용. 눈에 띄도록 amber 톤으로 구분. 값 있을 때만. */}
             {profile.adminMemo ? (
@@ -232,7 +260,7 @@ function PartnerThumb({partner}: {partner: Profile | undefined}) {
   return (
     <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-[6px] bg-[var(--violet-100)]">
       {photo ? (
-        <img className="h-full w-full object-cover" src={photo.url} alt={photo.alt} draggable={false} />
+        <img className="h-full w-full object-cover" src={photoThumbnailUrl(photo.url, PARTNER_THUMB_WIDTH)} alt={photo.alt} draggable={false} />
       ) : (
         <span className="text-[9px] font-semibold text-slate-400">없음</span>
       )}

@@ -1,5 +1,12 @@
 import {formatBirthYearLabel} from '@/lib/profiles/age';
-import {drinkingLabels, religionLabels, smokingLabels} from '@/lib/profiles/options';
+import {
+  drinkingLabels,
+  probeLabels,
+  rejectionToleranceLabels,
+  religionLabels,
+  responseSpeedLabels,
+  smokingLabels,
+} from '@/lib/profiles/options';
 import type {Profile} from '@/types/profile';
 
 export type ProfileInformationRow = [label: string, value: string];
@@ -59,4 +66,18 @@ export function getProfileInformationRows(
   options: InformationOptions = {},
 ): ProfileInformationRow[] {
   return [...getPrimaryInformationRows(profile), ...getAdditionalInformationRows(profile, options)];
+}
+
+// 관리자 전용 항목(떠보기/거절내성/응답속도). 주선자만 보는 상세 모달에서만 노출.
+// 미선택 항목은 제외한다.
+export function getAdminInformationRows(profile: Profile): ProfileInformationRow[] {
+  const rows: ProfileInformationRow[] = [];
+  if (profile.probe !== 'not_selected') rows.push(['떠보기', probeLabels[profile.probe]]);
+  if (profile.rejectionTolerance !== 'not_selected') {
+    rows.push(['거절내성', rejectionToleranceLabels[profile.rejectionTolerance]]);
+  }
+  if (profile.responseSpeed !== 'not_selected') {
+    rows.push(['응답속도', responseSpeedLabels[profile.responseSpeed]]);
+  }
+  return rows;
 }

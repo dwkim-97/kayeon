@@ -2,6 +2,7 @@ import {describe, expect, it} from 'vitest';
 
 import {
   getAdditionalInformationRows,
+  getAdminInformationRows,
   getPrimaryInformationRows,
   getProfileInformationRows,
 } from './information';
@@ -27,6 +28,9 @@ const profile: Profile = {
   matchmakerComment: '성실함',
   extra: '반려견',
   adminMemo: '',
+  probe: 'not_selected',
+  rejectionTolerance: 'not_selected',
+  responseSpeed: 'not_selected',
   photos: [],
   createdAt: '2026-06-30T00:00:00.000Z',
   updatedAt: '2026-06-30T00:00:00.000Z',
@@ -72,5 +76,22 @@ describe('profile information rows', () => {
       ...getPrimaryInformationRows(profile),
       ...getAdditionalInformationRows(profile),
     ]);
+  });
+
+  it('admin rows include set 떠보기/거절내성/응답속도 and omit not_selected', () => {
+    const withAdmin: Profile = {
+      ...profile,
+      probe: 'possible',
+      rejectionTolerance: 'high',
+      responseSpeed: 'not_selected',
+    };
+    expect(getAdminInformationRows(withAdmin)).toEqual([
+      ['떠보기', '떠보기 가능'],
+      ['거절내성', '상'],
+    ]);
+  });
+
+  it('admin rows are empty when all not_selected', () => {
+    expect(getAdminInformationRows(profile)).toEqual([]);
   });
 });

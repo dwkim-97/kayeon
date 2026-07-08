@@ -84,3 +84,29 @@ grant select, delete on public.pending_profiles to authenticated;
 -- 주선자 전용 내부 메모. 상세보기에서만(다른 색으로) 노출. 기존 데이터는 빈 값.
 alter table public.profiles
   add column if not exists admin_memo text not null default '';
+
+
+-- ④ 매물 관리자 전용 항목 컬럼 ----------------------------
+-- 떠보기/거절내성/응답속도. 주선자만 보는 항목. 기존 데이터는 'not_selected'.
+alter table public.profiles
+  add column if not exists probe text not null default 'not_selected',
+  add column if not exists rejection_tolerance text not null default 'not_selected',
+  add column if not exists response_speed text not null default 'not_selected';
+
+alter table public.profiles
+  drop constraint if exists profiles_probe_check;
+alter table public.profiles
+  add constraint profiles_probe_check
+  check (probe in ('possible', 'impossible', 'not_selected'));
+
+alter table public.profiles
+  drop constraint if exists profiles_rejection_tolerance_check;
+alter table public.profiles
+  add constraint profiles_rejection_tolerance_check
+  check (rejection_tolerance in ('high', 'mid', 'low', 'not_selected'));
+
+alter table public.profiles
+  drop constraint if exists profiles_response_speed_check;
+alter table public.profiles
+  add constraint profiles_response_speed_check
+  check (response_speed in ('fast', 'normal', 'slow', 'not_selected'));

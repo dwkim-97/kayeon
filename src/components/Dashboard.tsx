@@ -1,12 +1,15 @@
 'use client';
 
-import {Check, ChevronDown, ChevronUp, Grid3x3, LayoutGrid, Pencil, Plus, SlidersHorizontal, Users} from 'lucide-react';
+import {Briefcase, Check, ChevronDown, ChevronUp, Grid3x3, LayoutGrid, Pencil, Plus, SlidersHorizontal, Users} from 'lucide-react';
 import Link from 'next/link';
 import {useEffect, useMemo, useState} from 'react';
 
+import {useImagePrefetch} from '@/hooks/useImagePrefetch';
+import {useOfficeMode} from '@/hooks/useOfficeMode';
 import {AppHeader} from '@/components/AppHeader';
 import {closedAlertState, CustomAlert, type CustomAlertState} from '@/components/CustomAlert';
 import {FilterBar} from '@/components/FilterBar';
+import {NewArrivalToast} from '@/components/NewArrivalToast';
 import {ProfileCard, type ProfileCardVariant} from '@/components/ProfileCard';
 import {ProfileDetailModal} from '@/components/ProfileDetailModal';
 import {ProfileFormModal} from '@/components/ProfileFormModal';
@@ -16,6 +19,12 @@ import {historyEventDescriptions, recordHistory} from '@/lib/history/events';
 import {countOngoingByProfile} from '@/lib/matches/summary';
 import {formatBirthYearLabel} from '@/lib/profiles/age';
 import {filterProfiles} from '@/lib/profiles/filter';
+import {
+  countNewArrivals,
+  latestCreatedAt,
+  NEW_ARRIVAL_STORAGE_KEY,
+} from '@/lib/profiles/new-arrivals';
+import {collectDetailPhotoUrls} from '@/lib/profiles/prefetch';
 import {genderLabels} from '@/lib/profiles/options';
 import type {Gender, Profile, ProfileFilters, ProfileStatus} from '@/types/profile';
 import type {Match} from '@/types/match';
@@ -166,6 +175,8 @@ export function Dashboard({authorName}: DashboardProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [matches, setMatches] = useState<Match[]>([]);
   const [detailProfileId, setDetailProfileId] = useState<string | null>(null);
+  const [newArrivalCount, setNewArrivalCount] = useState(0);
+  const {officeMode, toggleOfficeMode} = useOfficeMode();
   // 첫 렌더는 항상 기본값 'detailed'로 시작(SSR/hydration 안전). localStorage는 브라우저에만
   // 존재하므로 mount 후 effect에서 읽어 반영한다 — 초기값에서 읽으면 서버 HTML과
   // 불일치하여 hydration 경고가 발생한다. 저장된 이력이 없으면 'detailed'가 기본.
@@ -174,7 +185,17 @@ export function Dashboard({authorName}: DashboardProps) {
   useEffect(() => {
     fetch('/api/profiles')
       .then(res => res.json())
-      .then(({profiles: loaded}) => setProfiles(loaded ?? []))
+      .then(({profiles: loaded}: {profiles?: Profile[]}) => {
+        const list = loaded ?? [];
+        setProfiles(list);
+
+        // 마지막 방문 이후 새로 등록된 매물 감지 → 알림. 확인 시점을 최신 등록일로 갱신.
+        const lastSeen = window.localStorage.getItem(NEW_ARRIVAL_STORAGE_KEY);
+        const newCount = countNewArrivals(list, lastSeen);
+        if (newCount > 0) setNewArrivalCount(newCount);
+        const latest = latestCreatedAt(list);
+        if (latest) window.localStorage.setItem(NEW_ARRIVAL_STORAGE_KEY, latest);
+      })
       .catch(() => setProfiles([]))
       .finally(() => setIsLoading(false));
   }, []);
@@ -198,6 +219,11 @@ export function Dashboard({authorName}: DashboardProps) {
     () => profiles.find(p => p.id === detailProfileId) ?? null,
     [profiles, detailProfileId],
   );
+
+  // 대시보드를 보는 동안 상세보기용 큰 사진(1200px)을 백그라운드로 미리 로드해
+  // 상세보기 진입 시 캐시에서 즉시 뜨게 한다(로딩 완료 후 idle 시점에 시작).
+  const detailPhotoUrls = useMemo(() => collectDetailPhotoUrls(profiles), [profiles]);
+  useImagePrefetch(detailPhotoUrls, !isLoading);
 
   const changeViewMode = (mode: ProfileCardVariant) => {
     setViewMode(mode);
@@ -450,6 +476,12 @@ export function Dashboard({authorName}: DashboardProps) {
           </div>
         </div>
       ) : null}
+      {newArrivalCount > 0 ? (
+        <NewArrivalToast count={newArrivalCount} onClose={() => setNewArrivalCount(0)} />
+      ) : null}
+      {/* 오피스 모드는 흐름상 콘텐츠(헤더+카드)에만 적용. fixed 요소/모달을 감싸면
+          filter가 그들의 containing block이 되어 위치가 어긋나므로 밖에 둔다. */}
+      <div className={officeMode ? 'office-mode' : ''}>
       <div className="sticky top-0 z-40 bg-white/95 backdrop-blur">
         <AppHeader page="dashboard" sticky={false} authorName={authorName} />
 
@@ -513,6 +545,22 @@ export function Dashboard({authorName}: DashboardProps) {
 
             {/* 정렬: 필터 버튼 옆의 독립 팝오버 */}
             <SortMenu filters={filters} onChange={setFilters} />
+
+            {/* 오피스 모드 토글: 켜면 화면을 흑백+블러로 위장(사진은 hover 시 선명) */}
+            <button
+              className={`inline-flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-[8px] border px-2 text-[11px] font-semibold transition ${
+                officeMode
+                  ? 'border-slate-700 bg-slate-700 text-white'
+                  : 'border-[var(--border)] bg-white text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
+              }`}
+              type="button"
+              onClick={toggleOfficeMode}
+              aria-pressed={officeMode}
+              title="오피스 모드 — 사무실에서 티 안 나게"
+            >
+              <Briefcase size={13} strokeWidth={1.75} aria-hidden />
+              <span className="hidden sm:inline">오피스</span>
+            </button>
 
             {/* 편집 모드 토글: 켜면 각 카드에 수정/삭제/비활성화 버튼 노출 */}
             <button
@@ -601,6 +649,7 @@ export function Dashboard({authorName}: DashboardProps) {
           )}
         </section>
       </div>
+      </div>
 
       {/* 좌측 하단 고정: 카카오톡 공유 */}
       <div className="fixed bottom-4 left-4 z-30">
@@ -634,6 +683,7 @@ export function Dashboard({authorName}: DashboardProps) {
           profile={detailProfile}
           matches={matches}
           allProfiles={profiles}
+          officeMode={officeMode}
           onCreateMatch={handleCreateMatch}
           onEndMatch={handleEndMatch}
           onDeleteMatch={handleDeleteMatch}

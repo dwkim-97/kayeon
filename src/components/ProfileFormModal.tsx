@@ -16,8 +16,26 @@ import {
   type ProfileFormValues,
 } from '@/lib/profiles/form';
 import {resizeImageFile} from '@/lib/profiles/image-resize';
-import {drinkingLabels, genderLabels, religionLabels, smokingLabels} from '@/lib/profiles/options';
-import type {Drinking, Gender, Profile, ProfilePhoto, Religion, Smoking} from '@/types/profile';
+import {
+  drinkingLabels,
+  genderLabels,
+  probeLabels,
+  rejectionToleranceLabels,
+  religionLabels,
+  responseSpeedLabels,
+  smokingLabels,
+} from '@/lib/profiles/options';
+import type {
+  Drinking,
+  Gender,
+  Probe,
+  RejectionTolerance,
+  Religion,
+  ResponseSpeed,
+  Profile,
+  ProfilePhoto,
+  Smoking,
+} from '@/types/profile';
 
 type ModalMode =
   | {
@@ -37,9 +55,21 @@ type ProfileFormModalProps = {
 };
 
 const genderOptions: [Gender, string][] = (['female', 'male'] as Gender[]).map(value => [value, genderLabels[value]]);
-const religionOptions: Religion[] = ['christian', 'buddhist', 'catholic', 'not_selected'];
+// 미선택은 버튼 재클릭 해제로 대체 → '무교'(none) 버튼을 제공
+const religionOptions: Religion[] = ['christian', 'buddhist', 'catholic', 'none'];
 const smokingOptions: Smoking[] = ['smoker', 'non_smoker'];
 const drinkingOptions: Drinking[] = ['drinker', 'non_drinker'];
+// 관리자 전용 항목 선택지
+const probeOptions: Probe[] = ['possible', 'impossible'];
+const rejectionToleranceOptions: RejectionTolerance[] = ['high', 'mid', 'low'];
+const responseSpeedOptions: ResponseSpeed[] = ['fast', 'normal', 'slow'];
+// 응답속도: 빠름=토끼 / 느림=거북이 (보통은 사이)
+const responseSpeedEmoji: Record<ResponseSpeed, string> = {
+  fast: '🐰',
+  normal: '🚶',
+  slow: '🐢',
+  not_selected: '',
+};
 const {oldestBirthYear, youngestBirthYear} = birthYearBounds;
 const birthYearOptions = Array.from({length: youngestBirthYear - oldestBirthYear + 1}, (_, index) => {
   const year = youngestBirthYear - index;
@@ -444,14 +474,36 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
               {/* 추가 정보: 상세 모달에서만 노출되는 부가 항목 */}
               <fieldset className="rounded-[10px] border border-[var(--border)] p-4">
                 <legend className="px-2 text-sm font-semibold text-slate-500">추가 정보</legend>
-                <div className="grid gap-4 sm:grid-cols-2">
+
+                {/* 버튼식 선택지(종교/흡연/음주)를 상단에 모아 배치. 다시 누르면 해제(미선택). */}
+                <div className="grid gap-4 sm:grid-cols-3">
                   <RadioGroup<Religion>
                     label="종교"
                     required={false}
                     value={values.religion}
                     options={religionOptions.map(value => [value, religionLabels[value]])}
                     onChange={value => updateField('religion', value)}
+                    deselectValue="not_selected"
                   />
+                  <RadioGroup<Smoking>
+                    label="흡연"
+                    required={false}
+                    value={values.smoking}
+                    options={smokingOptions.map(value => [value, smokingLabels[value]])}
+                    onChange={value => updateField('smoking', value)}
+                    deselectValue="not_selected"
+                  />
+                  <RadioGroup<Drinking>
+                    label="음주"
+                    required={false}
+                    value={values.drinking}
+                    options={drinkingOptions.map(value => [value, drinkingLabels[value]])}
+                    onChange={value => updateField('drinking', value)}
+                    deselectValue="not_selected"
+                  />
+                </div>
+
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <TextField
                     label="MBTI"
                     required={false}
@@ -467,20 +519,6 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
                     placeholder="독서, 러닝"
                     value={values.hobbies}
                     onChange={value => updateField('hobbies', value)}
-                  />
-                  <RadioGroup<Smoking>
-                    label="흡연"
-                    required={false}
-                    value={values.smoking}
-                    options={smokingOptions.map(value => [value, smokingLabels[value]])}
-                    onChange={value => updateField('smoking', value)}
-                  />
-                  <RadioGroup<Drinking>
-                    label="음주"
-                    required={false}
-                    value={values.drinking}
-                    options={drinkingOptions.map(value => [value, drinkingLabels[value]])}
-                    onChange={value => updateField('drinking', value)}
                   />
                   <TextArea
                     label="이상형"
@@ -516,6 +554,34 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
                   value={values.adminMemo}
                   onChange={event => updateField('adminMemo', event.target.value)}
                 />
+
+                {/* 관리자 전용 선택 항목 — 공유 화면에는 노출되지 않는다. 다시 누르면 해제. */}
+                <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                  <RadioGroup<Probe>
+                    label="떠보기"
+                    required={false}
+                    value={values.probe}
+                    options={probeOptions.map(value => [value, probeLabels[value]])}
+                    onChange={value => updateField('probe', value)}
+                    deselectValue="not_selected"
+                  />
+                  <RadioGroup<RejectionTolerance>
+                    label="거절내성"
+                    required={false}
+                    value={values.rejectionTolerance}
+                    options={rejectionToleranceOptions.map(value => [value, rejectionToleranceLabels[value]])}
+                    onChange={value => updateField('rejectionTolerance', value)}
+                    deselectValue="not_selected"
+                  />
+                  <RadioGroup<ResponseSpeed>
+                    label="응답속도"
+                    required={false}
+                    value={values.responseSpeed}
+                    options={responseSpeedOptions.map(value => [value, `${responseSpeedEmoji[value]} ${responseSpeedLabels[value]}`])}
+                    onChange={value => updateField('responseSpeed', value)}
+                    deselectValue="not_selected"
+                  />
+                </div>
               </fieldset>
             </div>
           </div>
@@ -636,12 +702,15 @@ function RadioGroup<TValue extends string>({
   value,
   options,
   onChange,
+  deselectValue,
 }: {
   label: string;
   required: boolean;
   value: TValue;
   options: Array<[TValue, string]>;
   onChange: (value: TValue) => void;
+  // 지정 시: 선택된 버튼을 다시 누르면 이 값으로 되돌린다(선택 해제 = 미선택).
+  deselectValue?: TValue;
 }) {
   return (
     <fieldset>
@@ -649,20 +718,25 @@ function RadioGroup<TValue extends string>({
         <FieldLabel label={label} required={required} />
       </legend>
       <div className="flex flex-wrap gap-2">
-        {options.map(([optionValue, optionLabel]) => (
-          <button
-            className={`rounded-full border px-3 py-1.5 text-sm font-semibold ${
-              value === optionValue
-                ? 'border-[var(--violet-600)] bg-[var(--violet-600)] text-white'
-                : 'border-[var(--border)] bg-[var(--violet-50)] text-[var(--violet-900)]'
-            }`}
-            key={optionValue}
-            type="button"
-            onClick={() => onChange(optionValue)}
-          >
-            {optionLabel}
-          </button>
-        ))}
+        {options.map(([optionValue, optionLabel]) => {
+          const isSelected = value === optionValue;
+          return (
+            <button
+              className={`rounded-full border px-3 py-1.5 text-sm font-semibold ${
+                isSelected
+                  ? 'border-[var(--violet-600)] bg-[var(--violet-600)] text-white'
+                  : 'border-[var(--border)] bg-[var(--violet-50)] text-[var(--violet-900)]'
+              }`}
+              key={optionValue}
+              type="button"
+              onClick={() =>
+                onChange(isSelected && deselectValue !== undefined ? deselectValue : optionValue)
+              }
+            >
+              {optionLabel}
+            </button>
+          );
+        })}
       </div>
     </fieldset>
   );

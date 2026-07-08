@@ -94,3 +94,90 @@ button:disabled {
 .profile-photo-animate-previous {
   animation: profile-photo-previous 220ms ease-out;
 }
+
+/* 새 매물 알림 — 배너 등장 + 반짝임(sparkle) 연출 */
+@keyframes new-arrival-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+  60% {
+    transform: translateY(2px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes new-arrival-sheen {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+@keyframes new-arrival-twinkle {
+  0%, 100% {
+    opacity: 0.25;
+    transform: scale(0.7) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15) rotate(20deg);
+  }
+}
+
+.new-arrival-pop {
+  animation: new-arrival-pop 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 배너 위를 지나가는 빛줄기 */
+.new-arrival-sheen {
+  animation: new-arrival-sheen 2.6s ease-in-out infinite;
+}
+
+/* 반짝이는 별 — 각기 다른 딜레이로 깜빡 */
+.new-arrival-twinkle {
+  animation: new-arrival-twinkle 1.6s ease-in-out infinite;
+}
+.new-arrival-twinkle-delay-1 {
+  animation-delay: 0.4s;
+}
+.new-arrival-twinkle-delay-2 {
+  animation-delay: 0.8s;
+}
+.new-arrival-twinkle-delay-3 {
+  animation-delay: 1.2s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .new-arrival-pop,
+  .new-arrival-sheen,
+  .new-arrival-twinkle {
+    animation: none;
+  }
+}
+
+/* 오피스 모드 — 사무실에서 봐도 티 안 나도록 화면을 차분한 무채색으로.
+   전체를 흑백/저채도로 낮추고, 사람 사진은 블러 처리한다.
+   개별 사진은 마우스를 올리면 잠깐 선명해져 작업은 계속 가능. */
+.office-mode {
+  filter: grayscale(1) contrast(0.92) brightness(1.02);
+}
+
+/* 매물 카드 사진(article 내부)과 상세 모달(role=dialog) 사진을 블러 처리 —
+   로고/아이콘은 흑백만 적용. 모달 루트가 office-mode 클래스를 직접 가지므로
+   `.office-mode[role="dialog"]`로 그 안의 사진만 대상으로 한다. */
+.office-mode article img,
+.office-mode[role='dialog'] img {
+  filter: blur(7px) grayscale(1);
+  transition: filter 160ms ease;
+}
+
+.office-mode article img:hover,
+.office-mode[role='dialog'] img:hover {
+  filter: blur(0) grayscale(1);
+}

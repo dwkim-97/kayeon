@@ -6,6 +6,7 @@ import {ChevronLeft, ChevronRight, X} from 'lucide-react';
 import {useEffect} from 'react';
 
 import {useBodyScrollLock} from '@/hooks/useBodyScrollLock';
+import {DETAIL_IMAGE_WIDTH, LIGHTBOX_THUMB_WIDTH, photoThumbnailUrl} from '@/lib/profiles/photo-url';
 import type {ProfilePhoto} from '@/types/profile';
 
 type PhotoLightboxProps = {
@@ -67,7 +68,7 @@ export function PhotoLightbox({photos, currentIndex, onIndexChange, onClose}: Ph
         <img
           key={photo.id}
           className="max-h-full max-w-full select-none rounded-[8px] object-contain shadow-2xl"
-          src={photo.url}
+          src={photoThumbnailUrl(photo.url, DETAIL_IMAGE_WIDTH)}
           alt={photo.alt}
           draggable={false}
         />
@@ -122,7 +123,7 @@ export function PhotoLightbox({photos, currentIndex, onIndexChange, onClose}: Ph
                 onClick={e => { e.stopPropagation(); onIndexChange(i); }}
                 aria-label={`${i + 1}번째 사진으로 이동`}
               >
-                <img className="h-full w-full object-cover" src={p.url} alt={p.alt} />
+                <img className="h-full w-full object-cover" src={photoThumbnailUrl(p.url, LIGHTBOX_THUMB_WIDTH)} alt={p.alt} />
               </button>
             ))}
           </div>
