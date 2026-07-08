@@ -4,6 +4,7 @@ import {Briefcase, Check, ChevronDown, ChevronUp, Grid3x3, LayoutGrid, Pencil, P
 import Link from 'next/link';
 import {useEffect, useMemo, useState} from 'react';
 
+import {useImagePrefetch} from '@/hooks/useImagePrefetch';
 import {useOfficeMode} from '@/hooks/useOfficeMode';
 import {AppHeader} from '@/components/AppHeader';
 import {closedAlertState, CustomAlert, type CustomAlertState} from '@/components/CustomAlert';
@@ -23,6 +24,7 @@ import {
   latestCreatedAt,
   NEW_ARRIVAL_STORAGE_KEY,
 } from '@/lib/profiles/new-arrivals';
+import {collectDetailPhotoUrls} from '@/lib/profiles/prefetch';
 import {genderLabels} from '@/lib/profiles/options';
 import type {Gender, Profile, ProfileFilters, ProfileStatus} from '@/types/profile';
 import type {Match} from '@/types/match';
@@ -217,6 +219,11 @@ export function Dashboard({authorName}: DashboardProps) {
     () => profiles.find(p => p.id === detailProfileId) ?? null,
     [profiles, detailProfileId],
   );
+
+  // 대시보드를 보는 동안 상세보기용 큰 사진(1200px)을 백그라운드로 미리 로드해
+  // 상세보기 진입 시 캐시에서 즉시 뜨게 한다(로딩 완료 후 idle 시점에 시작).
+  const detailPhotoUrls = useMemo(() => collectDetailPhotoUrls(profiles), [profiles]);
+  useImagePrefetch(detailPhotoUrls, !isLoading);
 
   const changeViewMode = (mode: ProfileCardVariant) => {
     setViewMode(mode);
