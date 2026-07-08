@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import {Pencil, X} from 'lucide-react';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState, type TouchEvent} from 'react';
 
 import {NaturalShareButton} from '@/components/NaturalShareButton';
 import {PhotoSlider} from '@/app/profiles/[id]/PhotoSlider';
@@ -48,6 +48,10 @@ export function ProfileDetailModal({
   const profileMatches = getProfileMatches(profile.id, matches);
   const candidates = getMatchCandidates(profile, allProfiles);
 
+  // 스크롤 컨테이너(모바일 세로 스크롤) + 아래로 쓸어내려 닫기 제스처용
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const swipeStart = useRef<{x: number; y: number; atTop: boolean} | null>(null);
+
   useBodyScrollLock(true);
 
   useEffect(() => {
@@ -57,6 +61,42 @@ export function ProfileDetailModal({
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
+
+  // 폰 뒤로가기(가장자리 스와이프/버튼)로 이전 페이지로 나가지 않고 모달만 닫는다.
+  // 마운트 시 더미 히스토리 항목을 넣고, popstate(뒤로가기) 때 onClose를 호출한다.
+  useEffect(() => {
+    window.history.pushState({kayeonDetailModal: true}, '');
+    const onPopState = () => onClose();
+    window.addEventListener('popstate', onPopState);
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+      // 정상 닫기(X/스와이프/Escape)로 언마운트된 경우, 우리가 넣은 항목을 되돌린다.
+      // popstate로 닫힌 경우엔 이미 항목이 소비됐으므로 back()이 실제 페이지 이동을
+      // 유발하지 않도록 우리 상태일 때만 되돌린다.
+      if (window.history.state?.kayeonDetailModal) window.history.back();
+    };
+  }, [onClose]);
+
+  // 아래로 쓸어내려 닫기 — 스크롤 최상단에서 시작한 수직 아래 스와이프만 처리
+  // (사진 슬라이더의 좌우 스와이프·본문 세로 스크롤과 충돌하지 않게).
+  const SWIPE_DOWN_THRESHOLD = 90;
+
+  const onTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0];
+    const atTop = (scrollRef.current?.scrollTop ?? 0) <= 0;
+    swipeStart.current = {x: touch.clientX, y: touch.clientY, atTop};
+  };
+
+  const onTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (!start || !start.atTop) return;
+    const touch = event.changedTouches[0];
+    const dy = touch.clientY - start.y;
+    const dx = touch.clientX - start.x;
+    // 아래로 충분히, 그리고 수평보다 수직 이동이 클 때만 닫기
+    if (dy > SWIPE_DOWN_THRESHOLD && dy > Math.abs(dx)) onClose();
+  };
 
   const handleCreate = (partner: Profile) => {
     const femaleId = profile.gender === 'female' ? profile.id : partner.id;
@@ -76,8 +116,11 @@ export function ProfileDetailModal({
       onClick={onClose}
     >
       <section
+        ref={scrollRef}
         className="relative flex h-full w-full max-w-6xl flex-col overflow-y-auto bg-white shadow-sm sm:h-[90vh] sm:rounded-[12px] md:flex-row md:overflow-hidden"
         onClick={event => event.stopPropagation()}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
       >
         {/* 항상 보이는 닫기 버튼 (좌상단 오버레이) — 모바일/PC 공통 */}
         <button
