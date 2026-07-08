@@ -10,7 +10,8 @@ import type {Profile} from '@/types/profile';
 
 // "자연스러운 공유" — 사진을 Web Share로 묶어 보내고 정보 텍스트는 클립보드에 복사.
 // 카카오 카드 공유와 별개로, 사람이 직접 앨범+텍스트를 보낸 것처럼 전송한다.
-export function NaturalShareButton({profile}: {profile: Profile}) {
+// onShared: 공유(또는 데스크톱 폴백)가 실제로 완료됐을 때 호출(사용자 취소 시엔 호출 안 함).
+export function NaturalShareButton({profile, onShared}: {profile: Profile; onShared?: () => void}) {
   const [isBusy, setIsBusy] = useState(false);
   const [alertState, setAlertState] = useState<CustomAlertState>(closedAlertState);
 
@@ -31,7 +32,7 @@ export function NaturalShareButton({profile}: {profile: Profile}) {
         try {
           await navigator.share({files});
         } catch {
-          // 사용자가 공유 시트를 취소한 경우 등 — 조용히 무시
+          // 사용자가 공유 시트를 취소한 경우 등 — 조용히 무시(체크 해제도 하지 않음)
           setIsBusy(false);
           return;
         }
@@ -40,6 +41,7 @@ export function NaturalShareButton({profile}: {profile: Profile}) {
           title: '정보가 복사됐어요',
           message: '사진을 보낸 채팅방에 길게 눌러 붙여넣기 하면 정보가 함께 전달됩니다.',
         });
+        onShared?.();
       } else {
         // 데스크톱/파일 공유 미지원 — 사진 다운로드 + 텍스트는 이미 복사됨
         for (const file of files) {
@@ -58,6 +60,7 @@ export function NaturalShareButton({profile}: {profile: Profile}) {
               ? '사진이 다운로드됐어요. 카카오톡에 사진을 첨부하고 붙여넣기 하세요.'
               : '정보가 클립보드에 복사됐어요. 채팅방에 붙여넣기 하세요.',
         });
+        onShared?.();
       }
     } finally {
       setIsBusy(false);

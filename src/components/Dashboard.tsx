@@ -655,7 +655,10 @@ export function Dashboard({authorName}: DashboardProps) {
       {/* 좌측 하단 고정: 공유 버튼들 — 위에서 아래로 자연스러운 공유 → 카카오톡 공유 */}
       <div className="fixed bottom-4 left-4 z-30 flex flex-col items-start gap-2">
         {selectedProfiles.length === 1 ? (
-          <NaturalShareButton profile={selectedProfiles[0]} />
+          <NaturalShareButton
+            profile={selectedProfiles[0]}
+            onShared={() => setSelectedIds(current => current.filter(id => id !== selectedProfiles[0].id))}
+          />
         ) : null}
         <ShareButton profiles={selectedProfiles} />
       </div>
