@@ -7,6 +7,9 @@ import type {Profile} from '@/types/profile';
 // 사진과 함께 사람이 직접 친 것처럼 보이도록 줄 단위로 구성한다.
 export function buildShareText(profile: Profile): string {
   const header = formatBirthYearLabel(profile.birthYear);
-  const lines = getProfileInformationRows(profile).map(([label, value]) => `${label}: ${value}`);
+  // 첫 줄이 이미 년생이므로 정보 행의 '나이'는 중복이라 제외한다.
+  const lines = getProfileInformationRows(profile)
+    .filter(([label]) => label !== '나이')
+    .map(([label, value]) => `${label}: ${value}`);
   return [header, ...lines].join('\n');
 }

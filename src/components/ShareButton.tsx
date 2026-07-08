@@ -149,12 +149,12 @@ export function ShareButton({profiles}: ShareButtonProps) {
       />
 
       <button
-        className="inline-flex h-11 items-center gap-2 rounded-[8px] bg-[var(--violet-600)] px-4 font-bold text-white shadow-[0_12px_30px_rgba(127,34,254,0.24)] transition hover:bg-[var(--violet-700)] disabled:bg-[var(--violet-200)]"
+        className="inline-flex h-10 items-center gap-1.5 rounded-[8px] bg-[var(--violet-600)] px-3.5 text-sm font-bold text-white shadow-[0_12px_30px_rgba(127,34,254,0.24)] transition hover:bg-[var(--violet-700)] disabled:bg-[var(--violet-200)]"
         type="button"
         disabled={profiles.length === 0}
         onClick={handleClick}
       >
-        <Share2 size={17} aria-hidden />
+        <Share2 size={15} aria-hidden />
         {`카카오톡 공유 (${profiles.length})`}
       </button>
 

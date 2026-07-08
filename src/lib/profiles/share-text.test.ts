@@ -40,6 +40,11 @@ describe('buildShareText', () => {
     expect(text.split('\n')[0]).toBe('95년생');
   });
 
+  it('does not repeat the age as a 나이 line (header already shows it)', () => {
+    const text = buildShareText(makeProfile({}));
+    expect(text).not.toContain('나이:');
+  });
+
   it('includes primary + additional info as label: value lines', () => {
     const text = buildShareText(makeProfile({}));
     expect(text).toContain('키: 168cm');

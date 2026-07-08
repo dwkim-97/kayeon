@@ -132,15 +132,10 @@ export function ProfileCard({
       </label>
 
       <div
-        className={`relative overflow-hidden rounded-[8px] bg-white shadow-sm transition ${
-          isStarred
-            ? 'border-4 border-yellow-400'
-            : !isBlocked && isSelected
-              ? 'border-4 border-[var(--violet-600)]'
-              : 'border border-[var(--border)]'
-        } ${
-          // 별표 매물이 선택된 경우 별표 border 위에 select outline 추가
-          !isBlocked && isSelected && isStarred ? 'outline outline-4 outline-offset-[-8px] outline-[var(--violet-600)]' : ''
+        className={`relative overflow-hidden rounded-[8px] bg-white transition ${
+          !isBlocked && isSelected
+            ? 'border-4 border-[var(--violet-600)] shadow-sm'
+            : 'border border-[var(--border)] shadow-sm'
         } ${isBlocked ? 'grayscale' : ''}`}
       >
         {isBlocked ? <div className="absolute inset-0 z-10 bg-slate-200/65" aria-hidden /> : null}
