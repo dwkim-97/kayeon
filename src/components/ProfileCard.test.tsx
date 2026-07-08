@@ -187,6 +187,8 @@ describe('ProfileCard', () => {
     const img = container.querySelector('img')!;
     expect(img.getAttribute('loading')).toBe('lazy');
     expect(img.getAttribute('src')).toContain('/render/image/public/');
-    expect(img.getAttribute('src')).toContain('width=520');
+    // 비율 유지 축소(resize=contain)로 요청 — 잘림/찌그러짐 방지
+    expect(img.getAttribute('src')).toContain('resize=contain');
+    expect(img.getAttribute('src')).toContain('width=650');
   });
 });
