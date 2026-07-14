@@ -1,5 +1,7 @@
 'use client';
 
+import {DndContext, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent} from '@dnd-kit/core';
+import {SortableContext, rectSortingStrategy} from '@dnd-kit/sortable';
 import {Briefcase, Check, ChevronDown, ChevronUp, Grid3x3, LayoutGrid, Pencil, Plus, SlidersHorizontal, Users} from 'lucide-react';
 import Link from 'next/link';
 import {useEffect, useMemo, useState} from 'react';
@@ -17,6 +19,7 @@ import {ProfileDetailModal} from '@/components/ProfileDetailModal';
 import {ProfileFormModal} from '@/components/ProfileFormModal';
 import {ShareButton} from '@/components/ShareButton';
 import {SortMenu} from '@/components/SortMenu';
+import {computeDroppedWeight} from '@/lib/profiles/manual-order';
 import {historyEventDescriptions, recordHistory} from '@/lib/history/events';
 import {countOngoingByProfile, getOngoingPairs} from '@/lib/matches/summary';
 import {formatBirthYearLabel} from '@/lib/profiles/age';
@@ -180,6 +183,10 @@ export function Dashboard({authorName}: DashboardProps) {
   const [detailProfileId, setDetailProfileId] = useState<string | null>(null);
   const [newArrivalCount, setNewArrivalCount] = useState(0);
   const {officeMode, toggleOfficeMode} = useOfficeMode();
+  const sensors = useSensors(
+    useSensor(PointerSensor, {activationConstraint: {distance: 5}}),
+    useSensor(TouchSensor, {activationConstraint: {delay: 200, tolerance: 5}}),
+  );
   // 첫 렌더는 항상 기본값 'detailed'로 시작(SSR/hydration 안전). localStorage는 브라우저에만
   // 존재하므로 mount 후 effect에서 읽어 반영한다 — 초기값에서 읽으면 서버 HTML과
   // 불일치하여 hydration 경고가 발생한다. 저장된 이력이 없으면 'detailed'가 기본.
@@ -448,6 +455,28 @@ export function Dashboard({authorName}: DashboardProps) {
     setMatches(current => current.filter(m => m.id !== matchId));
   };
 
+  // 편집모드 드래그 완료: 이웃 midpoint 가중치를 계산해 PATCH 저장.
+  // Task 6 에서 비편집모드 드래그(매칭) 브랜치를 onDragEnd에 추가할 수 있도록
+  // 핸들러를 분리해 두고 onDragEnd에서 isEditMode 조건으로 위임한다.
+  const handleReorder = async (event: DragEndEvent) => {
+    const {active, over} = event;
+    if (!over || active.id === over.id) return;
+    const fromIndex = visibleProfiles.findIndex(p => p.id === active.id);
+    const toIndex = visibleProfiles.findIndex(p => p.id === over.id);
+    if (fromIndex < 0 || toIndex < 0) return;
+    const weight = computeDroppedWeight(visibleProfiles, fromIndex, toIndex);
+    const moved = visibleProfiles[fromIndex];
+    setProfiles(current => current.map(p => (p.id === moved.id ? {...p, manualOrderWeight: weight} : p)));
+    const res = await fetch(`/api/profiles/${moved.id}`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({manualOrderWeight: weight}),
+    });
+    if (!res.ok) {
+      setAlertState({kind: 'alert', title: '순서 저장 실패', message: 'manual_order_weight 컬럼이 아직 DB에 없을 수 있습니다. RUN_IN_SQL_EDITOR.sql의 ⑤를 실행해 주세요.'});
+    }
+  };
+
   const requestDelete = (profile: Profile) => {
     setAlertState({
       kind: 'confirm',
@@ -649,6 +678,37 @@ export function Dashboard({authorName}: DashboardProps) {
                 ))}
               </div>
             )
+          ) : isEditMode ? (
+            <DndContext sensors={sensors} onDragEnd={handleReorder}>
+              <SortableContext items={visibleProfiles.map(p => p.id)} strategy={rectSortingStrategy}>
+                <div
+                  className={
+                    viewMode === 'compact'
+                      ? 'grid grid-cols-[repeat(auto-fill,minmax(min(50%,160px),1fr))] gap-3'
+                      : 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-5'
+                  }
+                >
+                  {visibleProfiles.map(profile => (
+                    <ProfileCard
+                      key={profile.id}
+                      profile={profile}
+                      authorName={authorName}
+                      variant={viewMode}
+                      isEditMode={isEditMode}
+                      sortable
+                      isSelected={selectedIdsSet.has(profile.id)}
+                      ongoingMatchCount={ongoingCounts.get(profile.id) ?? 0}
+                      onSelectChange={handleSelectChange}
+                      onEdit={selectedProfile => setModal({kind: 'edit', profile: selectedProfile})}
+                      onDelete={requestDelete}
+                      onStatusChange={handleStatusChange}
+                      onToggleStar={handleToggleStar}
+                      onOpenDetail={selectedProfile => setDetailProfileId(selectedProfile.id)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           ) : (
             <div
               className={

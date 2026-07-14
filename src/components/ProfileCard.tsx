@@ -2,6 +2,8 @@
 
 /* eslint-disable @next/next/no-img-element */
 
+import {useSortable} from '@dnd-kit/sortable';
+import {CSS} from '@dnd-kit/utilities';
 import {ChevronLeft, ChevronRight, Eye, EyeOff, Pencil, Trash2} from 'lucide-react';
 import {useState} from 'react';
 
@@ -28,6 +30,7 @@ type ProfileCardProps = {
   onOpenDetail: (profile: Profile) => void;
   variant?: ProfileCardVariant;
   isEditMode?: boolean;
+  sortable?: boolean;
   ongoingMatchCount?: number;
 };
 
@@ -92,9 +95,15 @@ export function ProfileCard({
   onOpenDetail,
   variant = 'detailed',
   isEditMode = false,
+  sortable = false,
   ongoingMatchCount = 0,
 }: ProfileCardProps) {
   const [photoIndex, setPhotoIndex] = useState(0);
+  // useSortable은 항상 호출(hooks 규칙 준수). SortableContext 밖에서는 inert 값을 반환한다.
+  const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({id: profile.id});
+  const sortableStyle = sortable
+    ? {transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1, touchAction: 'none' as const}
+    : undefined;
   const hasMultiplePhotos = profile.photos.length > 1;
   const isBlocked = !profile.isActivated;
   const isCompact = variant === 'compact';
@@ -115,7 +124,19 @@ export function ProfileCard({
   const activePhoto = profile.photos[photoIndex];
 
   return (
-    <article className="relative">
+    <article ref={setNodeRef} style={sortableStyle} className="relative">
+      {/* 드래그 핸들: 편집모드 + sortable일 때만 표시. listeners를 핸들에만 달아
+          사진 네비 / 상세보기 클릭이 방해받지 않도록 한다. */}
+      {sortable && isEditMode ? (
+        <div
+          className="absolute right-1 top-1 z-30 cursor-grab rounded bg-black/40 px-1.5 py-0.5 text-[10px] font-bold text-white"
+          {...attributes}
+          {...listeners}
+          title="드래그해 순서 변경"
+        >
+          ⋮⋮
+        </div>
+      ) : null}
       {/* 좌측 상단: 체크박스 */}
       <label
         className={`absolute -left-1.5 -top-1.5 z-20 grid place-items-center rounded-[7px] border border-[var(--border)] bg-white shadow-sm ${
