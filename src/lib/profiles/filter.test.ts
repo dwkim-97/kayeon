@@ -238,10 +238,12 @@ describe('filterProfiles', () => {
 
   it('ignores reward/weight tiers under an explicit sort (keeps only starred pin)', () => {
     const profiles: Profile[] = [
-      {...baseProfile, id: 'tall-reward', height: 180, reward: 'X', manualOrderWeight: 9},
-      {...baseProfile, id: 'short-plain', height: 160, reward: ''},
+      // reward-holder is SHORTER — if reward tier wrongly applied under height sort, it would jump to top
+      {...baseProfile, id: 'short-reward', height: 160, reward: 'X', manualOrderWeight: 9},
+      {...baseProfile, id: 'tall-plain', height: 180, reward: ''},
     ];
     const result = filterProfiles(profiles, {...noFilter, gender: 'female', sortField: 'height', sortDirection: 'desc'});
-    expect(result.map(p => p.id)).toEqual(['tall-reward', 'short-plain']);
+    // height desc must win: tall-plain first, despite short-reward having a reward
+    expect(result.map(p => p.id)).toEqual(['tall-plain', 'short-reward']);
   });
 });
