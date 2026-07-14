@@ -26,6 +26,8 @@ const baseProfile: Profile = {
   probe: 'not_selected',
   rejectionTolerance: 'not_selected',
   responseSpeed: 'not_selected',
+  reward: '',
+  manualOrderWeight: 0,
   photos: [
     {
       id: 'photo-1',
@@ -212,5 +214,34 @@ describe('filterProfiles', () => {
       // star는 키가 가장 작지만 집착매물이라 항상 맨 앞. 나머지는 키 오름차순.
       expect(result.map(p => p.id)).toEqual(['star', 'y1990', 'y2000']);
     });
+  });
+
+  it('floats reward profiles above non-reward, below starred (default sort)', () => {
+    const profiles: Profile[] = [
+      {...baseProfile, id: 'plain', reward: '', createdAt: '2026-07-01T00:00:00.000Z'},
+      {...baseProfile, id: 'reward', reward: '소개비 50만원', createdAt: '2026-06-01T00:00:00.000Z'},
+      {...baseProfile, id: 'starred', starredByName: 'Aiden', reward: '', createdAt: '2026-05-01T00:00:00.000Z'},
+    ];
+    const result = filterProfiles(profiles, {...noFilter, gender: 'female'});
+    expect(result.map(p => p.id)).toEqual(['starred', 'reward', 'plain']);
+  });
+
+  it('orders by manualOrderWeight ascending under reward tier (default sort)', () => {
+    const profiles: Profile[] = [
+      {...baseProfile, id: 'w3', manualOrderWeight: 3},
+      {...baseProfile, id: 'w1', manualOrderWeight: 1},
+      {...baseProfile, id: 'w2', manualOrderWeight: 2},
+    ];
+    const result = filterProfiles(profiles, {...noFilter, gender: 'female'});
+    expect(result.map(p => p.id)).toEqual(['w1', 'w2', 'w3']);
+  });
+
+  it('ignores reward/weight tiers under an explicit sort (keeps only starred pin)', () => {
+    const profiles: Profile[] = [
+      {...baseProfile, id: 'tall-reward', height: 180, reward: 'X', manualOrderWeight: 9},
+      {...baseProfile, id: 'short-plain', height: 160, reward: ''},
+    ];
+    const result = filterProfiles(profiles, {...noFilter, gender: 'female', sortField: 'height', sortDirection: 'desc'});
+    expect(result.map(p => p.id)).toEqual(['tall-reward', 'short-plain']);
   });
 });

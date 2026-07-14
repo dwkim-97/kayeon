@@ -64,14 +64,25 @@ function compareBySort(left: Profile, right: Profile, field: SortField, directio
   }
 }
 
-// 정렬 우선순위: 집착매물 → (정렬 옵션 또는 기본 정렬).
-// 집착매물은 누가 찍었든(starredByName이 있으면) 항상 맨 앞으로 온다.
+// 정렬 우선순위: 집착매물 → 리워드 보유 → 수동 가중치 → (정렬 옵션 또는 기본 정렬).
+// 리워드·가중치 티어는 기본순(default)에서만 적용. 명시적 정렬 시엔 집착매물 핀만 유지.
 function compareProfiles(left: Profile, right: Profile, sortField: SortField, sortDirection: SortDirection) {
   const leftStarred = left.starredByName ? 1 : 0;
   const rightStarred = right.starredByName ? 1 : 0;
   if (rightStarred !== leftStarred) return rightStarred - leftStarred;
 
-  if (sortField === 'default') return compareDefault(left, right);
+  if (sortField === 'default') {
+    const leftReward = left.reward.trim() ? 1 : 0;
+    const rightReward = right.reward.trim() ? 1 : 0;
+    if (rightReward !== leftReward) return rightReward - leftReward;
+
+    // 수동 가중치: 작을수록 위(오름차순). 동률(기본 0)이면 다음 티어로.
+    if (left.manualOrderWeight !== right.manualOrderWeight) {
+      return left.manualOrderWeight - right.manualOrderWeight;
+    }
+
+    return compareDefault(left, right);
+  }
 
   const sorted = compareBySort(left, right, sortField, sortDirection);
   // 동점이면 등록 최신순으로 안정적 타이브레이크
