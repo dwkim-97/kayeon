@@ -31,6 +31,8 @@ const profile: Profile = {
   probe: 'not_selected',
   rejectionTolerance: 'not_selected',
   responseSpeed: 'not_selected',
+  reward: '',
+  manualOrderWeight: 0,
   photos: [],
   createdAt: '2026-06-30T00:00:00.000Z',
   updatedAt: '2026-06-30T00:00:00.000Z',
@@ -93,5 +95,15 @@ describe('profile information rows', () => {
 
   it('admin rows are empty when all not_selected', () => {
     expect(getAdminInformationRows(profile)).toEqual([]);
+  });
+
+  it('includes 리워드 row when reward is non-empty', () => {
+    const rows = getAdminInformationRows({...profile, reward: '소개비 50만원'});
+    expect(rows).toContainEqual(['리워드', '소개비 50만원']);
+  });
+
+  it('omits 리워드 row when reward is blank', () => {
+    const rows = getAdminInformationRows({...profile, reward: '   '});
+    expect(rows.some(([label]) => label === '리워드')).toBe(false);
   });
 });

@@ -189,16 +189,26 @@ export function ProfileDetailModal({
                     <span aria-hidden>🔒</span> 관리자 전용
                   </h3>
                   <ul className="flex flex-wrap gap-2">
-                    {adminRows.map(([label, value]) => (
-                      <li
-                        key={label}
-                        className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-white px-2.5 py-1 text-xs font-semibold text-amber-900"
-                      >
-                        <span className="text-amber-600">{label}</span>
-                        <span>{value}</span>
-                      </li>
-                    ))}
+                    {adminRows
+                      .filter(([label]) => label !== '리워드')
+                      .map(([label, value]) => (
+                        <li
+                          key={label}
+                          className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-white px-2.5 py-1 text-xs font-semibold text-amber-900"
+                        >
+                          <span className="text-amber-600">{label}</span>
+                          <span>{value}</span>
+                        </li>
+                      ))}
                   </ul>
+                  {adminRows
+                    .filter(([label]) => label === '리워드')
+                    .map(([, value]) => (
+                      <p key="reward" className="mt-2 flex items-center gap-1.5 break-keep text-sm font-semibold text-amber-900">
+                        <span aria-hidden>🎁</span>
+                        <span>{value}</span>
+                      </p>
+                    ))}
                 </div>
               </div>
             ) : null}

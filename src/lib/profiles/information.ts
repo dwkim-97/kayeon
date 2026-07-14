@@ -79,5 +79,6 @@ export function getAdminInformationRows(profile: Profile): ProfileInformationRow
   if (profile.responseSpeed !== 'not_selected') {
     rows.push(['응답속도', responseSpeedLabels[profile.responseSpeed]]);
   }
+  if (profile.reward.trim()) rows.push(['리워드', profile.reward.trim()]);
   return rows;
 }

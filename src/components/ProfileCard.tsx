@@ -100,6 +100,7 @@ export function ProfileCard({
   const isCompact = variant === 'compact';
   const birthYearLabel = formatBirthYearLabel(profile.birthYear);
   const isStarred = !!profile.starredByName;
+  const hasReward = !!profile.reward.trim();
   const authorColor = getAuthorColor(profile.authorName);
   // compact: 년생 / 키 / 사는 곳 / 회사 를 한 줄로 요약 (빈 값은 제외)
   const compactSummary = [birthYearLabel, `${profile.height}cm`, profile.residence, profile.job]
@@ -177,6 +178,17 @@ export function ProfileCard({
               >
                 <span aria-hidden>⭐️</span>
                 <span>집착매물</span>
+              </span>
+            ) : null}
+            {hasReward ? (
+              <span
+                className={`inline-flex items-center gap-0.5 whitespace-nowrap rounded-full bg-emerald-500 font-bold text-white shadow-sm ${
+                  isCompact ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1 text-xs'
+                }`}
+                title={profile.reward.trim()}
+              >
+                <span aria-hidden>🎁</span>
+                {isCompact ? null : <span className="max-w-[8rem] truncate">{profile.reward.trim()}</span>}
               </span>
             ) : null}
             <span

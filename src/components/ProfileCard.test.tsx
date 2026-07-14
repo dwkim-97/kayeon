@@ -27,6 +27,8 @@ const profile: Profile = {
   probe: 'not_selected',
   rejectionTolerance: 'not_selected',
   responseSpeed: 'not_selected',
+  reward: '',
+  manualOrderWeight: 0,
   photos: [
     {id: 'photo-1', url: '/sample.jpg', alt: '프로필 사진 1', order: 0},
     {id: 'photo-2', url: '/sample-2.jpg', alt: '프로필 사진 2', order: 1},
@@ -167,6 +169,11 @@ describe('ProfileCard', () => {
     // 사진이 2장이어도 카드 이미지 영역에는 현재 사진 1장만 존재
     const imgs = container.querySelectorAll('img');
     expect(imgs.length).toBe(1);
+  });
+
+  it('shows 🎁 reward badge when reward is set', () => {
+    render(<ProfileCard {...defaultProps} profile={{...profile, reward: '소개비 50만원'}} />);
+    expect(screen.getByTitle('소개비 50만원')).toBeInTheDocument();
   });
 
   it('lazy-loads the card image via a render/image thumbnail URL', () => {
