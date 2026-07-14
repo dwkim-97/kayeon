@@ -38,7 +38,7 @@ export function MatchPairCard({pair, onOpenProfile, onEndMatch, onDeleteMatch}: 
   onDeleteMatch: (matchId: string) => void;
 }) {
   return (
-    <div className="rounded-[10px] border border-[var(--border)] bg-white p-3 shadow-sm">
+    <article className="rounded-[10px] border border-[var(--border)] bg-white p-3 shadow-sm">
       <div className="flex items-center gap-2">
         <MiniCard profile={pair.female} onOpen={onOpenProfile} />
         <span className="shrink-0 text-lg" aria-hidden>💞</span>
@@ -48,6 +48,6 @@ export function MatchPairCard({pair, onOpenProfile, onEndMatch, onDeleteMatch}: 
         <button type="button" className="rounded-[6px] border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50" onClick={() => onEndMatch(pair.match.id)}>종료</button>
         <button type="button" className="rounded-[6px] border border-red-100 px-2.5 py-1 text-xs font-semibold text-[var(--danger)] hover:bg-red-50" onClick={() => onDeleteMatch(pair.match.id)}>삭제</button>
       </div>
-    </div>
+    </article>
   );
 }
