@@ -3,7 +3,7 @@ import type {PostgrestError} from '@supabase/supabase-js';
 // 관리자 전용 신규 컬럼들. 아직 DB에 적용되지 않은 환경에서는
 // insert/update가 실패할 수 있으므로, 실패 시 이 컬럼들을 제거하고 재시도한다.
 // (기존 admin_memo 패턴과 동일한 취지 — SQL 실행 전에도 등록/수정이 깨지지 않게)
-export const ADMIN_ONLY_DB_COLUMNS = ['probe', 'rejection_tolerance', 'response_speed'] as const;
+export const ADMIN_ONLY_DB_COLUMNS = ['probe', 'rejection_tolerance', 'response_speed', 'reward', 'manual_order_weight'] as const;
 
 // PostgREST/Postgres가 "그런 컬럼 없음"을 알리는 신호인지 판별.
 //  - 42703: undefined_column (Postgres)

@@ -26,6 +26,8 @@ export const sampleProfiles: Profile[] = [
     probe: 'not_selected',
     rejectionTolerance: 'not_selected',
     responseSpeed: 'not_selected',
+    reward: '',
+    manualOrderWeight: 0,
     photos: [
       {
         id: 'female-1-photo-1',
@@ -66,6 +68,8 @@ export const sampleProfiles: Profile[] = [
     probe: 'not_selected',
     rejectionTolerance: 'not_selected',
     responseSpeed: 'not_selected',
+    reward: '',
+    manualOrderWeight: 0,
     photos: [
       {
         id: 'female-2-photo-1',
@@ -100,6 +104,8 @@ export const sampleProfiles: Profile[] = [
     probe: 'not_selected',
     rejectionTolerance: 'not_selected',
     responseSpeed: 'not_selected',
+    reward: '',
+    manualOrderWeight: 0,
     photos: [
       {
         id: 'male-1-photo-1',

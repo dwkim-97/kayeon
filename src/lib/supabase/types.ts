@@ -42,6 +42,8 @@ export type Database = {
           probe?: Probe;
           rejection_tolerance?: RejectionTolerance;
           response_speed?: ResponseSpeed;
+          reward?: string;
+          manual_order_weight?: number;
           starred_by_name: string | null;
           created_at: string;
           updated_at: string;
@@ -67,6 +69,8 @@ export type Database = {
           probe?: Probe;
           rejection_tolerance?: RejectionTolerance;
           response_speed?: ResponseSpeed;
+          reward?: string;
+          manual_order_weight?: number;
           starred_by_name?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -92,6 +96,8 @@ export type Database = {
           probe?: Probe;
           rejection_tolerance?: RejectionTolerance;
           response_speed?: ResponseSpeed;
+          reward?: string;
+          manual_order_weight?: number;
           starred_by_name?: string | null;
           created_at?: string;
           updated_at?: string;

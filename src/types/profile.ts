@@ -43,6 +43,9 @@ export type Profile = {
   probe: Probe;
   rejectionTolerance: RejectionTolerance;
   responseSpeed: ResponseSpeed;
+  reward: string;
+  // 수동 정렬 가중치(편집모드 드래그). 작을수록 위. 기본 0.
+  manualOrderWeight: number;
   photos: ProfilePhoto[];
   createdAt: string;
   updatedAt: string;

@@ -56,6 +56,8 @@ export function rowToProfile(row: ProfileRow, photoRows: ProfilePhotoRow[], publ
     probe: row.probe ?? 'not_selected',
     rejectionTolerance: row.rejection_tolerance ?? 'not_selected',
     responseSpeed: row.response_speed ?? 'not_selected',
+    reward: row.reward ?? '',
+    manualOrderWeight: row.manual_order_weight ?? 0,
     photos,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -97,6 +99,8 @@ export function profileToInsertRow(
     probe: profile.probe,
     rejection_tolerance: profile.rejectionTolerance,
     response_speed: profile.responseSpeed,
+    reward: profile.reward,
+    manual_order_weight: profile.manualOrderWeight,
   };
 }
 
@@ -124,6 +128,8 @@ const profileFieldMap: [keyof UpdatableProfile, keyof UpdateRow][] = [
   ['probe', 'probe'],
   ['rejectionTolerance', 'rejection_tolerance'],
   ['responseSpeed', 'response_speed'],
+  ['reward', 'reward'],
+  ['manualOrderWeight', 'manual_order_weight'],
   ['starredByName', 'starred_by_name'],
 ];
 

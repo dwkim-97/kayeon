@@ -277,6 +277,8 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
           isActivated: true,
           authorName,
           starredByName: null,
+          reward: '',
+          manualOrderWeight: 0,
           createdAt: now,
           updatedAt: now,
           ...normalized,
