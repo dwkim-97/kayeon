@@ -9,6 +9,7 @@ import {useOfficeMode} from '@/hooks/useOfficeMode';
 import {AppHeader} from '@/components/AppHeader';
 import {closedAlertState, CustomAlert, type CustomAlertState} from '@/components/CustomAlert';
 import {FilterBar} from '@/components/FilterBar';
+import {MatchPairCard} from '@/components/MatchPairCard';
 import {NaturalShareButton} from '@/components/NaturalShareButton';
 import {NewArrivalToast} from '@/components/NewArrivalToast';
 import {ProfileCard, type ProfileCardVariant} from '@/components/ProfileCard';
@@ -17,7 +18,7 @@ import {ProfileFormModal} from '@/components/ProfileFormModal';
 import {ShareButton} from '@/components/ShareButton';
 import {SortMenu} from '@/components/SortMenu';
 import {historyEventDescriptions, recordHistory} from '@/lib/history/events';
-import {countOngoingByProfile} from '@/lib/matches/summary';
+import {countOngoingByProfile, getOngoingPairs} from '@/lib/matches/summary';
 import {formatBirthYearLabel} from '@/lib/profiles/age';
 import {filterProfiles} from '@/lib/profiles/filter';
 import {
@@ -169,6 +170,7 @@ export function Dashboard({authorName}: DashboardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isMutating, setIsMutating] = useState(false);
   const [filters, setFilters] = useState<ProfileFilters>(defaultFilters('female'));
+  const [activeTab, setActiveTab] = useState<'female' | 'male' | 'matching'>('female');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [modal, setModal] = useState<ModalState>({kind: 'closed'});
   const [alertState, setAlertState] = useState<CustomAlertState>(closedAlertState);
@@ -216,6 +218,7 @@ export function Dashboard({authorName}: DashboardProps) {
   }, []);
 
   const ongoingCounts = useMemo(() => countOngoingByProfile(matches), [matches]);
+  const ongoingPairs = useMemo(() => getOngoingPairs(matches, profiles), [matches, profiles]);
   const detailProfile = useMemo(
     () => profiles.find(p => p.id === detailProfileId) ?? null,
     [profiles, detailProfileId],
@@ -493,15 +496,24 @@ export function Dashboard({authorName}: DashboardProps) {
               {(['female', 'male'] as Gender[]).map(gender => (
                 <button
                   className={`h-6 whitespace-nowrap rounded-[6px] px-2.5 text-[11px] font-semibold ${
-                    filters.gender === gender ? 'bg-[var(--violet-600)] text-white' : 'text-[var(--violet-900)]'
+                    activeTab === gender ? 'bg-[var(--violet-600)] text-white' : 'text-[var(--violet-900)]'
                   }`}
                   key={gender}
                   type="button"
-                  onClick={() => switchGender(gender)}
+                  onClick={() => { setActiveTab(gender); switchGender(gender); }}
                 >
                   {genderLabels[gender]}
                 </button>
               ))}
+              <button
+                className={`h-6 whitespace-nowrap rounded-[6px] px-2.5 text-[11px] font-semibold ${
+                  activeTab === 'matching' ? 'bg-pink-500 text-white' : 'text-[var(--violet-900)]'
+                }`}
+                type="button"
+                onClick={() => setActiveTab('matching')}
+              >
+                💞 매칭
+              </button>
             </div>
 
             {/* 뷰 전환 토글: 상세보기 / 작게보기 */}
@@ -615,12 +627,28 @@ export function Dashboard({authorName}: DashboardProps) {
             </div>
             <div className="inline-flex items-center gap-2 rounded-full bg-[var(--violet-50)] px-3 py-1.5 text-sm font-semibold text-[var(--violet-900)]">
               <Users size={16} strokeWidth={1.75} aria-hidden />
-              {isLoading ? '로딩 중...' : `${visibleProfiles.length}명 표시 · ${selectedProfiles.length}명 공유 선택`}
+              {isLoading ? '로딩 중...' : activeTab === 'matching' ? `${ongoingPairs.length}쌍 매칭 중` : `${visibleProfiles.length}명 표시 · ${selectedProfiles.length}명 공유 선택`}
             </div>
           </div>
 
           {isLoading ? (
             <div className="py-12 text-center text-sm font-semibold text-slate-400">프로필을 불러오는 중...</div>
+          ) : activeTab === 'matching' ? (
+            ongoingPairs.length === 0 ? (
+              <div className="py-12 text-center text-sm font-semibold text-slate-400">진행중인 매칭이 없습니다.</div>
+            ) : (
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,340px),1fr))] gap-4">
+                {ongoingPairs.map(pair => (
+                  <MatchPairCard
+                    key={pair.match.id}
+                    pair={pair}
+                    onOpenProfile={pid => setDetailProfileId(pid)}
+                    onEndMatch={handleEndMatch}
+                    onDeleteMatch={handleDeleteMatch}
+                  />
+                ))}
+              </div>
+            )
           ) : (
             <div
               className={

@@ -242,7 +242,7 @@ export function ProfileDetailModal({
                         key={m.id}
                         className="flex items-center gap-2 rounded-[8px] border border-[var(--border)] px-3 py-2 text-sm"
                       >
-                        <PartnerThumb partner={partner} />
+                        <PartnerThumb partner={partner} onOpen={onOpenProfile} />
                         <button
                           className="min-w-0 flex-1 truncate text-left font-semibold text-[var(--violet-900)] hover:underline disabled:no-underline"
                           type="button"
@@ -323,15 +323,20 @@ export function ProfileDetailModal({
 }
 
 // 매칭 상대 대표사진(첫 장) 썸네일. 사진이 없거나 삭제된 매물이면 플레이스홀더.
-function PartnerThumb({partner}: {partner: Profile | undefined}) {
+function PartnerThumb({partner, onOpen}: {partner: Profile | undefined; onOpen?: (id: string) => void}) {
   const photo = partner?.photos[0];
-  return (
-    <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-[6px] bg-[var(--violet-100)]">
-      {photo ? (
-        <img className="h-full w-full object-cover" src={photoThumbnailUrl(photo.url, PARTNER_THUMB_WIDTH)} alt={photo.alt} draggable={false} />
-      ) : (
-        <span className="text-[9px] font-semibold text-slate-400">없음</span>
-      )}
-    </span>
+  const inner = photo ? (
+    <img className="h-full w-full object-cover" src={photoThumbnailUrl(photo.url, PARTNER_THUMB_WIDTH)} alt={photo.alt} draggable={false} />
+  ) : (
+    <span className="text-[9px] font-semibold text-slate-400">없음</span>
   );
+  const cls = 'grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-[6px] bg-[var(--violet-100)]';
+  if (partner && onOpen) {
+    return (
+      <button type="button" className={`${cls} transition hover:ring-2 hover:ring-[var(--violet-400)]`} onClick={() => onOpen(partner.id)} aria-label="상세보기 열기">
+        {inner}
+      </button>
+    );
+  }
+  return <span className={cls}>{inner}</span>;
 }
