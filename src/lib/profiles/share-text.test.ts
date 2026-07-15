@@ -27,6 +27,8 @@ function makeProfile(overrides: Partial<Profile>): Profile {
     probe: 'possible',
     rejectionTolerance: 'high',
     responseSpeed: 'fast',
+    reward: '',
+    manualOrderWeight: 0,
     photos: [],
     createdAt: '2026-07-01T00:00:00.000Z',
     updatedAt: '2026-07-01T00:00:00.000Z',

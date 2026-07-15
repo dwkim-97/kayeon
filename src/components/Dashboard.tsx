@@ -475,14 +475,31 @@ export function Dashboard({authorName}: DashboardProps) {
     if (fromIndex < 0 || toIndex < 0) return;
     const weight = computeDroppedWeight(visibleProfiles, fromIndex, toIndex);
     const moved = visibleProfiles[fromIndex];
+    const previousWeight = moved.manualOrderWeight;
     setProfiles(current => current.map(p => (p.id === moved.id ? {...p, manualOrderWeight: weight} : p)));
+    const rollback = () =>
+      setProfiles(cur => cur.map(p => (p.id === moved.id ? {...p, manualOrderWeight: previousWeight} : p)));
+    const migrationAlert = () =>
+      setAlertState({kind: 'alert', title: '순서 저장 실패', message: 'manual_order_weight 컬럼이 아직 DB에 없을 수 있습니다. RUN_IN_SQL_EDITOR.sql의 ⑤를 실행해 주세요.'});
     const res = await fetch(`/api/profiles/${moved.id}`, {
       method: 'PATCH',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({manualOrderWeight: weight}),
     });
     if (!res.ok) {
-      setAlertState({kind: 'alert', title: '순서 저장 실패', message: 'manual_order_weight 컬럼이 아직 DB에 없을 수 있습니다. RUN_IN_SQL_EDITOR.sql의 ⑤를 실행해 주세요.'});
+      rollback();
+      migrationAlert();
+      return;
+    }
+    try {
+      const {profile: saved} = (await res.json()) as {profile: Profile};
+      if (saved.manualOrderWeight !== weight) {
+        rollback();
+        migrationAlert();
+      }
+    } catch {
+      rollback();
+      migrationAlert();
     }
   };
 
@@ -761,7 +778,7 @@ export function Dashboard({authorName}: DashboardProps) {
                         authorName={authorName}
                         variant={viewMode}
                         isEditMode={isEditMode}
-                        sortable={isEditMode}
+                        sortable
                         isSelected={selectedIdsSet.has(profile.id)}
                         ongoingMatchCount={ongoingCounts.get(profile.id) ?? 0}
                         onSelectChange={handleSelectChange}

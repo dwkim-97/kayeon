@@ -32,6 +32,8 @@ const profile: Profile = {
   probe: 'not_selected',
   rejectionTolerance: 'not_selected',
   responseSpeed: 'not_selected',
+  reward: '',
+  manualOrderWeight: 0,
   photos: [],
   createdAt: '2026-06-30T00:00:00.000Z',
   updatedAt: '2026-06-30T00:00:00.000Z',

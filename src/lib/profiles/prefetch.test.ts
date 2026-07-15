@@ -27,6 +27,8 @@ function makeProfile(id: string, photoUrls: string[]): Profile {
     probe: 'not_selected',
     rejectionTolerance: 'not_selected',
     responseSpeed: 'not_selected',
+    reward: '',
+    manualOrderWeight: 0,
     photos: photoUrls.map((url, order) => ({id: `${id}-${order}`, url, alt: '', order})),
     createdAt: '2026-07-01T00:00:00.000Z',
     updatedAt: '2026-07-01T00:00:00.000Z',

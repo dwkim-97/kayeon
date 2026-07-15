@@ -125,15 +125,16 @@ export function ProfileCard({
 
   return (
     <article ref={setNodeRef} style={sortableStyle} className="relative">
-      {/* 드래그 핸들: 편집모드 + sortable일 때만 표시. listeners를 핸들에만 달아
-          사진 네비 / 상세보기 클릭이 방해받지 않도록 한다. */}
-      {sortable && isEditMode ? (
+      {/* 드래그 핸들: sortable일 때 표시. listeners를 핸들에만 달아
+          사진 네비 / 상세보기 클릭이 방해받지 않도록 한다.
+          편집모드: 순서 변경 / 일반모드: 매칭/지원 */}
+      {sortable ? (
         <div
           className="absolute right-1 top-1 z-30 cursor-grab rounded bg-black/40 px-1.5 py-0.5 text-[10px] font-bold text-white"
           style={{touchAction: 'none'}}
           {...attributes}
           {...listeners}
-          title="드래그해 순서 변경"
+          title={isEditMode ? '드래그해 순서 변경' : '드래그해 매칭/지원'}
         >
           ⋮⋮
         </div>
