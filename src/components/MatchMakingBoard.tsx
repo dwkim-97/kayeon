@@ -7,6 +7,7 @@ import {
   DragOverlay,
   PointerSensor,
   TouchSensor,
+  useDndContext,
   useDraggable,
   useDroppable,
   useSensor,
@@ -45,6 +46,9 @@ function MiniProfile({profile}: {profile: Profile}) {
 function DraggableDroppableCard({profile}: {profile: Profile}) {
   const drag = useDraggable({id: profile.id, data: {gender: profile.gender}});
   const drop = useDroppable({id: profile.id, data: {gender: profile.gender}});
+  const {active} = useDndContext();
+  const activeGender = active?.data?.current?.gender as 'female' | 'male' | undefined;
+  const isValidTarget = activeGender !== undefined && activeGender !== profile.gender;
   const setRefs = (node: HTMLElement | null) => {
     drag.setNodeRef(node);
     drop.setNodeRef(node);
@@ -56,7 +60,7 @@ function DraggableDroppableCard({profile}: {profile: Profile}) {
       {...drag.listeners}
       style={{touchAction: 'none', opacity: drag.isDragging ? 0.4 : 1}}
       className={`cursor-grab rounded-[8px] border p-2 transition ${
-        drop.isOver ? 'border-pink-400 bg-pink-50 ring-2 ring-pink-300' : 'border-[var(--border)] bg-white'
+        drop.isOver && isValidTarget ? 'border-pink-400 bg-pink-50 ring-2 ring-pink-300' : 'border-[var(--border)] bg-white'
       }`}
     >
       <MiniProfile profile={profile} />
