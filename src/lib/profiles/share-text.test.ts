@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 
-import {buildShareText} from './share-text';
+import {buildPairShareText, buildShareText} from './share-text';
 import type {Profile} from '@/types/profile';
 
 function makeProfile(overrides: Partial<Profile>): Profile {
@@ -74,5 +74,19 @@ describe('buildShareText', () => {
     expect(text).not.toContain('MBTI');
     expect(text).not.toContain('취미');
     expect(text).not.toContain('종교');
+  });
+});
+
+const sampleFemale = makeProfile({gender: 'female', birthYear: 1995, reward: '소개비 100만원'});
+const sampleMale = makeProfile({id: 'q', gender: 'male', birthYear: 1992, reward: ''});
+
+describe('buildPairShareText', () => {
+  it('joins two profiles with a divider and excludes admin/reward', () => {
+    const a = {...sampleFemale, reward: '소개비 100만원'};
+    const b = sampleMale;
+    const text = buildPairShareText(a, b);
+    expect(text).toContain('───');
+    expect(text).not.toContain('소개비'); // reward excluded (admin-only)
+    expect(text.split('───').length).toBe(2);
   });
 });
