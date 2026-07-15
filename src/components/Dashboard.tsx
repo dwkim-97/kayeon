@@ -712,7 +712,7 @@ export function Dashboard({authorName}: DashboardProps) {
             )
           ) : (
             // 단일 DndContext: 편집모드 → 순서 재정렬, 일반모드 → 짝지기 드래그
-            <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleGridDragEnd}>
+            <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleGridDragEnd} onDragCancel={() => setDraggingId(null)}>
               <SortableContext items={(isEditMode ? visibleProfiles : (draggingId ? pairDropTargets : visibleProfiles)).map(p => p.id)} strategy={rectSortingStrategy}>
                 {draggingId && !isEditMode ? (
                   <div>

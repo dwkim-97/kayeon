@@ -86,7 +86,7 @@ describe('buildPairShareText', () => {
     const b = sampleMale;
     const text = buildPairShareText(a, b);
     expect(text).toContain('───');
-    expect(text).not.toContain('소개비'); // reward excluded (admin-only)
+    expect(text).not.toContain('소개비'); // reward absent: getProfileInformationRows never calls getAdminInformationRows
     expect(text.split('───').length).toBe(2);
   });
 });
