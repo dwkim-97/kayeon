@@ -1,5 +1,7 @@
 'use client';
 
+import {DndContext, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent} from '@dnd-kit/core';
+import {SortableContext, rectSortingStrategy} from '@dnd-kit/sortable';
 import {Briefcase, Check, ChevronDown, ChevronUp, Grid3x3, LayoutGrid, Pencil, Plus, SlidersHorizontal, Users} from 'lucide-react';
 import Link from 'next/link';
 import {useEffect, useMemo, useState} from 'react';
@@ -9,15 +11,20 @@ import {useOfficeMode} from '@/hooks/useOfficeMode';
 import {AppHeader} from '@/components/AppHeader';
 import {closedAlertState, CustomAlert, type CustomAlertState} from '@/components/CustomAlert';
 import {FilterBar} from '@/components/FilterBar';
+import {MatchMakingBoard} from '@/components/MatchMakingBoard';
+import {MatchPairCard} from '@/components/MatchPairCard';
 import {NaturalShareButton} from '@/components/NaturalShareButton';
 import {NewArrivalToast} from '@/components/NewArrivalToast';
 import {ProfileCard, type ProfileCardVariant} from '@/components/ProfileCard';
+import {PairActionModal} from '@/components/PairActionModal';
 import {ProfileDetailModal} from '@/components/ProfileDetailModal';
 import {ProfileFormModal} from '@/components/ProfileFormModal';
 import {ShareButton} from '@/components/ShareButton';
 import {SortMenu} from '@/components/SortMenu';
+import {canReorderProfiles} from '@/lib/profiles/can-reorder';
+import {reorderWeights} from '@/lib/profiles/manual-order';
 import {historyEventDescriptions, recordHistory} from '@/lib/history/events';
-import {countOngoingByProfile} from '@/lib/matches/summary';
+import {countOngoingByProfile, getOngoingPairs} from '@/lib/matches/summary';
 import {formatBirthYearLabel} from '@/lib/profiles/age';
 import {filterProfiles} from '@/lib/profiles/filter';
 import {
@@ -169,15 +176,22 @@ export function Dashboard({authorName}: DashboardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isMutating, setIsMutating] = useState(false);
   const [filters, setFilters] = useState<ProfileFilters>(defaultFilters('female'));
+  const [activeTab, setActiveTab] = useState<'female' | 'male' | 'matching'>('female');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [modal, setModal] = useState<ModalState>({kind: 'closed'});
   const [alertState, setAlertState] = useState<CustomAlertState>(closedAlertState);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [pairModal, setPairModal] = useState<{female: Profile; male: Profile} | null>(null);
+  const [matchMode, setMatchMode] = useState(false);
   const [detailProfileId, setDetailProfileId] = useState<string | null>(null);
   const [newArrivalCount, setNewArrivalCount] = useState(0);
   const {officeMode, toggleOfficeMode} = useOfficeMode();
+  const sensors = useSensors(
+    useSensor(PointerSensor, {activationConstraint: {distance: 5}}),
+    useSensor(TouchSensor, {activationConstraint: {delay: 200, tolerance: 5}}),
+  );
   // 첫 렌더는 항상 기본값 'detailed'로 시작(SSR/hydration 안전). localStorage는 브라우저에만
   // 존재하므로 mount 후 effect에서 읽어 반영한다 — 초기값에서 읽으면 서버 HTML과
   // 불일치하여 hydration 경고가 발생한다. 저장된 이력이 없으면 'detailed'가 기본.
@@ -215,7 +229,11 @@ export function Dashboard({authorName}: DashboardProps) {
     if (isViewMode(stored)) setViewMode(stored);
   }, []);
 
+  const canReorder = useMemo(() => canReorderProfiles(filters), [filters]);
   const ongoingCounts = useMemo(() => countOngoingByProfile(matches), [matches]);
+  const ongoingPairs = useMemo(() => getOngoingPairs(matches, profiles), [matches, profiles]);
+  const matchFemales = useMemo(() => profiles.filter(p => p.gender === 'female' && p.isActivated), [profiles]);
+  const matchMales = useMemo(() => profiles.filter(p => p.gender === 'male' && p.isActivated), [profiles]);
   const detailProfile = useMemo(
     () => profiles.find(p => p.id === detailProfileId) ?? null,
     [profiles, detailProfileId],
@@ -445,6 +463,60 @@ export function Dashboard({authorName}: DashboardProps) {
     setMatches(current => current.filter(m => m.id !== matchId));
   };
 
+  // 편집모드 드래그 완료: 재배열 후 0..n 순번을 재부여하고, 바뀐 행만 PATCH.
+  const handleReorder = async (event: DragEndEvent) => {
+    const {active, over} = event;
+    if (!over || active.id === over.id) return;
+    const fromIndex = visibleProfiles.findIndex(p => p.id === active.id);
+    const toIndex = visibleProfiles.findIndex(p => p.id === over.id);
+    if (fromIndex < 0 || toIndex < 0) return;
+
+    const changes = reorderWeights(visibleProfiles, fromIndex, toIndex);
+    if (changes.length === 0) return;
+
+    // 롤백용 이전 가중치 보관
+    const prevById = new Map(visibleProfiles.map(p => [p.id, p.manualOrderWeight]));
+    const weightById = new Map(changes.map(c => [c.id, c.manualOrderWeight]));
+
+    // 낙관적 업데이트
+    setProfiles(current =>
+      current.map(p => (weightById.has(p.id) ? {...p, manualOrderWeight: weightById.get(p.id)!} : p)),
+    );
+
+    const rollback = () =>
+      setProfiles(current =>
+        current.map(p => (prevById.has(p.id) ? {...p, manualOrderWeight: prevById.get(p.id)!} : p)),
+      );
+    const migrationAlert = () =>
+      setAlertState({
+        kind: 'alert',
+        title: '순서 저장 실패',
+        message: 'manual_order_weight 컬럼이 아직 DB에 없을 수 있습니다. RUN_IN_SQL_EDITOR.sql의 ⑤를 실행해 주세요.',
+      });
+
+    // 변경 행을 각각 PATCH. 하나라도 실패/stripped면 전체 롤백 + 안내.
+    const results = await Promise.all(
+      changes.map(async change => {
+        try {
+          const res = await fetch(`/api/profiles/${change.id}`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({manualOrderWeight: change.manualOrderWeight}),
+          });
+          if (!res.ok) return false;
+          const {profile: saved} = (await res.json()) as {profile: Profile};
+          return saved.manualOrderWeight === change.manualOrderWeight;
+        } catch {
+          return false;
+        }
+      }),
+    );
+    if (results.some(ok => !ok)) {
+      rollback();
+      migrationAlert();
+    }
+  };
+
   const requestDelete = (profile: Profile) => {
     setAlertState({
       kind: 'confirm',
@@ -493,15 +565,24 @@ export function Dashboard({authorName}: DashboardProps) {
               {(['female', 'male'] as Gender[]).map(gender => (
                 <button
                   className={`h-6 whitespace-nowrap rounded-[6px] px-2.5 text-[11px] font-semibold ${
-                    filters.gender === gender ? 'bg-[var(--violet-600)] text-white' : 'text-[var(--violet-900)]'
+                    activeTab === gender ? 'bg-[var(--violet-600)] text-white' : 'text-[var(--violet-900)]'
                   }`}
                   key={gender}
                   type="button"
-                  onClick={() => switchGender(gender)}
+                  onClick={() => { setActiveTab(gender); switchGender(gender); setMatchMode(false); }}
                 >
                   {genderLabels[gender]}
                 </button>
               ))}
+              <button
+                className={`h-6 whitespace-nowrap rounded-[6px] px-2.5 text-[11px] font-semibold ${
+                  activeTab === 'matching' ? 'bg-pink-500 text-white' : 'text-[var(--violet-900)]'
+                }`}
+                type="button"
+                onClick={() => { setActiveTab('matching'); setMatchMode(false); }}
+              >
+                💞 매칭
+              </button>
             </div>
 
             {/* 뷰 전환 토글: 상세보기 / 작게보기 */}
@@ -593,35 +674,112 @@ export function Dashboard({authorName}: DashboardProps) {
       <div className="mx-auto max-w-7xl px-4 py-6 pb-24">
         <section className="mt-2 rounded-[8px] border border-[var(--border)] bg-white p-4">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <label className="inline-flex items-center gap-3 text-sm font-semibold text-slate-700">
-                <input
-                  className="h-8 w-8 accent-[var(--violet-600)]"
-                  type="checkbox"
-                  checked={allVisibleSelected}
-                  disabled={activeVisibleProfiles.length === 0}
-                  onChange={event => handleSelectAll(event.target.checked)}
-                />
-                전체 선택
-              </label>
-              <button
-                className="inline-flex h-8 items-center rounded-[6px] border border-[var(--violet-200)] bg-white px-3 text-xs font-bold text-[var(--violet-700)] transition hover:bg-[var(--violet-50)] disabled:cursor-not-allowed disabled:opacity-50"
-                type="button"
-                disabled={selectedIds.length === 0}
-                onClick={() => setSelectedIds([])}
-              >
-                선택 초기화
-              </button>
-            </div>
+            {activeTab !== 'matching' ? (
+              <div className="flex items-center gap-3">
+                <label className="inline-flex items-center gap-3 text-sm font-semibold text-slate-700">
+                  <input
+                    className="h-8 w-8 accent-[var(--violet-600)]"
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    disabled={activeVisibleProfiles.length === 0}
+                    onChange={event => handleSelectAll(event.target.checked)}
+                  />
+                  전체 선택
+                </label>
+                <button
+                  className="inline-flex h-8 items-center rounded-[6px] border border-[var(--violet-200)] bg-white px-3 text-xs font-bold text-[var(--violet-700)] transition hover:bg-[var(--violet-50)] disabled:cursor-not-allowed disabled:opacity-50"
+                  type="button"
+                  disabled={selectedIds.length === 0}
+                  onClick={() => setSelectedIds([])}
+                >
+                  선택 초기화
+                </button>
+              </div>
+            ) : (
+              <div />
+            )}
             <div className="inline-flex items-center gap-2 rounded-full bg-[var(--violet-50)] px-3 py-1.5 text-sm font-semibold text-[var(--violet-900)]">
               <Users size={16} strokeWidth={1.75} aria-hidden />
-              {isLoading ? '로딩 중...' : `${visibleProfiles.length}명 표시 · ${selectedProfiles.length}명 공유 선택`}
+              {isLoading ? '로딩 중...' : activeTab === 'matching' ? `${ongoingPairs.length}쌍 매칭 중` : `${visibleProfiles.length}명 표시 · ${selectedProfiles.length}명 공유 선택`}
             </div>
           </div>
 
           {isLoading ? (
             <div className="py-12 text-center text-sm font-semibold text-slate-400">프로필을 불러오는 중...</div>
+          ) : activeTab === 'matching' ? (
+            <div>
+              <div className="mb-4 flex justify-end">
+                <button
+                  type="button"
+                  className={`inline-flex h-8 items-center gap-1 rounded-[8px] border px-3 text-xs font-semibold transition ${
+                    matchMode
+                      ? 'border-pink-500 bg-pink-500 text-white'
+                      : 'border-[var(--border)] bg-white text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
+                  }`}
+                  onClick={() => setMatchMode(v => !v)}
+                >
+                  {matchMode ? '매칭 모드 종료' : '+ 매칭 추가'}
+                </button>
+              </div>
+              {matchMode ? (
+                <MatchMakingBoard
+                  females={matchFemales}
+                  males={matchMales}
+                  officeMode={officeMode}
+                  onPair={(female, male) => setPairModal({female, male})}
+                />
+              ) : ongoingPairs.length === 0 ? (
+                <div className="py-12 text-center text-sm font-semibold text-slate-400">진행중인 매칭이 없습니다.</div>
+              ) : (
+                <div className="mx-auto flex max-w-2xl flex-col gap-3">
+                  {ongoingPairs.map(pair => (
+                    <MatchPairCard
+                      key={pair.match.id}
+                      pair={pair}
+                      onOpenProfile={pid => setDetailProfileId(pid)}
+                      onEndMatch={handleEndMatch}
+                      onDeleteMatch={handleDeleteMatch}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : isEditMode && canReorder ? (
+            <DndContext sensors={sensors} onDragEnd={event => void handleReorder(event)}>
+              <SortableContext items={visibleProfiles.map(p => p.id)} strategy={rectSortingStrategy}>
+                <div
+                  className={
+                    viewMode === 'compact'
+                      ? 'grid grid-cols-[repeat(auto-fill,minmax(min(50%,160px),1fr))] gap-3'
+                      : 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-5'
+                  }
+                >
+                  {visibleProfiles.map(profile => (
+                    <ProfileCard
+                      key={profile.id}
+                      profile={profile}
+                      authorName={authorName}
+                      variant={viewMode}
+                      isEditMode={isEditMode}
+                      sortable
+                      isSelected={selectedIdsSet.has(profile.id)}
+                      ongoingMatchCount={ongoingCounts.get(profile.id) ?? 0}
+                      onSelectChange={handleSelectChange}
+                      onEdit={selectedProfile => setModal({kind: 'edit', profile: selectedProfile})}
+                      onDelete={requestDelete}
+                      onStatusChange={handleStatusChange}
+                      onToggleStar={handleToggleStar}
+                      onOpenDetail={selectedProfile => setDetailProfileId(selectedProfile.id)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           ) : (
+            <>
+              {isEditMode ? (
+                <p className="mb-3 rounded-[8px] bg-amber-50 px-3 py-2 text-center text-xs font-semibold text-amber-700">기본 정렬 + 필터 없음 상태에서만 드래그로 순서를 바꿀 수 있어요.</p>
+              ) : null}
             <div
               className={
                 viewMode === 'compact'
@@ -647,6 +805,7 @@ export function Dashboard({authorName}: DashboardProps) {
                 />
               ))}
             </div>
+            </>
           )}
         </section>
       </div>
@@ -700,6 +859,15 @@ export function Dashboard({authorName}: DashboardProps) {
             setModal({kind: 'edit', profile: selectedProfile});
           }}
           onClose={() => setDetailProfileId(null)}
+        />
+      ) : null}
+      {pairModal ? (
+        <PairActionModal
+          female={pairModal.female}
+          male={pairModal.male}
+          officeMode={officeMode}
+          onMatch={handleCreateMatch}
+          onClose={() => setPairModal(null)}
         />
       ) : null}
       <CustomAlert state={alertState} onClose={() => setAlertState(closedAlertState)} />

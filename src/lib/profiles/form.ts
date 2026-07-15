@@ -28,6 +28,7 @@ export type ProfileFormValues = {
   probe: Probe;
   rejectionTolerance: RejectionTolerance;
   responseSpeed: ResponseSpeed;
+  reward: string;
   photos: ProfilePhoto[];
 };
 
@@ -85,6 +86,7 @@ export const emptyProfileFormValues: ProfileFormValues = {
   probe: 'not_selected',
   rejectionTolerance: 'not_selected',
   responseSpeed: 'not_selected',
+  reward: '',
   photos: [],
 };
 
@@ -107,6 +109,7 @@ export function profileToFormValues(profile: Profile): ProfileFormValues {
     probe: profile.probe,
     rejectionTolerance: profile.rejectionTolerance,
     responseSpeed: profile.responseSpeed,
+    reward: profile.reward,
     photos: profile.photos,
   };
 }
@@ -124,6 +127,7 @@ export function normalizeProfileFormValues(values: ProfileFormValues): Normalize
     matchmakerComment: values.matchmakerComment.trim(),
     extra: values.extra.trim(),
     adminMemo: values.adminMemo.trim(),
+    reward: values.reward.trim(),
     photos: values.photos.map((photo, order) => ({...photo, order})),
   };
 }

@@ -52,30 +52,57 @@ export function ProfileDetailModal({
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const swipeStart = useRef<{x: number; y: number; atTop: boolean} | null>(null);
 
+  // onClose는 부모(Dashboard)가 매 렌더마다 새 인라인 함수로 넘긴다. 아래 두 effect가
+  // onClose를 deps에 두면, 부모가 리렌더될 때마다 effect가 재실행되고 cleanup의
+  // history.back()이 popstate→onClose를 유발해 모달이 바로 닫힌다.
+  // (@dnd-kit 도입 후 모달을 열자마자 Dashboard가 한 번 더 렌더되며 이 문제가 드러남)
+  // → 최신 onClose를 ref에 담아두고 effect는 열림당 한 번만 실행되게 한다.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  // 우리가 history.back()으로 유발한 popstate 한 번을 무시하기 위한 플래그.
+  const popGuardRef = useRef({suppress: false});
+
   useBodyScrollLock(true);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') onCloseRef.current();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onClose]);
+  }, []);
 
   // 폰 뒤로가기(가장자리 스와이프/버튼)로 이전 페이지로 나가지 않고 모달만 닫는다.
   // 마운트 시 더미 히스토리 항목을 넣고, popstate(뒤로가기) 때 onClose를 호출한다.
+  //
+  // 주의: 개발 모드 StrictMode는 effect를 setup→cleanup→setup 순으로 이중 실행한다.
+  // cleanup의 history.back()은 브라우저에서 popstate를 "비동기"로 발생시키는데,
+  // 그 popstate가 재-setup 이후 도착해 새 리스너에 잡히면 열자마자 onClose가 불려
+  // 모달이 바로 닫힌다. 우리가 유발한 back()의 popstate는 한 번 무시하도록 플래그를 둔다.
   useEffect(() => {
+    const guard = popGuardRef.current;
     window.history.pushState({kayeonDetailModal: true}, '');
-    const onPopState = () => onClose();
+    const onPopState = () => {
+      if (guard.suppress) {
+        guard.suppress = false;
+        return;
+      }
+      onCloseRef.current();
+    };
     window.addEventListener('popstate', onPopState);
     return () => {
       window.removeEventListener('popstate', onPopState);
       // 정상 닫기(X/스와이프/Escape)로 언마운트된 경우, 우리가 넣은 항목을 되돌린다.
       // popstate로 닫힌 경우엔 이미 항목이 소비됐으므로 back()이 실제 페이지 이동을
-      // 유발하지 않도록 우리 상태일 때만 되돌린다.
-      if (window.history.state?.kayeonDetailModal) window.history.back();
+      // 유발하지 않도록 우리 상태일 때만 되돌린다. 이때 발생할 popstate는 우리 것이므로
+      // 무시하도록 표시한다(StrictMode 재-setup 리스너가 잡아도 닫히지 않게).
+      if (window.history.state?.kayeonDetailModal) {
+        guard.suppress = true;
+        window.history.back();
+      }
     };
-  }, [onClose]);
+  }, []);
 
   // 아래로 쓸어내려 닫기 — 스크롤 최상단에서 시작한 수직 아래 스와이프만 처리
   // (사진 슬라이더의 좌우 스와이프·본문 세로 스크롤과 충돌하지 않게).
@@ -189,16 +216,26 @@ export function ProfileDetailModal({
                     <span aria-hidden>🔒</span> 관리자 전용
                   </h3>
                   <ul className="flex flex-wrap gap-2">
-                    {adminRows.map(([label, value]) => (
-                      <li
-                        key={label}
-                        className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-white px-2.5 py-1 text-xs font-semibold text-amber-900"
-                      >
-                        <span className="text-amber-600">{label}</span>
-                        <span>{value}</span>
-                      </li>
-                    ))}
+                    {adminRows
+                      .filter(([label]) => label !== '리워드')
+                      .map(([label, value]) => (
+                        <li
+                          key={label}
+                          className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-white px-2.5 py-1 text-xs font-semibold text-amber-900"
+                        >
+                          <span className="text-amber-600">{label}</span>
+                          <span>{value}</span>
+                        </li>
+                      ))}
                   </ul>
+                  {adminRows
+                    .filter(([label]) => label === '리워드')
+                    .map(([, value]) => (
+                      <p key="reward" className="mt-2 flex items-center gap-1.5 break-keep text-sm font-semibold text-amber-900">
+                        <span aria-hidden>🎁</span>
+                        <span>{value}</span>
+                      </p>
+                    ))}
                 </div>
               </div>
             ) : null}
@@ -232,7 +269,7 @@ export function ProfileDetailModal({
                         key={m.id}
                         className="flex items-center gap-2 rounded-[8px] border border-[var(--border)] px-3 py-2 text-sm"
                       >
-                        <PartnerThumb partner={partner} />
+                        <PartnerThumb partner={partner} onOpen={onOpenProfile} />
                         <button
                           className="min-w-0 flex-1 truncate text-left font-semibold text-[var(--violet-900)] hover:underline disabled:no-underline"
                           type="button"
@@ -313,15 +350,20 @@ export function ProfileDetailModal({
 }
 
 // 매칭 상대 대표사진(첫 장) 썸네일. 사진이 없거나 삭제된 매물이면 플레이스홀더.
-function PartnerThumb({partner}: {partner: Profile | undefined}) {
+function PartnerThumb({partner, onOpen}: {partner: Profile | undefined; onOpen?: (id: string) => void}) {
   const photo = partner?.photos[0];
-  return (
-    <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-[6px] bg-[var(--violet-100)]">
-      {photo ? (
-        <img className="h-full w-full object-cover" src={photoThumbnailUrl(photo.url, PARTNER_THUMB_WIDTH)} alt={photo.alt} draggable={false} />
-      ) : (
-        <span className="text-[9px] font-semibold text-slate-400">없음</span>
-      )}
-    </span>
+  const inner = photo ? (
+    <img className="h-full w-full object-cover" src={photoThumbnailUrl(photo.url, PARTNER_THUMB_WIDTH)} alt={photo.alt} draggable={false} />
+  ) : (
+    <span className="text-[9px] font-semibold text-slate-400">없음</span>
   );
+  const cls = 'grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-[6px] bg-[var(--violet-100)]';
+  if (partner && onOpen) {
+    return (
+      <button type="button" className={`${cls} transition hover:ring-2 hover:ring-[var(--violet-400)]`} onClick={() => onOpen(partner.id)} aria-label="상세보기 열기">
+        {inner}
+      </button>
+    );
+  }
+  return <span className={cls}>{inner}</span>;
 }

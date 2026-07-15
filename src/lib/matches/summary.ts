@@ -22,3 +22,16 @@ export function getMatchCandidates(profile: Profile, all: Profile[]): Profile[] 
 export function getProfileMatches(profileId: string, matches: Match[]): Match[] {
   return matches.filter(m => m.femaleId === profileId || m.maleId === profileId);
 }
+
+// 진행중 매칭을 커플(여자/남자 프로필 resolve)로. 최신 매칭이 위. 삭제된 쪽은 undefined.
+export function getOngoingPairs(matches: Match[], profiles: Profile[]) {
+  const byId = new Map(profiles.map(p => [p.id, p]));
+  return matches
+    .filter(m => m.status === 'ongoing')
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .map(match => ({
+      match,
+      female: byId.get(match.femaleId),
+      male: byId.get(match.maleId),
+    }));
+}

@@ -110,3 +110,9 @@ alter table public.profiles
 alter table public.profiles
   add constraint profiles_response_speed_check
   check (response_speed in ('fast', 'normal', 'slow', 'not_selected'));
+
+-- ⑤ 매물 리워드 + 수동 정렬 가중치 --------------------------
+-- reward: 관리자 전용 자유 텍스트(뱃지/상세 표시). manual_order_weight: 편집모드 드래그 순서.
+alter table public.profiles
+  add column if not exists reward text not null default '',
+  add column if not exists manual_order_weight double precision not null default 0;

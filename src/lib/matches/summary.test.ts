@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 
-import {countOngoingByProfile, getMatchCandidates, getProfileMatches} from './summary';
+import {countOngoingByProfile, getMatchCandidates, getOngoingPairs, getProfileMatches} from './summary';
 import type {Match} from '@/types/match';
 import type {Profile} from '@/types/profile';
 
@@ -39,6 +39,8 @@ const profile = (over: Partial<Profile>): Profile => ({
   probe: 'not_selected',
   rejectionTolerance: 'not_selected',
   responseSpeed: 'not_selected',
+  reward: '',
+  manualOrderWeight: 0,
   photos: [],
   createdAt: '2026-07-01T00:00:00Z',
   updatedAt: '2026-07-01T00:00:00Z',
@@ -78,5 +80,32 @@ describe('getProfileMatches', () => {
       match({id: 'm3', femaleId: 'x', maleId: 'y'}),
     ];
     expect(getProfileMatches('f1', matches).map(m => m.id)).toEqual(['m1', 'm2']);
+  });
+});
+
+describe('getOngoingPairs', () => {
+  const female = {id: 'f1', gender: 'female'} as Profile;
+  const male = {id: 'm1', gender: 'male'} as Profile;
+  const mk = (over: Partial<Match>): Match => ({
+    id: 'x', femaleId: 'f1', maleId: 'm1', status: 'ongoing', memo: '',
+    createdByName: 'A', createdAt: '2026-07-01T00:00:00.000Z', endedAt: null, ...over,
+  });
+
+  it('returns ongoing pairs resolved to profiles, newest first', () => {
+    const matches = [
+      mk({id: 'old', createdAt: '2026-06-01T00:00:00.000Z'}),
+      mk({id: 'new', createdAt: '2026-07-10T00:00:00.000Z'}),
+      mk({id: 'ended', status: 'ended'}),
+    ];
+    const pairs = getOngoingPairs(matches, [female, male]);
+    expect(pairs.map(p => p.match.id)).toEqual(['new', 'old']);
+    expect(pairs[0].female?.id).toBe('f1');
+    expect(pairs[0].male?.id).toBe('m1');
+  });
+
+  it('keeps pair with a deleted side as undefined', () => {
+    const pairs = getOngoingPairs([mk({})], [female]); // male missing
+    expect(pairs[0].female?.id).toBe('f1');
+    expect(pairs[0].male).toBeUndefined();
   });
 });

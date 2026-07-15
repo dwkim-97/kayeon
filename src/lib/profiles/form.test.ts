@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 
-import {normalizeProfileFormValues, validateProfileFormValues} from './form';
+import {emptyProfileFormValues, normalizeProfileFormValues, validateProfileFormValues} from './form';
 import type {ProfileFormValues} from './form';
 
 const validValues: ProfileFormValues = {
@@ -21,6 +21,7 @@ const validValues: ProfileFormValues = {
   probe: 'not_selected',
   rejectionTolerance: 'not_selected',
   responseSpeed: 'not_selected',
+  reward: '',
   photos: [
     {
       id: 'photo-1',
@@ -39,6 +40,12 @@ describe('profile form helpers', () => {
     expect(normalized.birthYear).toBe(1998);
     expect(normalized.height).toBe(164);
     expect(normalized.job).toBe('ibk / 을지로 / 금융');
+  });
+
+  it('threads reward through form values and normalize', () => {
+    const values = {...emptyProfileFormValues, reward: '  소개비 50만원  '};
+    const normalized = normalizeProfileFormValues(values);
+    expect(normalized.reward).toBe('소개비 50만원');
   });
 
   it('requires core fields except name and rejects more than four photos', () => {

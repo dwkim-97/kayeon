@@ -277,6 +277,7 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
           isActivated: true,
           authorName,
           starredByName: null,
+          manualOrderWeight: 0,
           createdAt: now,
           updatedAt: now,
           ...normalized,
@@ -580,6 +581,16 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
                     options={responseSpeedOptions.map(value => [value, `${responseSpeedEmoji[value]} ${responseSpeedLabels[value]}`])}
                     onChange={value => updateField('responseSpeed', value)}
                     deselectValue="not_selected"
+                  />
+                </div>
+                <div className="mt-4">
+                  <TextField
+                    label="리워드"
+                    required={false}
+                    type="text"
+                    placeholder="예: 소개비 50만원, 명품 선물"
+                    value={values.reward}
+                    onChange={value => updateField('reward', value)}
                   />
                 </div>
               </fieldset>

@@ -80,6 +80,8 @@ function normalizeStoredProfile(profile: Record<string, unknown>, index: number)
     probe: enumField(profile, 'probe', probeValues, 'not_selected'),
     rejectionTolerance: enumField(profile, 'rejectionTolerance', rejectionToleranceValues, 'not_selected'),
     responseSpeed: enumField(profile, 'responseSpeed', responseSpeedValues, 'not_selected'),
+    reward: stringField(profile, 'reward', ''),
+    manualOrderWeight: numberField(profile, 'manualOrderWeight', 0),
     photos: photoField(profile, 'photos'),
     createdAt: stringField(profile, 'createdAt', now),
     updatedAt: stringField(profile, 'updatedAt', now),
