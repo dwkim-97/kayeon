@@ -187,7 +187,7 @@ export function ProfileCard({
             <div className="grid h-full place-items-center text-sm text-slate-500">사진 없음</div>
           )}
 
-          {/* 주선자 뱃지 (+ 집착매물 뱃지) — compact: 좌하단 / detailed: 우상단. 주선자별 고정 색 */}
+          {/* 집착매물 + 리워드 뱃지 — compact: 좌하단 / detailed: 우상단. */}
           <div
             className={`absolute z-20 flex items-center gap-1 ${
               isCompact ? 'bottom-3 left-3' : 'right-3 top-3'
@@ -214,15 +214,26 @@ export function ProfileCard({
                 {isCompact ? null : <span className="max-w-[8rem] truncate">{profile.reward.trim()}</span>}
               </span>
             ) : null}
+            {/* compact는 주선자 뱃지도 이 클러스터(좌하단)에 함께 둔다 */}
+            {isCompact ? (
+              <span
+                className="whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold shadow-sm"
+                style={{backgroundColor: authorColor.bg, color: authorColor.text}}
+              >
+                {profile.authorName}
+              </span>
+            ) : null}
+          </div>
+
+          {/* detailed: 주선자 뱃지는 정보 오버레이 바로 위(좌하단)에 둔다 */}
+          {!isCompact ? (
             <span
-              className={`whitespace-nowrap rounded-full font-semibold shadow-sm ${
-                isCompact ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1 text-xs'
-              }`}
+              className="absolute bottom-20 left-3 z-20 whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold shadow-sm"
               style={{backgroundColor: authorColor.bg, color: authorColor.text}}
             >
               {profile.authorName}
             </span>
-          </div>
+          ) : null}
 
           {/* 진행중 매칭 배지 — compact: 우상단 / detailed: 좌상단(주선자와 겹치지 않게) */}
           {ongoingMatchCount > 0 ? (
@@ -231,7 +242,7 @@ export function ProfileCard({
                 isCompact ? 'right-3 px-2 py-0.5 text-[10px]' : 'left-3 px-2.5 py-1 text-xs'
               }`}
             >
-              💞 매칭 {ongoingMatchCount}
+              💞 {isCompact ? '' : '매칭 '}{ongoingMatchCount}
             </div>
           ) : null}
 
@@ -259,24 +270,24 @@ export function ProfileCard({
           {hasMultiplePhotos ? (
             <>
               <button
-                className={`absolute left-2 top-1/2 z-20 grid -translate-y-1/2 place-items-center rounded-full bg-white/65 text-[var(--violet-900)] ${
-                  isCompact ? 'h-9 w-9' : 'h-12 w-12'
+                className={`absolute left-2 top-1/2 z-20 grid -translate-y-1/2 place-items-center rounded-full bg-white/35 text-[var(--violet-900)] transition hover:bg-white/60 ${
+                  isCompact ? 'h-6 w-6' : 'h-9 w-9'
                 }`}
                 type="button"
                 onClick={e => { e.stopPropagation(); movePhoto(-1); }}
                 aria-label="이전 사진"
               >
-                <ChevronLeft size={isCompact ? 20 : 26} strokeWidth={1.75} aria-hidden />
+                <ChevronLeft size={isCompact ? 15 : 20} strokeWidth={1.75} aria-hidden />
               </button>
               <button
-                className={`absolute right-2 top-1/2 z-20 grid -translate-y-1/2 place-items-center rounded-full bg-white/65 text-[var(--violet-900)] ${
-                  isCompact ? 'h-9 w-9' : 'h-12 w-12'
+                className={`absolute right-2 top-1/2 z-20 grid -translate-y-1/2 place-items-center rounded-full bg-white/35 text-[var(--violet-900)] transition hover:bg-white/60 ${
+                  isCompact ? 'h-6 w-6' : 'h-9 w-9'
                 }`}
                 type="button"
                 onClick={e => { e.stopPropagation(); movePhoto(1); }}
                 aria-label="다음 사진"
               >
-                <ChevronRight size={isCompact ? 20 : 26} strokeWidth={1.75} aria-hidden />
+                <ChevronRight size={isCompact ? 15 : 20} strokeWidth={1.75} aria-hidden />
               </button>
               <div
                 className={`absolute bottom-3 right-3 z-20 rounded-full bg-black/55 font-semibold text-white ${

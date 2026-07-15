@@ -106,16 +106,16 @@ export function MatchMakingBoard({
       <p className="mb-3 rounded-[8px] bg-pink-50 px-3 py-2 text-center text-sm font-semibold text-pink-700">
         한쪽 매물을 반대편 매물 위로 끌어다 놓으면 매칭/지원을 선택할 수 있어요 💞
       </p>
-      <div className={`grid grid-cols-2 gap-3 ${officeMode ? 'office-mode' : ''}`}>
-        <div>
+      <div className={`grid grid-cols-2 divide-x divide-[var(--border)] ${officeMode ? 'office-mode' : ''}`}>
+        <div className="pr-3">
           <h3 className="mb-2 text-center text-sm font-bold text-[var(--violet-900)]">여성 {females.length}</h3>
-          <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {females.map(p => <DraggableDroppableCard key={p.id} profile={p} />)}
           </div>
         </div>
-        <div>
+        <div className="pl-3">
           <h3 className="mb-2 text-center text-sm font-bold text-[var(--violet-900)]">남성 {males.length}</h3>
-          <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {males.map(p => <DraggableDroppableCard key={p.id} profile={p} />)}
           </div>
         </div>
