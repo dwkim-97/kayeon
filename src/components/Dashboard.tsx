@@ -715,7 +715,7 @@ export function Dashboard({authorName}: DashboardProps) {
             ongoingPairs.length === 0 ? (
               <div className="py-12 text-center text-sm font-semibold text-slate-400">진행중인 매칭이 없습니다.</div>
             ) : (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,340px),1fr))] gap-4">
+              <div className="mx-auto flex max-w-2xl flex-col gap-3">
                 {ongoingPairs.map(pair => (
                   <MatchPairCard
                     key={pair.match.id}

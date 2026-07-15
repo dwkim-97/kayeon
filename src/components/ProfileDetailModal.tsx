@@ -52,21 +52,29 @@ export function ProfileDetailModal({
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const swipeStart = useRef<{x: number; y: number; atTop: boolean} | null>(null);
 
+  // onClose는 부모(Dashboard)가 매 렌더마다 새 인라인 함수로 넘긴다. 아래 두 effect가
+  // onClose를 deps에 두면, 부모가 리렌더될 때마다 effect가 재실행되고 cleanup의
+  // history.back()이 popstate→onClose를 유발해 모달이 바로 닫힌다.
+  // (@dnd-kit 도입 후 모달을 열자마자 Dashboard가 한 번 더 렌더되며 이 문제가 드러남)
+  // → 최신 onClose를 ref에 담아두고 effect는 열림당 한 번만 실행되게 한다.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useBodyScrollLock(true);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') onCloseRef.current();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onClose]);
+  }, []);
 
   // 폰 뒤로가기(가장자리 스와이프/버튼)로 이전 페이지로 나가지 않고 모달만 닫는다.
   // 마운트 시 더미 히스토리 항목을 넣고, popstate(뒤로가기) 때 onClose를 호출한다.
   useEffect(() => {
     window.history.pushState({kayeonDetailModal: true}, '');
-    const onPopState = () => onClose();
+    const onPopState = () => onCloseRef.current();
     window.addEventListener('popstate', onPopState);
     return () => {
       window.removeEventListener('popstate', onPopState);
@@ -75,7 +83,7 @@ export function ProfileDetailModal({
       // 유발하지 않도록 우리 상태일 때만 되돌린다.
       if (window.history.state?.kayeonDetailModal) window.history.back();
     };
-  }, [onClose]);
+  }, []);
 
   // 아래로 쓸어내려 닫기 — 스크롤 최상단에서 시작한 수직 아래 스와이프만 처리
   // (사진 슬라이더의 좌우 스와이프·본문 세로 스크롤과 충돌하지 않게).
