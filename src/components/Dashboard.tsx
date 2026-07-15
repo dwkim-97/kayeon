@@ -20,7 +20,7 @@ import {ProfileDetailModal} from '@/components/ProfileDetailModal';
 import {ProfileFormModal} from '@/components/ProfileFormModal';
 import {ShareButton} from '@/components/ShareButton';
 import {SortMenu} from '@/components/SortMenu';
-import {computeDroppedWeight} from '@/lib/profiles/manual-order';
+import {reorderWeights} from '@/lib/profiles/manual-order';
 import {historyEventDescriptions, recordHistory} from '@/lib/history/events';
 import {countOngoingByProfile, getOngoingPairs} from '@/lib/matches/summary';
 import {formatBirthYearLabel} from '@/lib/profiles/age';
@@ -464,40 +464,55 @@ export function Dashboard({authorName}: DashboardProps) {
     setMatches(current => current.filter(m => m.id !== matchId));
   };
 
-  // 편집모드 드래그 완료: 이웃 midpoint 가중치를 계산해 PATCH 저장.
-  // Task 6 에서 비편집모드 드래그(매칭) 브랜치를 onDragEnd에 추가할 수 있도록
-  // 핸들러를 분리해 두고 onDragEnd에서 isEditMode 조건으로 위임한다.
+  // 편집모드 드래그 완료: 재배열 후 0..n 순번을 재부여하고, 바뀐 행만 PATCH.
   const handleReorder = async (event: DragEndEvent) => {
     const {active, over} = event;
     if (!over || active.id === over.id) return;
     const fromIndex = visibleProfiles.findIndex(p => p.id === active.id);
     const toIndex = visibleProfiles.findIndex(p => p.id === over.id);
     if (fromIndex < 0 || toIndex < 0) return;
-    const weight = computeDroppedWeight(visibleProfiles, fromIndex, toIndex);
-    const moved = visibleProfiles[fromIndex];
-    const previousWeight = moved.manualOrderWeight;
-    setProfiles(current => current.map(p => (p.id === moved.id ? {...p, manualOrderWeight: weight} : p)));
+
+    const changes = reorderWeights(visibleProfiles, fromIndex, toIndex);
+    if (changes.length === 0) return;
+
+    // 롤백용 이전 가중치 보관
+    const prevById = new Map(visibleProfiles.map(p => [p.id, p.manualOrderWeight]));
+    const weightById = new Map(changes.map(c => [c.id, c.manualOrderWeight]));
+
+    // 낙관적 업데이트
+    setProfiles(current =>
+      current.map(p => (weightById.has(p.id) ? {...p, manualOrderWeight: weightById.get(p.id)!} : p)),
+    );
+
     const rollback = () =>
-      setProfiles(cur => cur.map(p => (p.id === moved.id ? {...p, manualOrderWeight: previousWeight} : p)));
+      setProfiles(current =>
+        current.map(p => (prevById.has(p.id) ? {...p, manualOrderWeight: prevById.get(p.id)!} : p)),
+      );
     const migrationAlert = () =>
-      setAlertState({kind: 'alert', title: '순서 저장 실패', message: 'manual_order_weight 컬럼이 아직 DB에 없을 수 있습니다. RUN_IN_SQL_EDITOR.sql의 ⑤를 실행해 주세요.'});
-    const res = await fetch(`/api/profiles/${moved.id}`, {
-      method: 'PATCH',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({manualOrderWeight: weight}),
-    });
-    if (!res.ok) {
-      rollback();
-      migrationAlert();
-      return;
-    }
-    try {
-      const {profile: saved} = (await res.json()) as {profile: Profile};
-      if (saved.manualOrderWeight !== weight) {
-        rollback();
-        migrationAlert();
-      }
-    } catch {
+      setAlertState({
+        kind: 'alert',
+        title: '순서 저장 실패',
+        message: 'manual_order_weight 컬럼이 아직 DB에 없을 수 있습니다. RUN_IN_SQL_EDITOR.sql의 ⑤를 실행해 주세요.',
+      });
+
+    // 변경 행을 각각 PATCH. 하나라도 실패/stripped면 전체 롤백 + 안내.
+    const results = await Promise.all(
+      changes.map(async change => {
+        try {
+          const res = await fetch(`/api/profiles/${change.id}`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({manualOrderWeight: change.manualOrderWeight}),
+          });
+          if (!res.ok) return false;
+          const {profile: saved} = (await res.json()) as {profile: Profile};
+          return saved.manualOrderWeight === change.manualOrderWeight;
+        } catch {
+          return false;
+        }
+      }),
+    );
+    if (results.some(ok => !ok)) {
       rollback();
       migrationAlert();
     }
