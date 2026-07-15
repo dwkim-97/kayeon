@@ -1,6 +1,6 @@
 'use client';
 
-import {DndContext, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent} from '@dnd-kit/core';
+import {DndContext, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent} from '@dnd-kit/core';
 import {SortableContext, rectSortingStrategy} from '@dnd-kit/sortable';
 import {Briefcase, Check, ChevronDown, ChevronUp, Grid3x3, LayoutGrid, Pencil, Plus, SlidersHorizontal, Users} from 'lucide-react';
 import Link from 'next/link';
@@ -181,7 +181,6 @@ export function Dashboard({authorName}: DashboardProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [matches, setMatches] = useState<Match[]>([]);
-  const [draggingId, setDraggingId] = useState<string | null>(null);
   const [pairModal, setPairModal] = useState<{female: Profile; male: Profile} | null>(null);
   const [detailProfileId, setDetailProfileId] = useState<string | null>(null);
   const [newArrivalCount, setNewArrivalCount] = useState(0);
@@ -245,12 +244,6 @@ export function Dashboard({authorName}: DashboardProps) {
   };
 
   const visibleProfiles = useMemo(() => filterProfiles(profiles, filters), [profiles, filters]);
-  const draggingProfile = useMemo(() => profiles.find(p => p.id === draggingId) ?? null, [profiles, draggingId]);
-  const oppositeGender: Gender = draggingProfile?.gender === 'female' ? 'male' : 'female';
-  const pairDropTargets = useMemo(
-    () => (draggingId ? profiles.filter(p => p.gender === oppositeGender && p.isActivated) : []),
-    [draggingId, profiles, oppositeGender],
-  );
   const activeVisibleProfiles = useMemo(
     () => visibleProfiles.filter(profile => profile.isActivated),
     [visibleProfiles],
@@ -518,29 +511,6 @@ export function Dashboard({authorName}: DashboardProps) {
     }
   };
 
-  const handleDragStart = (event: DragStartEvent) => {
-    if (!isEditMode) setDraggingId(String(event.active.id));
-  };
-
-  const handlePairDragEnd = (event: DragEndEvent) => {
-    const dragged = draggingProfile;
-    setDraggingId(null);
-    if (!dragged || !event.over) return;
-    const target = profiles.find(p => p.id === event.over!.id);
-    if (!target || target.gender === dragged.gender) return;
-    const female = dragged.gender === 'female' ? dragged : target;
-    const male = dragged.gender === 'female' ? target : dragged;
-    setPairModal({female, male});
-  };
-
-  const handleGridDragEnd = (event: DragEndEvent) => {
-    if (isEditMode) {
-      void handleReorder(event);
-    } else {
-      handlePairDragEnd(event);
-    }
-  };
-
   const requestDelete = (profile: Profile) => {
     setAlertState({
       kind: 'confirm',
@@ -742,72 +712,63 @@ export function Dashboard({authorName}: DashboardProps) {
                 ))}
               </div>
             )
-          ) : (
-            // 단일 DndContext: 편집모드 → 순서 재정렬, 일반모드 → 짝지기 드래그
-            <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleGridDragEnd} onDragCancel={() => setDraggingId(null)}>
-              <SortableContext items={(isEditMode ? visibleProfiles : (draggingId ? pairDropTargets : visibleProfiles)).map(p => p.id)} strategy={rectSortingStrategy}>
-                {draggingId && !isEditMode ? (
-                  <div>
-                    <p className="mb-3 rounded-[8px] bg-pink-50 px-3 py-2 text-center text-sm font-semibold text-pink-700">
-                      이성 매물 위에 놓아 연결하세요 💞
-                    </p>
-                    <div
-                      className={
-                        viewMode === 'compact'
-                          ? 'grid grid-cols-[repeat(auto-fill,minmax(min(50%,160px),1fr))] gap-3'
-                          : 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-5'
-                      }
-                    >
-                      {pairDropTargets.map(profile => (
-                        <ProfileCard
-                          key={profile.id}
-                          profile={profile}
-                          authorName={authorName}
-                          variant={viewMode}
-                          isEditMode={false}
-                          sortable
-                          isSelected={selectedIdsSet.has(profile.id)}
-                          ongoingMatchCount={ongoingCounts.get(profile.id) ?? 0}
-                          onSelectChange={handleSelectChange}
-                          onEdit={selectedProfile => setModal({kind: 'edit', profile: selectedProfile})}
-                          onDelete={requestDelete}
-                          onStatusChange={handleStatusChange}
-                          onToggleStar={handleToggleStar}
-                          onOpenDetail={selectedProfile => setDetailProfileId(selectedProfile.id)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div
-                    className={
-                      viewMode === 'compact'
-                        ? 'grid grid-cols-[repeat(auto-fill,minmax(min(50%,160px),1fr))] gap-3'
-                        : 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-5'
-                    }
-                  >
-                    {visibleProfiles.map(profile => (
-                      <ProfileCard
-                        key={profile.id}
-                        profile={profile}
-                        authorName={authorName}
-                        variant={viewMode}
-                        isEditMode={isEditMode}
-                        sortable
-                        isSelected={selectedIdsSet.has(profile.id)}
-                        ongoingMatchCount={ongoingCounts.get(profile.id) ?? 0}
-                        onSelectChange={handleSelectChange}
-                        onEdit={selectedProfile => setModal({kind: 'edit', profile: selectedProfile})}
-                        onDelete={requestDelete}
-                        onStatusChange={handleStatusChange}
-                        onToggleStar={handleToggleStar}
-                        onOpenDetail={selectedProfile => setDetailProfileId(selectedProfile.id)}
-                      />
-                    ))}
-                  </div>
-                )}
+          ) : isEditMode ? (
+            <DndContext sensors={sensors} onDragEnd={event => void handleReorder(event)}>
+              <SortableContext items={visibleProfiles.map(p => p.id)} strategy={rectSortingStrategy}>
+                <div
+                  className={
+                    viewMode === 'compact'
+                      ? 'grid grid-cols-[repeat(auto-fill,minmax(min(50%,160px),1fr))] gap-3'
+                      : 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-5'
+                  }
+                >
+                  {visibleProfiles.map(profile => (
+                    <ProfileCard
+                      key={profile.id}
+                      profile={profile}
+                      authorName={authorName}
+                      variant={viewMode}
+                      isEditMode={isEditMode}
+                      sortable
+                      isSelected={selectedIdsSet.has(profile.id)}
+                      ongoingMatchCount={ongoingCounts.get(profile.id) ?? 0}
+                      onSelectChange={handleSelectChange}
+                      onEdit={selectedProfile => setModal({kind: 'edit', profile: selectedProfile})}
+                      onDelete={requestDelete}
+                      onStatusChange={handleStatusChange}
+                      onToggleStar={handleToggleStar}
+                      onOpenDetail={selectedProfile => setDetailProfileId(selectedProfile.id)}
+                    />
+                  ))}
+                </div>
               </SortableContext>
             </DndContext>
+          ) : (
+            <div
+              className={
+                viewMode === 'compact'
+                  ? 'grid grid-cols-[repeat(auto-fill,minmax(min(50%,160px),1fr))] gap-3'
+                  : 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-5'
+              }
+            >
+              {visibleProfiles.map(profile => (
+                <ProfileCard
+                  key={profile.id}
+                  profile={profile}
+                  authorName={authorName}
+                  variant={viewMode}
+                  isEditMode={isEditMode}
+                  isSelected={selectedIdsSet.has(profile.id)}
+                  ongoingMatchCount={ongoingCounts.get(profile.id) ?? 0}
+                  onSelectChange={handleSelectChange}
+                  onEdit={selectedProfile => setModal({kind: 'edit', profile: selectedProfile})}
+                  onDelete={requestDelete}
+                  onStatusChange={handleStatusChange}
+                  onToggleStar={handleToggleStar}
+                  onOpenDetail={selectedProfile => setDetailProfileId(selectedProfile.id)}
+                />
+              ))}
+            </div>
           )}
         </section>
       </div>
