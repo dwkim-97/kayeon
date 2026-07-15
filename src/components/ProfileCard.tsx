@@ -102,7 +102,7 @@ export function ProfileCard({
   // useSortable은 항상 호출(hooks 규칙 준수). SortableContext 밖에서는 inert 값을 반환한다.
   const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({id: profile.id});
   const sortableStyle = sortable
-    ? {transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1, touchAction: 'none' as const}
+    ? {transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1}
     : undefined;
   const hasMultiplePhotos = profile.photos.length > 1;
   const isBlocked = !profile.isActivated;
@@ -130,6 +130,7 @@ export function ProfileCard({
       {sortable && isEditMode ? (
         <div
           className="absolute right-1 top-1 z-30 cursor-grab rounded bg-black/40 px-1.5 py-0.5 text-[10px] font-bold text-white"
+          style={{touchAction: 'none'}}
           {...attributes}
           {...listeners}
           title="드래그해 순서 변경"
