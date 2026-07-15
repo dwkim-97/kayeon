@@ -11,6 +11,7 @@ import {useOfficeMode} from '@/hooks/useOfficeMode';
 import {AppHeader} from '@/components/AppHeader';
 import {closedAlertState, CustomAlert, type CustomAlertState} from '@/components/CustomAlert';
 import {FilterBar} from '@/components/FilterBar';
+import {MatchMakingBoard} from '@/components/MatchMakingBoard';
 import {MatchPairCard} from '@/components/MatchPairCard';
 import {NaturalShareButton} from '@/components/NaturalShareButton';
 import {NewArrivalToast} from '@/components/NewArrivalToast';
@@ -182,6 +183,7 @@ export function Dashboard({authorName}: DashboardProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [matches, setMatches] = useState<Match[]>([]);
   const [pairModal, setPairModal] = useState<{female: Profile; male: Profile} | null>(null);
+  const [matchMode, setMatchMode] = useState(false);
   const [detailProfileId, setDetailProfileId] = useState<string | null>(null);
   const [newArrivalCount, setNewArrivalCount] = useState(0);
   const {officeMode, toggleOfficeMode} = useOfficeMode();
@@ -228,6 +230,8 @@ export function Dashboard({authorName}: DashboardProps) {
 
   const ongoingCounts = useMemo(() => countOngoingByProfile(matches), [matches]);
   const ongoingPairs = useMemo(() => getOngoingPairs(matches, profiles), [matches, profiles]);
+  const matchFemales = useMemo(() => profiles.filter(p => p.gender === 'female' && p.isActivated), [profiles]);
+  const matchMales = useMemo(() => profiles.filter(p => p.gender === 'male' && p.isActivated), [profiles]);
   const detailProfile = useMemo(
     () => profiles.find(p => p.id === detailProfileId) ?? null,
     [profiles, detailProfileId],
@@ -563,7 +567,7 @@ export function Dashboard({authorName}: DashboardProps) {
                   }`}
                   key={gender}
                   type="button"
-                  onClick={() => { setActiveTab(gender); switchGender(gender); }}
+                  onClick={() => { setActiveTab(gender); switchGender(gender); setMatchMode(false); }}
                 >
                   {genderLabels[gender]}
                 </button>
@@ -573,7 +577,7 @@ export function Dashboard({authorName}: DashboardProps) {
                   activeTab === 'matching' ? 'bg-pink-500 text-white' : 'text-[var(--violet-900)]'
                 }`}
                 type="button"
-                onClick={() => setActiveTab('matching')}
+                onClick={() => { setActiveTab('matching'); setMatchMode(false); }}
               >
                 💞 매칭
               </button>
@@ -668,26 +672,30 @@ export function Dashboard({authorName}: DashboardProps) {
       <div className="mx-auto max-w-7xl px-4 py-6 pb-24">
         <section className="mt-2 rounded-[8px] border border-[var(--border)] bg-white p-4">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <label className="inline-flex items-center gap-3 text-sm font-semibold text-slate-700">
-                <input
-                  className="h-8 w-8 accent-[var(--violet-600)]"
-                  type="checkbox"
-                  checked={allVisibleSelected}
-                  disabled={activeVisibleProfiles.length === 0}
-                  onChange={event => handleSelectAll(event.target.checked)}
-                />
-                전체 선택
-              </label>
-              <button
-                className="inline-flex h-8 items-center rounded-[6px] border border-[var(--violet-200)] bg-white px-3 text-xs font-bold text-[var(--violet-700)] transition hover:bg-[var(--violet-50)] disabled:cursor-not-allowed disabled:opacity-50"
-                type="button"
-                disabled={selectedIds.length === 0}
-                onClick={() => setSelectedIds([])}
-              >
-                선택 초기화
-              </button>
-            </div>
+            {activeTab !== 'matching' ? (
+              <div className="flex items-center gap-3">
+                <label className="inline-flex items-center gap-3 text-sm font-semibold text-slate-700">
+                  <input
+                    className="h-8 w-8 accent-[var(--violet-600)]"
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    disabled={activeVisibleProfiles.length === 0}
+                    onChange={event => handleSelectAll(event.target.checked)}
+                  />
+                  전체 선택
+                </label>
+                <button
+                  className="inline-flex h-8 items-center rounded-[6px] border border-[var(--violet-200)] bg-white px-3 text-xs font-bold text-[var(--violet-700)] transition hover:bg-[var(--violet-50)] disabled:cursor-not-allowed disabled:opacity-50"
+                  type="button"
+                  disabled={selectedIds.length === 0}
+                  onClick={() => setSelectedIds([])}
+                >
+                  선택 초기화
+                </button>
+              </div>
+            ) : (
+              <div />
+            )}
             <div className="inline-flex items-center gap-2 rounded-full bg-[var(--violet-50)] px-3 py-1.5 text-sm font-semibold text-[var(--violet-900)]">
               <Users size={16} strokeWidth={1.75} aria-hidden />
               {isLoading ? '로딩 중...' : activeTab === 'matching' ? `${ongoingPairs.length}쌍 매칭 중` : `${visibleProfiles.length}명 표시 · ${selectedProfiles.length}명 공유 선택`}
@@ -697,21 +705,43 @@ export function Dashboard({authorName}: DashboardProps) {
           {isLoading ? (
             <div className="py-12 text-center text-sm font-semibold text-slate-400">프로필을 불러오는 중...</div>
           ) : activeTab === 'matching' ? (
-            ongoingPairs.length === 0 ? (
-              <div className="py-12 text-center text-sm font-semibold text-slate-400">진행중인 매칭이 없습니다.</div>
-            ) : (
-              <div className="mx-auto flex max-w-2xl flex-col gap-3">
-                {ongoingPairs.map(pair => (
-                  <MatchPairCard
-                    key={pair.match.id}
-                    pair={pair}
-                    onOpenProfile={pid => setDetailProfileId(pid)}
-                    onEndMatch={handleEndMatch}
-                    onDeleteMatch={handleDeleteMatch}
-                  />
-                ))}
+            <div>
+              <div className="mb-4 flex justify-end">
+                <button
+                  type="button"
+                  className={`inline-flex h-8 items-center gap-1 rounded-[8px] border px-3 text-xs font-semibold transition ${
+                    matchMode
+                      ? 'border-pink-500 bg-pink-500 text-white'
+                      : 'border-[var(--border)] bg-white text-[var(--violet-900)] hover:bg-[var(--violet-50)]'
+                  }`}
+                  onClick={() => setMatchMode(v => !v)}
+                >
+                  {matchMode ? '매칭 모드 종료' : '+ 매칭 추가'}
+                </button>
               </div>
-            )
+              {matchMode ? (
+                <MatchMakingBoard
+                  females={matchFemales}
+                  males={matchMales}
+                  officeMode={officeMode}
+                  onPair={(female, male) => setPairModal({female, male})}
+                />
+              ) : ongoingPairs.length === 0 ? (
+                <div className="py-12 text-center text-sm font-semibold text-slate-400">진행중인 매칭이 없습니다.</div>
+              ) : (
+                <div className="mx-auto flex max-w-2xl flex-col gap-3">
+                  {ongoingPairs.map(pair => (
+                    <MatchPairCard
+                      key={pair.match.id}
+                      pair={pair}
+                      onOpenProfile={pid => setDetailProfileId(pid)}
+                      onEndMatch={handleEndMatch}
+                      onDeleteMatch={handleDeleteMatch}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           ) : isEditMode ? (
             <DndContext sensors={sensors} onDragEnd={event => void handleReorder(event)}>
               <SortableContext items={visibleProfiles.map(p => p.id)} strategy={rectSortingStrategy}>
