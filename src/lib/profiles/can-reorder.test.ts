@@ -11,6 +11,7 @@ const base: ProfileFilters = {
   activeOnly: false,
   religion: '',
   smoking: '',
+  authorNames: ['에드', '조이', '에이든'],
   query: '',
   sortField: 'default',
   sortDirection: 'desc',
@@ -59,5 +60,13 @@ describe('canReorderProfiles', () => {
 
   it('activeOnly가 true이면 false', () => {
     expect(canReorderProfiles({...base, activeOnly: true})).toBe(false);
+  });
+
+  it('주선자 토글이 일부만 켜져 있으면 false', () => {
+    expect(canReorderProfiles({...base, authorNames: ['조이']})).toBe(false);
+  });
+
+  it('주선자 토글이 하나도 안 켜져 있으면 false', () => {
+    expect(canReorderProfiles({...base, authorNames: []})).toBe(false);
   });
 });

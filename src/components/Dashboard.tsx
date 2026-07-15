@@ -26,6 +26,7 @@ import {reorderWeights} from '@/lib/profiles/manual-order';
 import {historyEventDescriptions, recordHistory} from '@/lib/history/events';
 import {countOngoingByProfile, getOngoingPairs} from '@/lib/matches/summary';
 import {formatBirthYearLabel} from '@/lib/profiles/age';
+import {FIXED_AUTHOR_NAMES, getAuthorColor} from '@/lib/profiles/author-color';
 import {filterProfiles} from '@/lib/profiles/filter';
 import {
   countNewArrivals,
@@ -58,6 +59,7 @@ const defaultFilters = (gender: Gender): ProfileFilters => ({
   activeOnly: false,
   religion: '',
   smoking: '',
+  authorNames: [...FIXED_AUTHOR_NAMES],
   query: '',
   sortField: 'default',
   sortDirection: 'desc',
@@ -231,6 +233,16 @@ export function Dashboard({authorName}: DashboardProps) {
 
   const canReorder = useMemo(() => canReorderProfiles(filters), [filters]);
   const ongoingCounts = useMemo(() => countOngoingByProfile(matches), [matches]);
+
+  // 주선자 토글: 눌린 주선자만 표시. 다시 누르면 꺼짐. 기본값은 전부 켜짐(defaultFilters).
+  const toggleAuthor = (name: string) => {
+    setFilters(current => ({
+      ...current,
+      authorNames: current.authorNames.includes(name)
+        ? current.authorNames.filter(n => n !== name)
+        : [...current.authorNames, name],
+    }));
+  };
   const ongoingPairs = useMemo(() => getOngoingPairs(matches, profiles), [matches, profiles]);
   const matchFemales = useMemo(() => profiles.filter(p => p.gender === 'female' && p.isActivated), [profiles]);
   const matchMales = useMemo(() => profiles.filter(p => p.gender === 'male' && p.isActivated), [profiles]);
@@ -698,9 +710,37 @@ export function Dashboard({authorName}: DashboardProps) {
             ) : (
               <div />
             )}
-            <div className="inline-flex items-center gap-2 rounded-full bg-[var(--violet-50)] px-3 py-1.5 text-sm font-semibold text-[var(--violet-900)]">
-              <Users size={16} strokeWidth={1.75} aria-hidden />
-              {isLoading ? '로딩 중...' : activeTab === 'matching' ? `${ongoingPairs.length}쌍 매칭 중` : `${visibleProfiles.length}명 표시 · ${selectedProfiles.length}명 공유 선택`}
+            <div className="flex flex-nowrap items-center gap-1.5">
+              {/* 주선자 토글 — 눌린 주선자 매물만 표시. 버튼 색은 주선자 뱃지 색. */}
+              {activeTab !== 'matching' ? (
+                <div className="inline-flex shrink-0 items-center gap-1">
+                  {FIXED_AUTHOR_NAMES.map(name => {
+                    const on = filters.authorNames.includes(name);
+                    const color = getAuthorColor(name);
+                    return (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => toggleAuthor(name)}
+                        aria-pressed={on}
+                        className={`inline-flex h-7 items-center rounded-full px-2.5 text-[11px] font-bold shadow-sm transition ${
+                          on ? '' : 'opacity-40 grayscale'
+                        }`}
+                        style={{backgroundColor: color.bg, color: color.text}}
+                        title={`${name} 매물 ${on ? '숨기기' : '보기'}`}
+                      >
+                        {name}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+              <div className="inline-flex min-w-0 items-center gap-1.5 rounded-full bg-[var(--violet-50)] px-2.5 py-1 text-xs font-semibold text-[var(--violet-900)]">
+                <Users size={14} strokeWidth={1.75} className="shrink-0" aria-hidden />
+                <span className="truncate">
+                  {isLoading ? '로딩 중...' : activeTab === 'matching' ? `${ongoingPairs.length}쌍 매칭 중` : `${visibleProfiles.length}명 표시 · ${selectedProfiles.length}명 공유 선택`}
+                </span>
+              </div>
             </div>
           </div>
 

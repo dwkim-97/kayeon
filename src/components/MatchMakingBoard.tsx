@@ -18,7 +18,7 @@ import {
 import {useState} from 'react';
 
 import {formatBirthYearLabel} from '@/lib/profiles/age';
-import {PARTNER_THUMB_WIDTH, photoThumbnailUrl} from '@/lib/profiles/photo-url';
+import {MATCH_BOARD_THUMB_WIDTH, photoThumbnailUrl} from '@/lib/profiles/photo-url';
 import type {Profile} from '@/types/profile';
 
 // 매칭 모드용 작은 카드. 사진(정사각, 폭 꽉 채움) 위 + 년생/사는곳 아래로 세로 배치해
@@ -30,7 +30,7 @@ function MiniProfile({profile}: {profile: Profile}) {
     <article className="min-w-0">
       <span className="block aspect-square w-full overflow-hidden rounded-[6px] bg-[var(--violet-100)]">
         {photo ? (
-          <img className="h-full w-full object-cover" src={photoThumbnailUrl(photo.url, PARTNER_THUMB_WIDTH)} alt={photo.alt} draggable={false} />
+          <img className="h-full w-full object-cover" src={photoThumbnailUrl(photo.url, MATCH_BOARD_THUMB_WIDTH)} alt={photo.alt} draggable={false} />
         ) : (
           <span className="grid h-full w-full place-items-center text-[9px] text-slate-400">없음</span>
         )}

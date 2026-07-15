@@ -13,6 +13,7 @@ const baseFilters: ProfileFilters = {
   activeOnly: false,
   religion: '',
   smoking: '',
+  authorNames: ['에드', '조이', '에이든'],
   query: '',
   sortField: 'default',
   sortDirection: 'desc',

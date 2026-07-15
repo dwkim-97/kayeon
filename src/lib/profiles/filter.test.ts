@@ -48,12 +48,41 @@ const noFilter = {
   activeOnly: false,
   religion: '' as const,
   smoking: '' as const,
+  authorNames: ['Aiden', '조이', '에드', '에이든'],
   query: '',
   sortField: 'default' as const,
   sortDirection: 'desc' as const,
 };
 
 describe('filterProfiles', () => {
+  it('shows only profiles whose author is in the selected set', () => {
+    const profiles: Profile[] = [
+      {...baseProfile, id: 'a', authorName: '조이'},
+      {...baseProfile, id: 'b', authorName: '에드'},
+      {...baseProfile, id: 'c', authorName: '조이'},
+    ];
+    const result = filterProfiles(profiles, {...noFilter, gender: 'female', authorNames: ['조이']});
+    expect(result.map(p => p.id).sort()).toEqual(['a', 'c']);
+  });
+
+  it('shows nothing when no author is selected', () => {
+    const profiles: Profile[] = [
+      {...baseProfile, id: 'a', authorName: '조이'},
+      {...baseProfile, id: 'b', authorName: '에드'},
+    ];
+    const result = filterProfiles(profiles, {...noFilter, gender: 'female', authorNames: []});
+    expect(result).toHaveLength(0);
+  });
+
+  it('shows both when both authors are selected', () => {
+    const profiles: Profile[] = [
+      {...baseProfile, id: 'a', authorName: '조이'},
+      {...baseProfile, id: 'b', authorName: '에드'},
+    ];
+    const result = filterProfiles(profiles, {...noFilter, gender: 'female', authorNames: ['조이', '에드']});
+    expect(result).toHaveLength(2);
+  });
+
   it('combines gender, numeric filters, select filters, and value search', () => {
     const profiles: Profile[] = [
       baseProfile,
@@ -79,6 +108,7 @@ describe('filterProfiles', () => {
       activeOnly: true,
       religion: 'not_selected',
       smoking: 'non_smoker',
+      authorNames: ['Aiden'],
       query: 'ibk enfj 강남',
       sortField: 'default',
       sortDirection: 'desc',

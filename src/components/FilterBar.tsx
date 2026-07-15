@@ -44,15 +44,18 @@ export function FilterBar({filters, onChange, onReset}: FilterBarProps) {
   return (
     <section className="rounded-[8px] border border-[var(--border)] bg-white p-4 shadow-sm">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_1fr_1fr]">
-        <label className="flex h-12 items-center rounded-[8px] border border-[var(--border)] bg-white px-3 transition focus-within:border-[var(--violet-500)] focus-within:ring-4 focus-within:ring-[var(--violet-100)] sm:col-span-2 lg:col-span-1">
-          <Search className="shrink-0 text-slate-400" size={17} strokeWidth={1.75} aria-hidden />
-          <input
-            className="h-full min-w-0 flex-1 border-0 bg-transparent pl-3 outline-none"
-            value={filters.query}
-            onChange={event => onChange({...filters, query: event.target.value})}
-            placeholder="검색"
-          />
-        </label>
+        <fieldset className="rounded-[8px] border border-[var(--border)] p-2 sm:col-span-2 lg:col-span-1">
+          <legend className="px-1 text-xs font-semibold text-[var(--violet-800)]">검색</legend>
+          <label className="flex h-10 items-center rounded-[8px] border border-[var(--border)] bg-white px-3 transition focus-within:border-[var(--violet-500)] focus-within:ring-4 focus-within:ring-[var(--violet-100)]">
+            <Search className="shrink-0 text-slate-400" size={17} strokeWidth={1.75} aria-hidden />
+            <input
+              className="h-full min-w-0 flex-1 border-0 bg-transparent pl-2 outline-none"
+              value={filters.query}
+              onChange={event => onChange({...filters, query: event.target.value})}
+              placeholder="이름·회사·지역 등"
+            />
+          </label>
+        </fieldset>
 
         <fieldset className="rounded-[8px] border border-[var(--border)] p-2">
           <legend className="px-1 text-xs font-semibold text-[var(--violet-800)]">년생</legend>

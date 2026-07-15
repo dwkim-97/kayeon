@@ -60,6 +60,8 @@ export type ProfileFilters = {
   activeOnly: boolean;
   religion: Religion | '';
   smoking: Smoking | '';
+  // 주선자 다중 토글(대시보드 카운트 라인). 선택된 주선자의 매물만 표시. 기본값은 전부 선택.
+  authorNames: string[];
   query: string;
   sortField: SortField;
   sortDirection: SortDirection;

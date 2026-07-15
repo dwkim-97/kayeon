@@ -102,6 +102,8 @@ export function filterProfiles(profiles: Profile[], filters: ProfileFilters) {
       if (failsHeightFilter(profile.height, heightValue, filters.heightComparison)) return false;
       if (filters.religion && profile.religion !== filters.religion) return false;
       if (filters.smoking && profile.smoking !== filters.smoking) return false;
+      // 주선자 토글: 선택된 주선자의 매물만. 하나도 안 켜지면 아무것도 안 보임(0명).
+      if (!filters.authorNames.includes(profile.authorName)) return false;
 
       const searchText = profileSearchText(profile);
       return queryTerms.every(term => searchText.includes(term));
