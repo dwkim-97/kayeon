@@ -21,6 +21,7 @@ import {ProfileDetailModal} from '@/components/ProfileDetailModal';
 import {ProfileFormModal} from '@/components/ProfileFormModal';
 import {ShareButton} from '@/components/ShareButton';
 import {SortMenu} from '@/components/SortMenu';
+import {canReorderProfiles} from '@/lib/profiles/can-reorder';
 import {reorderWeights} from '@/lib/profiles/manual-order';
 import {historyEventDescriptions, recordHistory} from '@/lib/history/events';
 import {countOngoingByProfile, getOngoingPairs} from '@/lib/matches/summary';
@@ -228,6 +229,7 @@ export function Dashboard({authorName}: DashboardProps) {
     if (isViewMode(stored)) setViewMode(stored);
   }, []);
 
+  const canReorder = useMemo(() => canReorderProfiles(filters), [filters]);
   const ongoingCounts = useMemo(() => countOngoingByProfile(matches), [matches]);
   const ongoingPairs = useMemo(() => getOngoingPairs(matches, profiles), [matches, profiles]);
   const matchFemales = useMemo(() => profiles.filter(p => p.gender === 'female' && p.isActivated), [profiles]);
@@ -742,7 +744,7 @@ export function Dashboard({authorName}: DashboardProps) {
                 </div>
               )}
             </div>
-          ) : isEditMode ? (
+          ) : isEditMode && canReorder ? (
             <DndContext sensors={sensors} onDragEnd={event => void handleReorder(event)}>
               <SortableContext items={visibleProfiles.map(p => p.id)} strategy={rectSortingStrategy}>
                 <div
@@ -774,6 +776,10 @@ export function Dashboard({authorName}: DashboardProps) {
               </SortableContext>
             </DndContext>
           ) : (
+            <>
+              {isEditMode ? (
+                <p className="mb-3 rounded-[8px] bg-amber-50 px-3 py-2 text-center text-xs font-semibold text-amber-700">기본 정렬 + 필터 없음 상태에서만 드래그로 순서를 바꿀 수 있어요.</p>
+              ) : null}
             <div
               className={
                 viewMode === 'compact'
@@ -799,6 +805,7 @@ export function Dashboard({authorName}: DashboardProps) {
                 />
               ))}
             </div>
+            </>
           )}
         </section>
       </div>
