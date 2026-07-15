@@ -47,11 +47,11 @@ export function PairActionModal({female, male, officeMode = false, onMatch, onCl
   };
 
   const mini = (p: Profile) => (
-    <div className="flex flex-1 items-center gap-2 rounded-[8px] border border-[var(--border)] p-2">
+    <div className="flex min-w-0 flex-1 items-center gap-2 rounded-[8px] border border-[var(--border)] p-2">
       <span className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-[6px] bg-[var(--violet-100)]">
         {p.photos[0] ? <img className="h-full w-full object-cover" src={photoThumbnailUrl(p.photos[0].url, PARTNER_THUMB_WIDTH)} alt={p.photos[0].alt} /> : <span className="text-[9px] text-slate-400">없음</span>}
       </span>
-      <span className="min-w-0">
+      <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-bold text-[var(--violet-900)]">{formatBirthYearLabel(p.birthYear)}</span>
         <span className="block truncate text-xs text-slate-500">{p.residence} · {p.job}</span>
       </span>
@@ -62,7 +62,7 @@ export function PairActionModal({female, male, officeMode = false, onMatch, onCl
     <div className={`fixed inset-0 z-[65] grid place-items-center bg-black/70 p-4 ${officeMode ? 'office-mode' : ''}`} role="dialog" aria-modal="true" onClick={onClose}>
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[12px] bg-white p-5 shadow-sm sm:p-6" onClick={e => e.stopPropagation()}>
         <h2 className="mb-3 text-base font-bold text-[var(--violet-950)]">두 매물 연결</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           {mini(female)}
           <span className="shrink-0 text-lg" aria-hidden>💞</span>
           {mini(male)}

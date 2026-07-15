@@ -14,6 +14,7 @@ const filters: ProfileFilters = {
   activeOnly: true,
   religion: 'not_selected',
   smoking: 'non_smoker',
+  authorNames: ['에드', '조이', '에이든'],
   query: '강남',
   sortField: 'default',
   sortDirection: 'desc',

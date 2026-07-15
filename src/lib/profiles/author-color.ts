@@ -42,6 +42,9 @@ const FIXED_AUTHOR_COLORS: Record<string, AuthorColor> = {
   에이든: {bg: '#f3e8ff', text: '#6b21a8'}, // 보라(purple)
 };
 
+// 대시보드 주선자 토글에 쓰는 고정 주선자 목록(표시 순서). 기본값은 전부 선택됨.
+export const FIXED_AUTHOR_NAMES = ['에드', '조이', '에이든'] as const;
+
 export function getAuthorColor(name: string): AuthorColor {
   const key = name.trim();
   if (key === '') return AUTHOR_COLORS[0];
