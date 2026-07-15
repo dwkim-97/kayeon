@@ -60,6 +60,9 @@ export function ProfileDetailModal({
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
+  // 우리가 history.back()으로 유발한 popstate 한 번을 무시하기 위한 플래그.
+  const popGuardRef = useRef({suppress: false});
+
   useBodyScrollLock(true);
 
   useEffect(() => {
@@ -72,16 +75,32 @@ export function ProfileDetailModal({
 
   // 폰 뒤로가기(가장자리 스와이프/버튼)로 이전 페이지로 나가지 않고 모달만 닫는다.
   // 마운트 시 더미 히스토리 항목을 넣고, popstate(뒤로가기) 때 onClose를 호출한다.
+  //
+  // 주의: 개발 모드 StrictMode는 effect를 setup→cleanup→setup 순으로 이중 실행한다.
+  // cleanup의 history.back()은 브라우저에서 popstate를 "비동기"로 발생시키는데,
+  // 그 popstate가 재-setup 이후 도착해 새 리스너에 잡히면 열자마자 onClose가 불려
+  // 모달이 바로 닫힌다. 우리가 유발한 back()의 popstate는 한 번 무시하도록 플래그를 둔다.
   useEffect(() => {
+    const guard = popGuardRef.current;
     window.history.pushState({kayeonDetailModal: true}, '');
-    const onPopState = () => onCloseRef.current();
+    const onPopState = () => {
+      if (guard.suppress) {
+        guard.suppress = false;
+        return;
+      }
+      onCloseRef.current();
+    };
     window.addEventListener('popstate', onPopState);
     return () => {
       window.removeEventListener('popstate', onPopState);
       // 정상 닫기(X/스와이프/Escape)로 언마운트된 경우, 우리가 넣은 항목을 되돌린다.
       // popstate로 닫힌 경우엔 이미 항목이 소비됐으므로 back()이 실제 페이지 이동을
-      // 유발하지 않도록 우리 상태일 때만 되돌린다.
-      if (window.history.state?.kayeonDetailModal) window.history.back();
+      // 유발하지 않도록 우리 상태일 때만 되돌린다. 이때 발생할 popstate는 우리 것이므로
+      // 무시하도록 표시한다(StrictMode 재-setup 리스너가 잡아도 닫히지 않게).
+      if (window.history.state?.kayeonDetailModal) {
+        guard.suppress = true;
+        window.history.back();
+      }
     };
   }, []);
 
