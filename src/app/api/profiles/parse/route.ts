@@ -2,7 +2,7 @@ import {NextResponse} from 'next/server';
 
 export const runtime = 'nodejs';
 
-const SYSTEM_PROMPT = `You are a profile parser for a Korean matchmaking service.
+export const SYSTEM_PROMPT = `You are a profile parser for a Korean matchmaking service.
 Extract profile information from the given Korean text and return a JSON object.
 
 The input may use various formats: labeled (나이: 96년생), slash-separated (00/163/하나은행/잠실거주), plain sentences, or mixed.
@@ -15,7 +15,7 @@ Slash-separated format heuristics (when no labels are present):
 - A company/organization/job title → job
 
 Field mapping rules:
-- gender: "female" or "male". Infer from context (이화여대 → female). Default "female".
+- gender: "female" or "male". Infer from explicit gender words or context first (이화여대 → female). If there is no explicit gender/context but height is present, use height as a fallback signal: height >= 175 → male, height <= 170 → female. For height 171~174 with no other clue, default "female".
 - birthYear: 4-digit year number (e.g. 2000 for "00년생" or "00", 1996 for "96년생")
 - height: integer in cm (e.g. 163)
 - residence: region/address text as-is
@@ -32,6 +32,7 @@ Field mapping rules:
 Important:
 - Put education in extra, NOT job.
 - If a preference (e.g. "비흡연자 선호") implies something about the ideal partner, put it in idealType.
+- Do not duplicate information in extra if it was already mapped to gender, birthYear, height, residence, job, religion, mbti, hobbies, smoking, drinking, idealType, or matchmakerComment. extra must contain only remaining unmapped facts.
 - Omit fields not mentioned.
 - Return ONLY valid JSON, no explanation.`;
 

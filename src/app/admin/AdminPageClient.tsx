@@ -1,7 +1,6 @@
 'use client';
 
 import {Plus, Trash2, X} from 'lucide-react';
-import Link from 'next/link';
 import {FormEvent, useEffect, useState} from 'react';
 
 import {AppHeader} from '@/components/AppHeader';

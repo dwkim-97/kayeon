@@ -12,7 +12,7 @@ const profile: Profile = {
   probe: 'not_selected', rejectionTolerance: 'not_selected', responseSpeed: 'not_selected', reward: '', manualOrderWeight: 0,
   photos: [{id: 'ph1', url: '/s.jpg', alt: 'a', order: 0}], createdAt: '2026-06-30T00:00:00.000Z', updatedAt: '2026-06-30T00:00:00.000Z',
 };
-const props = {profile, matches: [], allProfiles: [profile], onCreateMatch() {}, onEndMatch() {}, onDeleteMatch() {}, onOpenProfile() {}, onEdit() {}};
+const props = {profile, matches: [], allProfiles: [profile], onCreateMatch() {}, onEndMatch() {}, onDeleteMatch() {}, onOpenProfile() {}, onStatusChange() {}, onEdit() {}};
 
 // jsdom은 history.back()에서 popstate를 쏘지 않는다. 실제 브라우저처럼
 // back() 호출 시 이전 state로 되돌리고 popstate를 "비동기"로 발생시키도록 스텁한다.
