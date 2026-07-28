@@ -140,21 +140,30 @@ describe('ProfileDetailModal', () => {
     expect(handleStatusChange).toHaveBeenCalledWith('profile-1', 'blocked');
   });
 
-  it('filters match candidates by search query', async () => {
+  it('opens a fixed match dialog and creates checked matches', async () => {
     const user = userEvent.setup();
+    const handleCreateMatch = vi.fn();
 
     render(
       <ProfileDetailModal
         {...baseProps}
         allProfiles={[profile, malePartner, otherMalePartner]}
+        onCreateMatch={handleCreateMatch}
         onClose={() => {}}
       />,
     );
 
     await user.click(screen.getByRole('button', {name: '+ 매칭 추가'}));
-    await user.type(screen.getByRole('searchbox', {name: '매칭 후보 검색'}), '판교');
+    expect(screen.getByRole('dialog', {name: '매칭 추가'})).toHaveClass('fixed');
 
-    expect(screen.getByText(/99년생 · 경기 판교 · 카카오/)).toBeInTheDocument();
-    expect(screen.queryByText(/96년생 · 서울 잠실 · 하나은행/)).not.toBeInTheDocument();
+    await user.type(screen.getByRole('searchbox', {name: '매칭 후보 검색'}), '카카오 판교');
+
+    expect(screen.getByText('99년생 · 경기 판교')).toBeInTheDocument();
+    expect(screen.queryByText('96년생 · 서울 잠실')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('checkbox', {name: '99년생 매칭 선택'}));
+    await user.click(screen.getByRole('button', {name: '선택한 매칭 추가 (1)'}));
+
+    expect(handleCreateMatch).toHaveBeenCalledWith('profile-1', 'profile-2');
   });
 });
