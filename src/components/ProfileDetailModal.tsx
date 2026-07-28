@@ -21,7 +21,7 @@ type ProfileDetailModalProps = {
   matches: Match[];
   allProfiles: Profile[];
   officeMode?: boolean;
-  onCreateMatch: (femaleId: string, maleId: string) => void;
+  onCreateMatch: (femaleId: string, maleId: string) => void | Promise<void>;
   onEndMatch: (matchId: string) => void;
   onDeleteMatch: (matchId: string) => void;
   onOpenProfile: (profileId: string) => void;
@@ -44,16 +44,11 @@ export function ProfileDetailModal({
   onClose,
 }: ProfileDetailModalProps) {
   const [showCandidates, setShowCandidates] = useState(false);
-  const [candidateQuery, setCandidateQuery] = useState('');
   const informationRows = getProfileInformationRows(profile);
   const adminRows = getAdminInformationRows(profile);
   const title = `${genderLabels[profile.gender]} · ${formatBirthYearLabel(profile.birthYear)}`;
   const profileMatches = getProfileMatches(profile.id, matches);
   const candidates = getMatchCandidates(profile, allProfiles);
-  const normalizedCandidateQuery = normalizeSearchText(candidateQuery);
-  const filteredCandidates = normalizedCandidateQuery
-    ? candidates.filter(candidate => getMatchCandidateSearchText(candidate).includes(normalizedCandidateQuery))
-    : candidates;
   const nextStatus: ProfileStatus = profile.isActivated ? 'blocked' : 'active';
   const statusActionLabel = profile.isActivated ? '비활성화' : '활성화';
 
@@ -78,11 +73,16 @@ export function ProfileDetailModal({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onCloseRef.current();
+      if (event.key !== 'Escape') return;
+      if (showCandidates) {
+        setShowCandidates(false);
+        return;
+      }
+      onCloseRef.current();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [showCandidates]);
 
   // 폰 뒤로가기(가장자리 스와이프/버튼)로 이전 페이지로 나가지 않고 모달만 닫는다.
   // 마운트 시 더미 히스토리 항목을 넣고, popstate(뒤로가기) 때 onClose를 호출한다.
@@ -134,14 +134,6 @@ export function ProfileDetailModal({
     const dx = touch.clientX - start.x;
     // 아래로 충분히, 그리고 수평보다 수직 이동이 클 때만 닫기
     if (dy > SWIPE_DOWN_THRESHOLD && dy > Math.abs(dx)) onClose();
-  };
-
-  const handleCreate = (partner: Profile) => {
-    const femaleId = profile.gender === 'female' ? profile.id : partner.id;
-    const maleId = profile.gender === 'female' ? partner.id : profile.id;
-    onCreateMatch(femaleId, maleId);
-    setShowCandidates(false);
-    setCandidateQuery('');
   };
 
   return (
@@ -334,71 +326,40 @@ export function ProfileDetailModal({
                 </ul>
               )}
 
-              {showCandidates ? (
-                <div className="mt-3 max-h-56 space-y-1 overflow-y-auto rounded-[8px] border border-[var(--border)] p-2">
-                  <p className="px-1 pb-1 text-xs font-semibold text-slate-400">
-                    {profile.gender === 'female' ? '남성' : '여성'} 매물을 선택하면 바로 연결됩니다
-                  </p>
-                  <div className="sticky top-0 z-10 bg-white pb-2">
-                    <div className="relative">
-                      <Search
-                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                        size={15}
-                        strokeWidth={1.75}
-                        aria-hidden
-                      />
-                      <input
-                        className="h-9 w-full rounded-[8px] border border-[var(--border)] bg-white pl-9 pr-3 text-sm outline-none focus:border-[var(--violet-500)] focus:ring-4 focus:ring-[var(--violet-100)]"
-                        type="search"
-                        aria-label="매칭 후보 검색"
-                        placeholder="검색"
-                        value={candidateQuery}
-                        onChange={event => setCandidateQuery(event.target.value)}
-                      />
-                    </div>
-                  </div>
-                  {candidates.length === 0 ? (
-                    <p className="p-2 text-sm text-slate-400">연결 가능한 이성 매물이 없습니다.</p>
-                  ) : filteredCandidates.length === 0 ? (
-                    <p className="p-2 text-sm text-slate-400">검색 결과가 없습니다.</p>
-                  ) : (
-                    filteredCandidates.map(c => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        className="flex w-full items-center gap-2 rounded-[6px] px-2 py-1.5 text-left text-sm hover:bg-[var(--violet-50)]"
-                        onClick={() => handleCreate(c)}
-                      >
-                        <PartnerThumb partner={c} />
-                        <span className="min-w-0 flex-1 truncate">
-                          {formatBirthYearLabel(c.birthYear)} · {c.residence} · {c.job}
-                        </span>
-                      </button>
-                    ))
-                  )}
-                </div>
-              ) : (
-                <button
-                  className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-[8px] bg-[var(--violet-600)] px-3 text-sm font-semibold text-white hover:bg-[var(--violet-700)]"
-                  type="button"
-                  onClick={() => {
-                    setCandidateQuery('');
-                    setShowCandidates(true);
-                  }}
-                >
-                  + 매칭 추가
-                </button>
-              )}
+              <button
+                className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-[8px] bg-[var(--violet-600)] px-3 text-sm font-semibold text-white hover:bg-[var(--violet-700)]"
+                type="button"
+                onClick={() => setShowCandidates(true)}
+              >
+                + 매칭 추가
+              </button>
             </div>
           </div>
         </div>
       </section>
+      {showCandidates ? (
+        <MatchCandidateDialog
+          profile={profile}
+          candidates={candidates}
+          onCreateMatch={onCreateMatch}
+          onClose={() => setShowCandidates(false)}
+        />
+      ) : null}
     </div>
   );
 }
 
 function normalizeSearchText(value: string) {
-  return value.trim().toLowerCase();
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[·/|,，、()[\]{}_-]+/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
+function getSearchTokens(value: string) {
+  const normalized = normalizeSearchText(value);
+  return normalized ? normalized.split(' ') : [];
 }
 
 function getMatchCandidateSearchText(profile: Profile) {
@@ -415,6 +376,174 @@ function getMatchCandidateSearchText(profile: Profile) {
       profile.extra,
       profile.authorName,
     ].join(' '),
+  );
+}
+
+function matchesCandidateQuery(profile: Profile, query: string) {
+  const tokens = getSearchTokens(query);
+  if (tokens.length === 0) return true;
+
+  const searchText = getMatchCandidateSearchText(profile);
+  const compactSearchText = searchText.replace(/\s/g, '');
+
+  return tokens.every(token => searchText.includes(token) || compactSearchText.includes(token.replace(/\s/g, '')));
+}
+
+function MatchCandidateDialog({
+  profile,
+  candidates,
+  onCreateMatch,
+  onClose,
+}: {
+  profile: Profile;
+  candidates: Profile[];
+  onCreateMatch: (femaleId: string, maleId: string) => void | Promise<void>;
+  onClose: () => void;
+}) {
+  const [query, setQuery] = useState('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const filteredCandidates = candidates.filter(candidate => matchesCandidateQuery(candidate, query));
+  const selectedCandidates = candidates.filter(candidate => selectedIds.includes(candidate.id));
+  useBodyScrollLock(true);
+
+  const toggleCandidate = (candidateId: string, checked: boolean) => {
+    setSelectedIds(current =>
+      checked ? [...new Set([...current, candidateId])] : current.filter(id => id !== candidateId),
+    );
+  };
+
+  const handleCreate = async () => {
+    if (selectedCandidates.length === 0 || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      for (const partner of selectedCandidates) {
+        const femaleId = profile.gender === 'female' ? profile.id : partner.id;
+        const maleId = profile.gender === 'female' ? partner.id : profile.id;
+        await onCreateMatch(femaleId, maleId);
+      }
+      onClose();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[90] grid place-items-center overflow-hidden bg-black/55 px-4 py-6 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label="매칭 추가"
+      onClick={event => {
+        event.stopPropagation();
+        onClose();
+      }}
+      onWheel={event => event.stopPropagation()}
+      onTouchMove={event => event.stopPropagation()}
+    >
+      <section
+        className="flex max-h-[86vh] w-full max-w-lg flex-col overflow-hidden rounded-[10px] bg-white shadow-[0_28px_90px_rgba(47,13,104,0.28)]"
+        onClick={event => event.stopPropagation()}
+      >
+        <header className="flex items-start justify-between gap-3 border-b border-[var(--border)] px-5 py-4">
+          <div>
+            <h3 className="text-lg font-extrabold text-[var(--violet-950)]">매칭 추가</h3>
+            <p className="mt-1 text-sm text-slate-500">
+              {profile.gender === 'female' ? '남성' : '여성'} 매물을 체크해서 연결합니다.
+            </p>
+          </div>
+          <button
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-[8px] text-slate-500 hover:bg-[var(--violet-50)]"
+            type="button"
+            onClick={onClose}
+            aria-label="매칭 추가 닫기"
+          >
+            <X size={18} strokeWidth={1.75} aria-hidden />
+          </button>
+        </header>
+
+        <div className="border-b border-[var(--border)] px-5 py-3">
+          <div className="relative">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              size={15}
+              strokeWidth={1.75}
+              aria-hidden
+            />
+            <input
+              className="h-10 w-full rounded-[8px] border border-[var(--border)] bg-white pl-9 pr-3 text-sm outline-none focus:border-[var(--violet-500)] focus:ring-4 focus:ring-[var(--violet-100)]"
+              type="search"
+              aria-label="매칭 후보 검색"
+              placeholder="검색"
+              value={query}
+              onChange={event => setQuery(event.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+          {candidates.length === 0 ? (
+            <p className="px-2 py-8 text-center text-sm text-slate-400">연결 가능한 이성 매물이 없습니다.</p>
+          ) : filteredCandidates.length === 0 ? (
+            <p className="px-2 py-8 text-center text-sm text-slate-400">검색 결과가 없습니다.</p>
+          ) : (
+            <ul className="space-y-1">
+              {filteredCandidates.map(candidate => {
+                const isSelected = selectedIds.includes(candidate.id);
+
+                return (
+                  <li key={candidate.id}>
+                    <label
+                      className={`flex cursor-pointer items-center gap-3 rounded-[8px] border px-3 py-2.5 transition ${
+                        isSelected
+                          ? 'border-[var(--violet-300)] bg-[var(--violet-50)]'
+                          : 'border-transparent hover:bg-[var(--violet-50)]'
+                      }`}
+                    >
+                      <input
+                        className="h-5 w-5 shrink-0 accent-[var(--violet-600)]"
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={event => toggleCandidate(candidate.id, event.target.checked)}
+                        aria-label={`${formatBirthYearLabel(candidate.birthYear)} 매칭 선택`}
+                      />
+                      <PartnerThumb partner={candidate} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-bold text-[var(--violet-950)]">
+                          {formatBirthYearLabel(candidate.birthYear)} · {candidate.residence}
+                        </span>
+                        <span className="mt-0.5 block truncate text-xs font-semibold text-slate-500">
+                          {candidate.height}cm · {candidate.job}
+                        </span>
+                      </span>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        <footer className="flex flex-col-reverse gap-2 border-t border-[var(--border)] px-5 py-4 sm:flex-row sm:justify-end">
+          <button
+            className="h-10 rounded-[8px] border border-[var(--border)] px-4 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+            type="button"
+            onClick={onClose}
+          >
+            취소
+          </button>
+          <button
+            className="inline-flex h-10 items-center justify-center rounded-[8px] bg-[var(--violet-600)] px-4 text-sm font-bold text-white hover:bg-[var(--violet-700)] disabled:bg-[var(--violet-300)]"
+            type="button"
+            disabled={selectedCandidates.length === 0 || isSubmitting}
+            onClick={() => void handleCreate()}
+          >
+            {isSubmitting ? '연결 중...' : `선택한 매칭 추가 (${selectedCandidates.length})`}
+          </button>
+        </footer>
+      </section>
+    </div>
   );
 }
 
