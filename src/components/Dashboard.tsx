@@ -3,7 +3,6 @@
 import {DndContext, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent} from '@dnd-kit/core';
 import {SortableContext, rectSortingStrategy} from '@dnd-kit/sortable';
 import {Briefcase, Check, ChevronDown, ChevronUp, Grid3x3, LayoutGrid, Pencil, Plus, SlidersHorizontal, Users} from 'lucide-react';
-import Link from 'next/link';
 import {useEffect, useMemo, useState} from 'react';
 
 import {useImagePrefetch} from '@/hooks/useImagePrefetch';
@@ -894,6 +893,7 @@ export function Dashboard({authorName}: DashboardProps) {
           onEndMatch={handleEndMatch}
           onDeleteMatch={handleDeleteMatch}
           onOpenProfile={pid => setDetailProfileId(pid)}
+          onStatusChange={handleStatusChange}
           onEdit={selectedProfile => {
             setDetailProfileId(null);
             setModal({kind: 'edit', profile: selectedProfile});

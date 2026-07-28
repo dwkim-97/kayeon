@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import {Pencil, X} from 'lucide-react';
+import {Pencil, Power, Search, X} from 'lucide-react';
 import {useEffect, useRef, useState, type TouchEvent} from 'react';
 
 import {NaturalShareButton} from '@/components/NaturalShareButton';
@@ -14,7 +14,7 @@ import {getAdminInformationRows, getProfileInformationRows} from '@/lib/profiles
 import {genderLabels} from '@/lib/profiles/options';
 import {PARTNER_THUMB_WIDTH, photoThumbnailUrl} from '@/lib/profiles/photo-url';
 import type {Match} from '@/types/match';
-import type {Profile} from '@/types/profile';
+import type {Profile, ProfileStatus} from '@/types/profile';
 
 type ProfileDetailModalProps = {
   profile: Profile;
@@ -25,6 +25,7 @@ type ProfileDetailModalProps = {
   onEndMatch: (matchId: string) => void;
   onDeleteMatch: (matchId: string) => void;
   onOpenProfile: (profileId: string) => void;
+  onStatusChange: (profileId: string, status: ProfileStatus) => void;
   onEdit: (profile: Profile) => void;
   onClose: () => void;
 };
@@ -38,15 +39,23 @@ export function ProfileDetailModal({
   onEndMatch,
   onDeleteMatch,
   onOpenProfile,
+  onStatusChange,
   onEdit,
   onClose,
 }: ProfileDetailModalProps) {
   const [showCandidates, setShowCandidates] = useState(false);
+  const [candidateQuery, setCandidateQuery] = useState('');
   const informationRows = getProfileInformationRows(profile);
   const adminRows = getAdminInformationRows(profile);
   const title = `${genderLabels[profile.gender]} · ${formatBirthYearLabel(profile.birthYear)}`;
   const profileMatches = getProfileMatches(profile.id, matches);
   const candidates = getMatchCandidates(profile, allProfiles);
+  const normalizedCandidateQuery = normalizeSearchText(candidateQuery);
+  const filteredCandidates = normalizedCandidateQuery
+    ? candidates.filter(candidate => getMatchCandidateSearchText(candidate).includes(normalizedCandidateQuery))
+    : candidates;
+  const nextStatus: ProfileStatus = profile.isActivated ? 'blocked' : 'active';
+  const statusActionLabel = profile.isActivated ? '비활성화' : '활성화';
 
   // 스크롤 컨테이너(모바일 세로 스크롤) + 아래로 쓸어내려 닫기 제스처용
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -58,7 +67,9 @@ export function ProfileDetailModal({
   // (@dnd-kit 도입 후 모달을 열자마자 Dashboard가 한 번 더 렌더되며 이 문제가 드러남)
   // → 최신 onClose를 ref에 담아두고 effect는 열림당 한 번만 실행되게 한다.
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   // 우리가 history.back()으로 유발한 popstate 한 번을 무시하기 위한 플래그.
   const popGuardRef = useRef({suppress: false});
@@ -130,6 +141,7 @@ export function ProfileDetailModal({
     const maleId = profile.gender === 'female' ? partner.id : profile.id;
     onCreateMatch(femaleId, maleId);
     setShowCandidates(false);
+    setCandidateQuery('');
   };
 
   return (
@@ -151,7 +163,7 @@ export function ProfileDetailModal({
       >
         {/* 항상 보이는 닫기 버튼 (좌상단 오버레이) — 모바일/PC 공통 */}
         <button
-          className="absolute left-3 top-3 z-40 grid h-9 w-9 place-items-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/60"
+          className="fixed left-3 top-3 z-[80] grid h-9 w-9 place-items-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/60"
           type="button"
           onClick={onClose}
           aria-label="닫기"
@@ -177,7 +189,20 @@ export function ProfileDetailModal({
           <header className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] px-5 py-4">
             <h2 className="text-lg font-bold text-[var(--violet-950)]">{title}</h2>
             {/* 상세보기에서 바로 수정 / 자연스러운 공유 */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <button
+                className={`inline-flex h-10 items-center gap-1.5 rounded-[8px] border px-3.5 text-sm font-bold shadow-sm transition ${
+                  profile.isActivated
+                    ? 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                    : 'border-[var(--violet-200)] bg-[var(--violet-50)] text-[var(--violet-800)] hover:bg-[var(--violet-100)]'
+                }`}
+                type="button"
+                onClick={() => onStatusChange(profile.id, nextStatus)}
+                aria-label={`${formatBirthYearLabel(profile.birthYear)} 매물 ${statusActionLabel}`}
+              >
+                <Power size={15} strokeWidth={1.75} aria-hidden />
+                {statusActionLabel}
+              </button>
               <button
                 className="inline-flex h-10 items-center gap-1.5 rounded-[8px] border border-[var(--border)] bg-white px-3.5 text-sm font-bold text-[var(--violet-800)] shadow-sm transition hover:bg-[var(--violet-50)]"
                 type="button"
@@ -314,10 +339,30 @@ export function ProfileDetailModal({
                   <p className="px-1 pb-1 text-xs font-semibold text-slate-400">
                     {profile.gender === 'female' ? '남성' : '여성'} 매물을 선택하면 바로 연결됩니다
                   </p>
+                  <div className="sticky top-0 z-10 bg-white pb-2">
+                    <div className="relative">
+                      <Search
+                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        size={15}
+                        strokeWidth={1.75}
+                        aria-hidden
+                      />
+                      <input
+                        className="h-9 w-full rounded-[8px] border border-[var(--border)] bg-white pl-9 pr-3 text-sm outline-none focus:border-[var(--violet-500)] focus:ring-4 focus:ring-[var(--violet-100)]"
+                        type="search"
+                        aria-label="매칭 후보 검색"
+                        placeholder="검색"
+                        value={candidateQuery}
+                        onChange={event => setCandidateQuery(event.target.value)}
+                      />
+                    </div>
+                  </div>
                   {candidates.length === 0 ? (
                     <p className="p-2 text-sm text-slate-400">연결 가능한 이성 매물이 없습니다.</p>
+                  ) : filteredCandidates.length === 0 ? (
+                    <p className="p-2 text-sm text-slate-400">검색 결과가 없습니다.</p>
                   ) : (
-                    candidates.map(c => (
+                    filteredCandidates.map(c => (
                       <button
                         key={c.id}
                         type="button"
@@ -336,7 +381,10 @@ export function ProfileDetailModal({
                 <button
                   className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-[8px] bg-[var(--violet-600)] px-3 text-sm font-semibold text-white hover:bg-[var(--violet-700)]"
                   type="button"
-                  onClick={() => setShowCandidates(true)}
+                  onClick={() => {
+                    setCandidateQuery('');
+                    setShowCandidates(true);
+                  }}
                 >
                   + 매칭 추가
                 </button>
@@ -346,6 +394,27 @@ export function ProfileDetailModal({
         </div>
       </section>
     </div>
+  );
+}
+
+function normalizeSearchText(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function getMatchCandidateSearchText(profile: Profile) {
+  return normalizeSearchText(
+    [
+      formatBirthYearLabel(profile.birthYear),
+      `${profile.height}cm`,
+      profile.residence,
+      profile.job,
+      profile.mbti,
+      profile.hobbies,
+      profile.idealType,
+      profile.matchmakerComment,
+      profile.extra,
+      profile.authorName,
+    ].join(' '),
   );
 }
 

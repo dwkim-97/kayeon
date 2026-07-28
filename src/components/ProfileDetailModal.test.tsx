@@ -1,4 +1,5 @@
-import {render} from '@testing-library/react';
+import {render, screen} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {ProfileDetailModal} from './ProfileDetailModal';
@@ -42,7 +43,32 @@ const baseProps = {
   onEndMatch: () => {},
   onDeleteMatch: () => {},
   onOpenProfile: () => {},
+  onStatusChange: () => {},
   onEdit: () => {},
+};
+
+const malePartner: Profile = {
+  ...profile,
+  id: 'profile-2',
+  gender: 'male',
+  residence: '경기 판교',
+  birthYear: 1999,
+  height: 181,
+  job: '카카오 / 판교 / IT',
+  mbti: 'ENTJ',
+  photos: [{id: 'photo-2', url: '/male.jpg', alt: '남성 프로필 사진 1', order: 0}],
+};
+
+const otherMalePartner: Profile = {
+  ...profile,
+  id: 'profile-3',
+  gender: 'male',
+  residence: '서울 잠실',
+  birthYear: 1996,
+  height: 176,
+  job: '하나은행 / 을지로 / 금융',
+  mbti: 'ISFP',
+  photos: [{id: 'photo-3', url: '/other-male.jpg', alt: '남성 프로필 사진 2', order: 0}],
 };
 
 describe('ProfileDetailModal', () => {
@@ -95,5 +121,40 @@ describe('ProfileDetailModal', () => {
     window.dispatchEvent(new PopStateEvent('popstate'));
 
     expect(closedWith).toBe(2);
+  });
+
+  it('shows a fixed close button', () => {
+    render(<ProfileDetailModal {...baseProps} onClose={() => {}} />);
+
+    expect(screen.getByLabelText('닫기')).toHaveClass('fixed');
+  });
+
+  it('calls onStatusChange from the detail page status button', async () => {
+    const user = userEvent.setup();
+    const handleStatusChange = vi.fn();
+
+    render(<ProfileDetailModal {...baseProps} onStatusChange={handleStatusChange} onClose={() => {}} />);
+
+    await user.click(screen.getByRole('button', {name: '98년생 매물 비활성화'}));
+
+    expect(handleStatusChange).toHaveBeenCalledWith('profile-1', 'blocked');
+  });
+
+  it('filters match candidates by search query', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ProfileDetailModal
+        {...baseProps}
+        allProfiles={[profile, malePartner, otherMalePartner]}
+        onClose={() => {}}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', {name: '+ 매칭 추가'}));
+    await user.type(screen.getByRole('searchbox', {name: '매칭 후보 검색'}), '판교');
+
+    expect(screen.getByText(/99년생 · 경기 판교 · 카카오/)).toBeInTheDocument();
+    expect(screen.queryByText(/96년생 · 서울 잠실 · 하나은행/)).not.toBeInTheDocument();
   });
 });

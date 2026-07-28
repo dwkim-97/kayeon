@@ -48,7 +48,7 @@ function buildDescription(profile: Profile): string {
   return parts.filter(Boolean).join(' · ');
 }
 
-function buildTemplateArgs(profile: Profile, origin: string): Record<string, string> {
+function buildTemplateArgs(profile: Profile): Record<string, string> {
   const args: Record<string, string> = {
     title: formatBirthYearLabel(profile.birthYear),
     description: buildDescription(profile),
@@ -82,18 +82,15 @@ type ShareButtonProps = {
 export function ShareButton({profiles}: ShareButtonProps) {
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
 
-  const hasKakao = !!kakaoKey;
   const groups = chunk(profiles, LIST_SIZE);
   const isSingleBatch = groups.length <= 1;
 
   const shareGroup = (group: Profile[]) => {
-    const origin = window.location.origin;
-
     if (group.length === 1) {
       // 1명: 피드형 커스텀 템플릿
       window.Kakao.Share.sendCustom({
         templateId: FEED_TEMPLATE_ID,
-        templateArgs: buildTemplateArgs(group[0], origin),
+        templateArgs: buildTemplateArgs(group[0]),
       });
     } else {
       // 2명 이상: 리스트형 커스텀 템플릿 (최대 5명 고정 슬롯)
@@ -125,6 +122,11 @@ export function ShareButton({profiles}: ShareButtonProps) {
 
   const handleClick = () => {
     if (profiles.length === 0) return;
+
+    if (!kakaoKey) {
+      void renderAndDownload(profiles);
+      return;
+    }
 
     if (!window.Kakao) {
       alert('카카오 공유 기능을 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
