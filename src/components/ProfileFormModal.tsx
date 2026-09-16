@@ -401,7 +401,7 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
                     key={photo.id}
                     data-photo-id={photo.id}
                   >
-                    <img className="pointer-events-none h-full w-full object-contain" src={photo.url} alt={photo.alt} />
+                    <img className="pointer-events-none h-full w-full object-cover" src={photo.url} alt={photo.alt} />
                     {/* 그립 핸들 */}
                     <span
                       className="absolute left-1 top-1 grid h-7 w-7 cursor-grab touch-none place-items-center rounded-full bg-white/90 text-[var(--violet-800)] active:cursor-grabbing"
