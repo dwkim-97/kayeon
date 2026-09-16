@@ -1,4 +1,6 @@
-import {describe, expect, it} from 'vitest';
+import {beforeEach, afterEach, describe, expect, it, vi} from 'vitest';
+beforeEach(() => vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://proj.supabase.co'));
+afterEach(() => vi.unstubAllEnvs());
 
 import {collectDetailPhotoUrls} from './prefetch';
 import type {Profile} from '@/types/profile';
@@ -39,11 +41,11 @@ const OBJECT = (name: string) =>
   `https://proj.supabase.co/storage/v1/object/public/profile-photos/${name}.png`;
 
 describe('collectDetailPhotoUrls', () => {
-  it('returns DETAIL-sized (1200) render URLs for every photo', () => {
+  it('returns DETAIL-sized (1200) optimized URLs for every photo', () => {
     const urls = collectDetailPhotoUrls([makeProfile('p1', [OBJECT('a'), OBJECT('b')])]);
     expect(urls).toHaveLength(2);
     urls.forEach(u => {
-      expect(u).toContain('/render/image/public/');
+      expect(u).toContain('/api/photos/thumbnail?');
       expect(u).toContain('width=1200');
     });
   });

@@ -49,7 +49,7 @@ export function PairActionModal({female, male, officeMode = false, onMatch, onCl
   const mini = (p: Profile) => (
     <div className="flex min-w-0 flex-1 items-center gap-2 rounded-[8px] border border-[var(--border)] p-2">
       <span className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-[6px] bg-[var(--violet-100)]">
-        {p.photos[0] ? <img className="h-full w-full object-cover" src={photoThumbnailUrl(p.photos[0].url, PARTNER_THUMB_WIDTH)} alt={p.photos[0].alt} /> : <span className="text-[9px] text-slate-400">없음</span>}
+        {p.photos[0] ? <img className="h-full w-full object-contain" src={photoThumbnailUrl(p.photos[0].url, PARTNER_THUMB_WIDTH)} alt={p.photos[0].alt} /> : <span className="text-[9px] text-slate-400">없음</span>}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-bold text-[var(--violet-900)]">{formatBirthYearLabel(p.birthYear)}</span>

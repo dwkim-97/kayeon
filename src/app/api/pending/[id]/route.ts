@@ -1,3 +1,4 @@
+import {photoPathsWithThumbnails} from '@/lib/profiles/thumbnail-path';
 import {NextResponse} from 'next/server';
 
 import {createSupabaseAdminClient} from '@/lib/supabase/admin';
@@ -13,7 +14,7 @@ export async function DELETE(_request: Request, {params}: RouteParams) {
 
   const {data: pending} = await admin.from('pending_profiles').select('photo_paths').eq('id', id).single();
   if (pending?.photo_paths?.length) {
-    await admin.storage.from(PROFILE_PHOTOS_BUCKET).remove(pending.photo_paths);
+    await admin.storage.from(PROFILE_PHOTOS_BUCKET).remove(photoPathsWithThumbnails(pending.photo_paths));
   }
   const {error} = await admin.from('pending_profiles').delete().eq('id', id);
   if (error) return NextResponse.json({message: error.message}, {status: 500});

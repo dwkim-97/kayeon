@@ -21,7 +21,7 @@ function MiniCard({profile, onOpen}: {profile: Profile | undefined; onOpen: (id:
       onClick={() => onOpen(profile.id)}
     >
       <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-[6px] bg-[var(--violet-100)]">
-        {photo ? <img className="h-full w-full object-cover" src={photoThumbnailUrl(photo.url, PARTNER_THUMB_WIDTH)} alt={photo.alt} draggable={false} /> : <span className="text-[9px] text-slate-400">없음</span>}
+        {photo ? <img className="h-full w-full object-contain" src={photoThumbnailUrl(photo.url, PARTNER_THUMB_WIDTH)} alt={photo.alt} draggable={false} /> : <span className="text-[9px] text-slate-400">없음</span>}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-xs font-bold leading-tight text-[var(--violet-900)]">{formatBirthYearLabel(profile.birthYear)}</span>

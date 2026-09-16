@@ -1,47 +1,25 @@
-import {describe, expect, it} from 'vitest';
-
-import {
-  CARD_THUMB_WIDTH_COMPACT,
-  CARD_THUMB_WIDTH_DETAILED,
-  photoThumbnailUrl,
-} from './photo-url';
-
-const OBJECT_URL =
-  'https://proj.supabase.co/storage/v1/object/public/profile-photos/abc/def.png';
-
+import {describe, expect, it, vi, afterEach} from 'vitest';
+import {photoThumbnailUrl} from './photo-url';
+const base = 'https://proj.supabase.co';
+const original = `${base}/storage/v1/object/public/profile-photos/abc/def.png`;
+afterEach(() => vi.unstubAllEnvs());
 describe('photoThumbnailUrl', () => {
-  it('rewrites a public object URL to a contain-resized render/image URL', () => {
-    const out = photoThumbnailUrl(OBJECT_URL, 520);
-    expect(out).toBe(
-      'https://proj.supabase.co/storage/v1/render/image/public/profile-photos/abc/def.png?width=520&height=520&resize=contain&quality=60',
-    );
+  it('routes stored photos to our optimizer without the paid Supabase API', () => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', base);
+    expect(photoThumbnailUrl(original, 520)).toBe('/api/photos/thumbnail?path=abc%2Fdef.png&width=650');
+    expect(photoThumbnailUrl(original, 96)).toContain('width=240');
+    expect(photoThumbnailUrl(original, 1200)).toContain('width=1200');
   });
-
-  it('uses resize=contain so images keep their aspect ratio (no crop/stretch)', () => {
-    const out = photoThumbnailUrl(OBJECT_URL, 520);
-    expect(out).toContain('resize=contain');
-    expect(out).toContain('width=520');
-    expect(out).toContain('height=520');
+  it('leaves previews and unrelated origins alone', () => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', base);
+    for (const url of ['data:image/png;base64,AA', '', original.replace(base, 'https://other.test')]) {
+      expect(photoThumbnailUrl(url, 400)).toBe(url);
+    }
   });
-
-  it('accepts a custom quality', () => {
-    const out = photoThumbnailUrl(OBJECT_URL, 320, 50);
-    expect(out).toContain('/render/image/public/');
-    expect(out).toContain('width=320');
-    expect(out).toContain('quality=50');
-  });
-
-  it('leaves data URLs untouched (upload previews must not break)', () => {
-    const dataUrl = 'data:image/jpeg;base64,AAAA';
-    expect(photoThumbnailUrl(dataUrl, 520)).toBe(dataUrl);
-  });
-
-  it('leaves non-matching URLs untouched', () => {
-    const other = 'https://example.com/some/photo.jpg';
-    expect(photoThumbnailUrl(other, 520)).toBe(other);
-  });
-
-  it('exposes distinct card widths', () => {
-    expect(CARD_THUMB_WIDTH_DETAILED).toBeGreaterThan(CARD_THUMB_WIDTH_COMPACT);
+  it('does not rewrite signed URLs or invalid storage paths', () => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', base);
+    for (const url of [original + '?token=abc', original.replace('abc/def.png', '%2e%2e/secret.png')]) {
+      expect(photoThumbnailUrl(url, 400)).toBe(url);
+    }
   });
 });

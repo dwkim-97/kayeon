@@ -10,6 +10,8 @@ describe('isPublicPath', () => {
     expect(isPublicPath('/_next/static/chunks/app.js')).toBe(true);
     expect(isPublicPath('/favicon.ico')).toBe(true);
 
+    expect(isPublicPath('/api/photos/thumbnail?path=a%2Fb.png&width=240')).toBe(true);
+    expect(isPublicPath('/api/photos/thumbnail/admin')).toBe(false);
     expect(isPublicPath('/')).toBe(false);
     expect(isPublicPath('/admin')).toBe(false);
     expect(isPublicPath('/api/profiles')).toBe(false);

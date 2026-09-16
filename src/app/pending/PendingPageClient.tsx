@@ -68,7 +68,7 @@ export function PendingPageClient({authorName}: {authorName: string}) {
                         key={i}
                         src={url}
                         alt={`대기 사진 ${i + 1}`}
-                        className="h-28 w-24 shrink-0 rounded-[6px] object-cover"
+                        className="h-28 w-24 shrink-0 rounded-[6px] object-contain"
                       />
                     ))
                   ) : (
