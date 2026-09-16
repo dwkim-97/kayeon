@@ -30,7 +30,7 @@ function MiniProfile({profile}: {profile: Profile}) {
     <article className="min-w-0">
       <span className="block aspect-square w-full overflow-hidden rounded-[6px] bg-[var(--violet-100)]">
         {photo ? (
-          <img className="h-full w-full object-contain" src={photoThumbnailUrl(photo.url, MATCH_BOARD_THUMB_WIDTH)} alt={photo.alt} draggable={false} />
+          <img className="h-full w-full object-cover" src={photoThumbnailUrl(photo.url, MATCH_BOARD_THUMB_WIDTH)} alt={photo.alt} draggable={false} />
         ) : (
           <span className="grid h-full w-full place-items-center text-[9px] text-slate-400">없음</span>
         )}

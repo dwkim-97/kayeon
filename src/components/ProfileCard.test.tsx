@@ -194,8 +194,8 @@ describe('ProfileCard', () => {
       <ProfileCard {...defaultProps} profile={withStorageUrl} variant="detailed" />,
     );
     const img = container.querySelector('img')!;
-    expect(img).toHaveClass('object-contain');
-    expect(img).not.toHaveClass('object-cover');
+    expect(img).toHaveClass('object-cover');
+    expect(img).not.toHaveClass('object-contain');
     expect(img.getAttribute('loading')).toBe('lazy');
     expect(img.getAttribute('src')).toContain('/api/photos/thumbnail?');
     expect(img.getAttribute('src')).toContain('width=650');
