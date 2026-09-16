@@ -123,7 +123,7 @@ export function PhotoLightbox({photos, currentIndex, onIndexChange, onClose}: Ph
                 onClick={e => { e.stopPropagation(); onIndexChange(i); }}
                 aria-label={`${i + 1}번째 사진으로 이동`}
               >
-                <img className="h-full w-full object-cover" src={photoThumbnailUrl(p.url, LIGHTBOX_THUMB_WIDTH)} alt={p.alt} />
+                <img className="h-full w-full object-contain" src={photoThumbnailUrl(p.url, LIGHTBOX_THUMB_WIDTH)} alt={p.alt} />
               </button>
             ))}
           </div>

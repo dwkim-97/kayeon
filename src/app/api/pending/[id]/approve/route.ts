@@ -1,3 +1,4 @@
+import {photoPathsWithThumbnails} from '@/lib/profiles/thumbnail-path';
 import {NextResponse} from 'next/server';
 
 import {getSessionUserName} from '@/lib/auth/session';
@@ -65,7 +66,7 @@ export async function POST(_request: Request, {params}: RouteParams) {
 
   // 4) pending 사진 + 행 삭제
   if (pending.photo_paths.length > 0) {
-    await admin.storage.from(PROFILE_PHOTOS_BUCKET).remove(pending.photo_paths);
+    await admin.storage.from(PROFILE_PHOTOS_BUCKET).remove(photoPathsWithThumbnails(pending.photo_paths));
   }
   await admin.from('pending_profiles').delete().eq('id', id);
 

@@ -1,3 +1,4 @@
+import {photoPathsWithThumbnails} from '@/lib/profiles/thumbnail-path';
 import {NextResponse} from 'next/server';
 
 import {isMissingColumnError, stripAdminColumns} from '@/lib/supabase/admin-columns';
@@ -52,7 +53,7 @@ export async function DELETE(_request: Request, {params}: RouteParams) {
   const storagePaths = (photoRows ?? []).map(photo => photo.storage_path);
 
   if (storagePaths.length > 0) {
-    await supabase.storage.from(PROFILE_PHOTOS_BUCKET).remove(storagePaths);
+    await supabase.storage.from(PROFILE_PHOTOS_BUCKET).remove(photoPathsWithThumbnails(storagePaths));
   }
 
   const {error} = await supabase.from('profiles').delete().eq('id', id);

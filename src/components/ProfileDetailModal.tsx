@@ -551,7 +551,7 @@ function MatchCandidateDialog({
 function PartnerThumb({partner, onOpen}: {partner: Profile | undefined; onOpen?: (id: string) => void}) {
   const photo = partner?.photos[0];
   const inner = photo ? (
-    <img className="h-full w-full object-cover" src={photoThumbnailUrl(photo.url, PARTNER_THUMB_WIDTH)} alt={photo.alt} draggable={false} />
+    <img className="h-full w-full object-contain" src={photoThumbnailUrl(photo.url, PARTNER_THUMB_WIDTH)} alt={photo.alt} draggable={false} />
   ) : (
     <span className="text-[9px] font-semibold text-slate-400">없음</span>
   );

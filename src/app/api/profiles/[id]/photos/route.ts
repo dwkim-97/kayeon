@@ -1,3 +1,4 @@
+import {photoPathsWithThumbnails} from '@/lib/profiles/thumbnail-path';
 import {NextResponse} from 'next/server';
 
 import {createSupabaseAdminClient} from '@/lib/supabase/admin';
@@ -64,7 +65,7 @@ export async function PUT(request: Request, {params}: RouteParams) {
   if (photosToDelete.length > 0) {
     const {error: storageError} = await supabase.storage
       .from(PROFILE_PHOTOS_BUCKET)
-      .remove(photosToDelete.map(photo => photo.storage_path));
+      .remove(photoPathsWithThumbnails(photosToDelete.map(photo => photo.storage_path)));
 
     if (storageError) {
       return NextResponse.json({message: storageError.message}, {status: 500});

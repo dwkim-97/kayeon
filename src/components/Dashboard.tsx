@@ -250,9 +250,11 @@ export function Dashboard({authorName}: DashboardProps) {
     [profiles, detailProfileId],
   );
 
-  // 대시보드를 보는 동안 상세보기용 큰 사진(1200px)을 백그라운드로 미리 로드해
-  // 상세보기 진입 시 캐시에서 즉시 뜨게 한다(로딩 완료 후 idle 시점에 시작).
-  const detailPhotoUrls = useMemo(() => collectDetailPhotoUrls(profiles), [profiles]);
+  // 열린 프로필만 미리 읽어 목록에서 모든 큰 사진을 내려받지 않게 한다.
+  const detailPhotoUrls = useMemo(
+    () => collectDetailPhotoUrls(detailProfile ? [detailProfile] : []),
+    [detailProfile],
+  );
   useImagePrefetch(detailPhotoUrls, !isLoading);
 
   const changeViewMode = (mode: ProfileCardVariant) => {

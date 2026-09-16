@@ -7,6 +7,7 @@ export function isPublicPath(input: string) {
   return (
     pathname === '/login' ||
     pathname === '/api/auth/login' ||
+    pathname === '/api/photos/thumbnail' ||
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/profiles/') ||
     isRootPublicFile

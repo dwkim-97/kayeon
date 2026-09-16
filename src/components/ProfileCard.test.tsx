@@ -52,12 +52,14 @@ const defaultProps = {
 
 describe('ProfileCard', () => {
   beforeEach(() => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://proj.supabase.co');
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-06-30T00:00:00.000Z'));
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllEnvs();
   });
 
   it('overlays birthYear/height and residence·job on the photo in the detailed variant', () => {
@@ -176,7 +178,7 @@ describe('ProfileCard', () => {
     expect(screen.getByTitle('소개비 50만원')).toBeInTheDocument();
   });
 
-  it('lazy-loads the card image via a render/image thumbnail URL', () => {
+  it('lazy-loads the card image via a stored thumbnail URL', () => {
     const withStorageUrl: Profile = {
       ...profile,
       photos: [
@@ -192,10 +194,10 @@ describe('ProfileCard', () => {
       <ProfileCard {...defaultProps} profile={withStorageUrl} variant="detailed" />,
     );
     const img = container.querySelector('img')!;
+    expect(img).toHaveClass('object-contain');
+    expect(img).not.toHaveClass('object-cover');
     expect(img.getAttribute('loading')).toBe('lazy');
-    expect(img.getAttribute('src')).toContain('/render/image/public/');
-    // 비율 유지 축소(resize=contain)로 요청 — 잘림/찌그러짐 방지
-    expect(img.getAttribute('src')).toContain('resize=contain');
+    expect(img.getAttribute('src')).toContain('/api/photos/thumbnail?');
     expect(img.getAttribute('src')).toContain('width=650');
   });
 });
