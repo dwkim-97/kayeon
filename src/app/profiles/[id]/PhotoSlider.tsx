@@ -6,7 +6,7 @@ import {ChevronLeft, ChevronRight} from 'lucide-react';
 import {useRef, useState, type TouchEvent} from 'react';
 
 import type {ProfileInformationRow} from '@/lib/profiles/information';
-import {DETAIL_IMAGE_WIDTH, photoThumbnailUrl} from '@/lib/profiles/photo-url';
+import {CARD_THUMB_WIDTH_DETAILED, DETAIL_IMAGE_WIDTH, photoThumbnailUrl} from '@/lib/profiles/photo-url';
 import type {ProfilePhoto} from '@/types/profile';
 
 type PhotoSliderProps = {
@@ -19,6 +19,7 @@ const SWIPE_THRESHOLD = 40;
 
 export function PhotoSlider({photos, infoRows}: PhotoSliderProps) {
   const [index, setIndex] = useState(0);
+  const [loadedUrls, setLoadedUrls] = useState<Set<string>>(() => new Set());
   const hasMultiple = photos.length > 1;
   // 스와이프 시작 좌표. 수평 이동이 수직보다 크고 임계값을 넘을 때만 사진을 넘긴다.
   const touchStart = useRef<{x: number; y: number} | null>(null);
@@ -52,20 +53,40 @@ export function PhotoSlider({photos, infoRows}: PhotoSliderProps) {
     );
   }
 
+  const activePhoto = photos[index] ?? photos[0];
+  const detailUrl = photoThumbnailUrl(activePhoto.url, DETAIL_IMAGE_WIDTH);
+  const previewUrl = photoThumbnailUrl(activePhoto.url, CARD_THUMB_WIDTH_DETAILED);
+  const showPreview = previewUrl !== detailUrl && !loadedUrls.has(detailUrl);
+
   return (
     <div
       className="relative h-full w-full overflow-hidden bg-black"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
+      {showPreview ? (
+        <img
+          className="absolute inset-0 h-full w-full object-contain"
+          src={previewUrl}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+        />
+      ) : null}
       {/* 사진 */}
       {photos.map((photo, i) => (
         <img
           key={photo.id}
-          className="absolute inset-0 h-full w-full object-contain transition-opacity duration-300"
+          className="absolute inset-0 h-full w-full object-contain"
           src={photoThumbnailUrl(photo.url, DETAIL_IMAGE_WIDTH)}
           alt={photo.alt}
-          style={{opacity: i === index ? 1 : 0}}
+          style={{opacity: i === index && !showPreview ? 1 : 0}}
+          fetchPriority={i === index ? 'high' : 'low'}
+          decoding="async"
+          onLoad={() => {
+            const url = photoThumbnailUrl(photo.url, DETAIL_IMAGE_WIDTH);
+            setLoadedUrls(current => new Set(current).add(url));
+          }}
           draggable={false}
         />
       ))}

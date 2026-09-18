@@ -169,6 +169,7 @@ export function ProfileCard({
             <>
               <img
                 key={activePhoto.id}
+                data-profile-thumbnail
                 className="absolute inset-0 h-full w-full select-none object-cover"
                 src={photoThumbnailUrl(activePhoto.url, thumbWidth)}
                 alt={activePhoto.alt}

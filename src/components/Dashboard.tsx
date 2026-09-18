@@ -250,19 +250,19 @@ export function Dashboard({authorName}: DashboardProps) {
     [profiles, detailProfileId],
   );
 
-  // 열린 프로필만 미리 읽어 목록에서 모든 큰 사진을 내려받지 않게 한다.
-  const detailPhotoUrls = useMemo(
-    () => collectDetailPhotoUrls(detailProfile ? [detailProfile] : []),
-    [detailProfile],
-  );
-  useImagePrefetch(detailPhotoUrls, !isLoading);
-
   const changeViewMode = (mode: ProfileCardVariant) => {
     setViewMode(mode);
     window.localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode);
   };
 
   const visibleProfiles = useMemo(() => filterProfiles(profiles, filters), [profiles, filters]);
+  // 목록 순서의 대표사진부터 준비하고, 나머지 사진도 클릭 전에 내려받는다.
+  const detailPhotoUrls = useMemo(
+    () => collectDetailPhotoUrls(detailProfile ? [detailProfile, ...visibleProfiles] : visibleProfiles),
+    [detailProfile, visibleProfiles],
+  );
+  useImagePrefetch(detailPhotoUrls, !isLoading);
+
   const activeVisibleProfiles = useMemo(
     () => visibleProfiles.filter(profile => profile.isActivated),
     [visibleProfiles],

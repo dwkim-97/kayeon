@@ -1,62 +1,87 @@
 'use client';
 
-import {useEffect} from 'react';
+import {useEffect, useRef} from 'react';
 
-// 주어진 이미지 URL들을 백그라운드로 미리 로드한다(브라우저 캐시에 적재).
-// 상세보기 진입 시 큰 사진이 캐시에서 즉시 떠 체감 성능이 올라간다.
-//
-// 안전장치:
-//  - requestIdleCallback으로 idle 시점에 시작 → 초기 썸네일 로딩을 방해하지 않음
-//  - 동시 요청 수 제한(concurrency) → 네트워크 포화 방지
-//  - 언마운트 시 중단(cancelled 플래그)
-const CONCURRENCY = 4;
+const CONCURRENCY = 2;
 
-type IdleHandle = {cancel: () => void};
-
-function scheduleIdle(run: () => void): IdleHandle {
-  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-    const id = window.requestIdleCallback(run, {timeout: 2000});
-    return {cancel: () => window.cancelIdleCallback(id)};
-  }
-  const id = setTimeout(run, 400);
-  return {cancel: () => clearTimeout(id)};
+function waitForThumbnail(img: HTMLImageElement, signal: AbortSignal): Promise<void> {
+  if (img.complete || signal.aborted) return Promise.resolve();
+  return new Promise(resolve => {
+    const finish = () => {
+      clearTimeout(timeout);
+      img.removeEventListener('load', finish);
+      img.removeEventListener('error', finish);
+      signal.removeEventListener('abort', finish);
+      resolve();
+    };
+    const timeout = setTimeout(finish, 10000);
+    img.addEventListener('load', finish);
+    img.addEventListener('error', finish);
+    signal.addEventListener('abort', finish, {once: true});
+  });
 }
 
-function loadOne(url: string): Promise<void> {
+function loadOne(url: string, signal: AbortSignal): Promise<boolean> {
   return new Promise(resolve => {
     const img = new Image();
-    // 성공/실패 모두 다음 URL로 넘어가야 하므로 둘 다 resolve
-    img.onload = () => resolve();
-    img.onerror = () => resolve();
-    img.src = url;
+    let finished = false;
+    const finish = (success: boolean) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeout);
+      img.onload = img.onerror = null;
+      signal.removeEventListener('abort', abort);
+      if (!success && signal.aborted) img.removeAttribute('src');
+      resolve(success);
+    };
+    const abort = () => finish(false);
+    const timeout = setTimeout(() => { img.removeAttribute('src'); finish(false); }, 30000);
+    img.fetchPriority = 'low';
+    img.decoding = 'async';
+    img.onload = () => { void img.decode().catch(() => {}).then(() => finish(!signal.aborted)); };
+    img.onerror = () => finish(false);
+    signal.addEventListener('abort', abort, {once: true});
+    if (signal.aborted) abort();
+    else img.src = url;
   });
 }
 
 export function useImagePrefetch(urls: string[], enabled: boolean): void {
-  // urls 배열의 정체성이 매 렌더 바뀌지 않도록 호출부에서 useMemo로 감싼다.
+  const completed = useRef(new Set<string>());
   useEffect(() => {
     if (!enabled || urls.length === 0) return;
-
-    let cancelled = false;
+    const controller = new AbortController();
+    const {signal} = controller;
     let cursor = 0;
-
-    const worker = async (): Promise<void> => {
-      while (!cancelled && cursor < urls.length) {
-        const index = cursor;
-        cursor += 1;
-        await loadOne(urls[index]);
+    let cancelIdle = () => {};
+    const queue = [...new Set(urls)].filter(url => !completed.current.has(url));
+    const worker = async () => {
+      while (!signal.aborted && cursor < queue.length) {
+        const url = queue[cursor++];
+        if (await loadOne(url, signal)) completed.current.add(url);
       }
     };
-
-    const idle = scheduleIdle(() => {
-      // CONCURRENCY개의 워커가 공유 커서를 소비하며 병렬 로드
-      const count = Math.min(CONCURRENCY, urls.length);
-      for (let i = 0; i < count; i += 1) void worker();
-    });
-
-    return () => {
-      cancelled = true;
-      idle.cancel();
+    const start = () => {
+      if (signal.aborted) return;
+      for (let i = 0; i < Math.min(CONCURRENCY, queue.length); i++) void worker();
     };
+    // Wait only for thumbnails currently on screen; offscreen lazy images must not block us.
+    const visible = Array.from(document.querySelectorAll<HTMLImageElement>('img[data-profile-thumbnail]'))
+      .filter(img => {
+        const rect = img.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.right > 0
+          && rect.top < window.innerHeight && rect.left < window.innerWidth;
+      });
+    void Promise.all(visible.map(img => waitForThumbnail(img, signal))).then(() => {
+      if (signal.aborted) return;
+      if ('requestIdleCallback' in window) {
+        const id = window.requestIdleCallback(start, {timeout: 2000});
+        cancelIdle = () => window.cancelIdleCallback(id);
+      } else {
+        const id = setTimeout(start, 400);
+        cancelIdle = () => clearTimeout(id);
+      }
+    });
+    return () => { controller.abort(); cancelIdle(); };
   }, [urls, enabled]);
 }
