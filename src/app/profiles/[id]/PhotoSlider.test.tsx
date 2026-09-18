@@ -1,5 +1,6 @@
 import {fireEvent, render, screen} from '@testing-library/react';
-import {describe, expect, it} from 'vitest';
+import {afterEach, describe, expect, it, vi} from 'vitest';
+afterEach(() => vi.unstubAllEnvs());
 
 import {PhotoSlider} from './PhotoSlider';
 import type {ProfilePhoto} from '@/types/profile';
@@ -56,4 +57,16 @@ describe('PhotoSlider swipe', () => {
     swipe(container, 200, 100);
     expect(screen.getByAltText('사진 1')).toBeInTheDocument();
   });
+  it('shows the cached thumbnail until the detail image loads', () => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://proj.supabase.co');
+    const {container} = render(<PhotoSlider photos={[{...photos[0], url: 'https://proj.supabase.co/storage/v1/object/public/profile-photos/a/b.png'}]} infoRows={[]} />);
+    const detail = screen.getByAltText('사진 1');
+    const preview = container.querySelector('img[aria-hidden="true"]');
+    expect(preview).toHaveAttribute('src', '/api/photos/thumbnail?path=a%2Fb.png&width=650');
+    expect(detail).toHaveStyle({opacity: '0'});
+    fireEvent.load(detail);
+    expect(detail).toHaveStyle({opacity: '1'});
+    expect(container.querySelector('img[aria-hidden="true"]')).toBeNull();
+  });
+
 });

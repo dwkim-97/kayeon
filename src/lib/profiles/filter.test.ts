@@ -170,14 +170,13 @@ describe('filterProfiles', () => {
     expect(result.map(p => p.id)).toEqual(['newer', 'older']);
   });
 
-  it('places a starred profile first, even when older or deactivated', () => {
+  it('places an active starred profile first, even when older', () => {
     const newestActive: Profile = {...baseProfile, id: 'newest', createdAt: '2026-07-02T00:00:00.000Z'};
     const oldStar: Profile = {
       ...baseProfile,
       id: 'star',
       createdAt: '2026-01-01T00:00:00.000Z',
-      isActivated: false,
-      status: 'blocked',
+      isActivated: true,
       starredByName: 'Aiden',
     };
     const result = filterProfiles([newestActive, oldStar], {...noFilter, gender: 'female'});
@@ -276,4 +275,15 @@ describe('filterProfiles', () => {
     // height desc must win: tall-plain first, despite short-reward having a reward
     expect(result.map(p => p.id)).toEqual(['tall-plain', 'short-reward']);
   });
+  it.each(['default', 'age', 'height', 'createdAt'] as const)(
+    'keeps inactive profiles last under %s in both directions, even when starred', sortField => {
+      const inactive = {...baseProfile, id: 'inactive', isActivated: false, starredByName: '에드', reward: '리워드', manualOrderWeight: -100};
+      const active = {...baseProfile, id: 'active'};
+      for (const sortDirection of ['asc', 'desc'] as const) {
+        expect(filterProfiles([inactive, active], {...noFilter, gender: 'female', sortField, sortDirection}).map(p => p.id))
+          .toEqual(['active', 'inactive']);
+      }
+    },
+  );
+
 });

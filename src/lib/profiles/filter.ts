@@ -38,9 +38,8 @@ const profileSearchText = (profile: Profile) =>
     .map(normalize)
     .join(' ');
 
-// 기본 정렬(정렬 옵션 미지정): 활성(active) → 최신 등록순(created_at desc).
+// 같은 활성 그룹 안의 기본 정렬: 최신 등록순(created_at desc).
 function compareDefault(left: Profile, right: Profile) {
-  if (left.isActivated !== right.isActivated) return Number(right.isActivated) - Number(left.isActivated);
   // created_at은 ISO 8601 문자열이라 사전식 비교로 시간순이 보장된다.
   return right.createdAt.localeCompare(left.createdAt);
 }
@@ -64,9 +63,10 @@ function compareBySort(left: Profile, right: Profile, field: SortField, directio
   }
 }
 
-// 정렬 우선순위: 집착매물 → 리워드 보유 → 수동 가중치 → (정렬 옵션 또는 기본 정렬).
+// 정렬 우선순위: 활성 매물 → 집착매물 → 리워드 보유 → 수동 가중치 → (정렬 옵션 또는 기본 정렬).
 // 리워드·가중치 티어는 기본순(default)에서만 적용. 명시적 정렬 시엔 집착매물 핀만 유지.
 function compareProfiles(left: Profile, right: Profile, sortField: SortField, sortDirection: SortDirection) {
+  if (left.isActivated !== right.isActivated) return Number(right.isActivated) - Number(left.isActivated);
   const leftStarred = left.starredByName ? 1 : 0;
   const rightStarred = right.starredByName ? 1 : 0;
   if (rightStarred !== leftStarred) return rightStarred - leftStarred;
