@@ -1,79 +1,67 @@
 import {NextResponse} from 'next/server';
+import {z} from 'zod';
+
+import {normalizeParsedProfile, profileExtractionSchema, SYSTEM_PROMPT} from '@/lib/profiles/ai-parse';
 
 export const runtime = 'nodejs';
 
-export const SYSTEM_PROMPT = `You are a profile parser for a Korean matchmaking service.
-Extract profile information from the given Korean text and return a JSON object.
-
-The input may use various formats: labeled (나이: 96년생), slash-separated (00/163/하나은행/잠실거주), plain sentences, or mixed.
-
-Slash-separated format heuristics (when no labels are present):
-- A 2-digit number (00~06) or 4-digit year (1990~2009) alone → birthYear (2-digit: add 2000, so "00" → 2000, "06" → 2006)
-- A 3-digit number between 140 and 200 → height in cm
-- A standalone MBTI string (ISFP, ENTJ, etc.) → mbti
-- A Korean region/address (잠실거주, 강남, 판교 등) → residence (strip 거주 suffix)
-- A company/organization/job title → job
-
-Field mapping rules:
-- gender: "female" or "male". Infer from explicit gender words or context first (이화여대 → female). If there is no explicit gender/context but height is present, use height as a fallback signal: height >= 175 → male, height <= 170 → female. For height 171~174 with no other clue, default "female".
-- birthYear: 4-digit year number (e.g. 2000 for "00년생" or "00", 1996 for "96년생")
-- height: integer in cm (e.g. 163)
-- residence: region/address text as-is
-- job: job/company/position as-is
-- religion: "christian"(기독교/크리스천), "buddhist"(불교), "catholic"(천주교), "not_selected"(무교/없음 or not mentioned)
-- mbti: uppercase 4-letter MBTI if mentioned
-- hobbies: comma-separated hobbies
-- smoking: "smoker"(흡연), "non_smoker"(비흡연), "not_selected"(not mentioned)
-- drinking: "drinker"(음주), "non_drinker"(비음주), "not_selected"(not mentioned)
-- idealType: ideal partner description (e.g. "비흡연자 선호" → put here)
-- matchmakerComment: matchmaker notes if clearly written by a matchmaker
-- extra: ALL info not fitting above — education(학력/학교/졸업/재학/전공), certificates, languages, personality, misc. Combine multiple items with newline.
-
-Important:
-- Put education in extra, NOT job.
-- If a preference (e.g. "비흡연자 선호") implies something about the ideal partner, put it in idealType.
-- Do not duplicate information in extra if it was already mapped to gender, birthYear, height, residence, job, religion, mbti, hobbies, smoking, drinking, idealType, or matchmakerComment. extra must contain only remaining unmapped facts.
-- Omit fields not mentioned.
-- Return ONLY valid JSON, no explanation.`;
+const inputSchema = z.object({text: z.string().trim().min(1).max(12000)});
+const responseSchema = z.object({
+  choices: z.array(z.object({
+    finish_reason: z.string(),
+    message: z.object({content: z.string().nullable(), refusal: z.string().nullable().optional()}),
+  })),
+});
 
 export async function POST(request: Request) {
+  const input = inputSchema.safeParse(await request.json().catch(() => null));
+  if (!input.success) {
+    return NextResponse.json({message: '프로필 텍스트를 1~12,000자로 입력해 주세요.'}, {status: 400});
+  }
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({message: 'GROQ_API_KEY가 설정되지 않았습니다.'}, {status: 500});
+    return NextResponse.json({message: 'AI 자동입력 설정을 확인해 주세요.'}, {status: 500});
   }
 
-  const {text} = (await request.json()) as {text: string};
-  if (!text?.trim()) {
-    return NextResponse.json({message: '텍스트를 입력해 주세요.'}, {status: 400});
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}`},
+      signal: AbortSignal.timeout(45000),
+      body: JSON.stringify({
+        model: 'openai/gpt-oss-120b',
+        messages: [
+          {role: 'system', content: SYSTEM_PROMPT},
+          {role: 'user', content: input.data.text},
+        ],
+        temperature: 0,
+        reasoning_effort: 'medium',
+        max_completion_tokens: 8192,
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'profile_extraction', strict: true,
+            schema: z.toJSONSchema(profileExtractionSchema, {target: 'draft-7'}),
+          },
+        },
+      }),
+    });
+    if (!response.ok) {
+      return NextResponse.json({message: response.status === 429
+        ? 'AI 요청이 많습니다. 잠시 후 다시 시도해 주세요.'
+        : 'AI 분석에 실패했습니다. 잠시 후 다시 시도해 주세요.'}, {status: response.status === 429 ? 429 : 502});
+    }
+    const data = responseSchema.parse(await response.json());
+    const choice = data.choices[0];
+    if (!choice || choice.finish_reason !== 'stop' || choice.message.refusal || !choice.message.content) {
+      return NextResponse.json({message: 'AI 분석을 완료하지 못했습니다. 내용을 확인하고 다시 시도해 주세요.'}, {status: 502});
+    }
+    const extraction = profileExtractionSchema.parse(JSON.parse(choice.message.content));
+    return NextResponse.json(normalizeParsedProfile(extraction, input.data.text));
+  } catch (error) {
+    const timeout = error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError');
+    return NextResponse.json({message: timeout
+      ? 'AI 분석 시간이 초과되었습니다. 다시 시도해 주세요.'
+      : 'AI 응답을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.'}, {status: timeout ? 504 : 502});
   }
-
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'llama-3.1-8b-instant',
-      messages: [
-        {role: 'system', content: SYSTEM_PROMPT},
-        {role: 'user', content: text},
-      ],
-      temperature: 0,
-      response_format: {type: 'json_object'},
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    return NextResponse.json({message: `AI 파싱 실패: ${error}`}, {status: 500});
-  }
-
-  const data = (await response.json()) as {choices: Array<{message: {content: string}}>};
-  const content = data.choices[0]?.message?.content;
-  if (!content) {
-    return NextResponse.json({message: 'AI 응답이 없습니다.'}, {status: 500});
-  }
-
-  return NextResponse.json({parsed: JSON.parse(content)});
 }
