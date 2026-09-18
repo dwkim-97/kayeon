@@ -85,6 +85,7 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
   const [parseText, setParseText] = useState('');
+  const [parseWarnings, setParseWarnings] = useState<string[]>([]);
   const [showParseInput, setShowParseInput] = useState(false);
   const [draggingPhotoId, setDraggingPhotoId] = useState('');
   const [isUploadDragActive, setIsUploadDragActive] = useState(false);
@@ -211,18 +212,24 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
   const handleParse = async () => {
     if (!parseText.trim()) return;
     setIsParsing(true);
+    setParseWarnings([]);
     try {
       const res = await fetch('/api/profiles/parse', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({text: parseText}),
       });
-      const data = (await res.json()) as {parsed?: Record<string, unknown>; message?: string};
+      const data = (await res.json()) as {parsed?: Record<string, unknown>; warnings?: string[]; message?: string};
       if (!res.ok) {
         setAlertState({kind: 'alert', title: '파싱 실패', message: data.message ?? '오류가 발생했습니다.'});
         return;
       }
       const p = data.parsed ?? {};
+      setParseWarnings(data.warnings ?? []);
+      if (Object.keys(p).length === 0) {
+        setAlertState({kind: 'alert', title: '자동입력할 정보가 없습니다.', message: '성별·년생·키 등 본인 정보를 명확하게 입력해 주세요.'});
+        return;
+      }
       setValues(current => ({
         ...current,
         ...(typeof p.gender === 'string' ? {gender: p.gender as typeof current.gender} : {}),
@@ -241,6 +248,8 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
       }));
       setShowParseInput(false);
       setParseText('');
+    } catch {
+      setAlertState({kind: 'alert', title: '자동입력 실패', message: '네트워크 연결을 확인하고 다시 시도해 주세요.'});
     } finally {
       setIsParsing(false);
     }
@@ -322,11 +331,12 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
           {showParseInput ? (
             <div className="mt-3 rounded-[8px] border border-[var(--violet-200)] bg-[var(--violet-50)] p-3">
               <p className="mb-2 text-xs font-semibold text-[var(--violet-700)]">
-                텍스트를 붙여넣으면 AI가 폼을 자동으로 채워줍니다. 학력·특기 등 폼에 없는 내용은 기타에 입력됩니다.
+                원문에서 확인한 정보만 채웁니다. 학력·특기는 기타에 입력되며, 성별·년생이 불명확하면 기존 값을 유지합니다. 저장 전에 확인해 주세요.
               </p>
               <textarea
                 className="w-full resize-none rounded-[6px] border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--violet-500)]"
                 rows={5}
+                maxLength={12000}
                 placeholder={'나이: 96년생\n키: 161cm\n직장: 고등학교 교사\n학력: 이화여대 졸\n거주: 하남 미사'}
                 value={parseText}
                 onChange={e => setParseText(e.target.value)}
@@ -356,6 +366,14 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
         </div>
 
         <form className="max-h-[calc(94vh-80px)] overflow-y-auto p-4 sm:p-5" onSubmit={handleSubmit}>
+          {parseWarnings.length > 0 ? (
+            <div role="status" className="mb-4 rounded-[8px] border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              <p className="font-semibold">자동입력 후 확인이 필요합니다</p>
+              <ul className="mt-1 list-disc pl-5">
+                {parseWarnings.map((warning, index) => <li key={index}>{warning}</li>)}
+              </ul>
+            </div>
+          ) : null}
           <div className="grid gap-5 lg:grid-cols-[260px_1fr]">
             <div>
               <label
