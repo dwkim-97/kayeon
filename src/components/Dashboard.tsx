@@ -3,6 +3,7 @@
 import {DndContext, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent} from '@dnd-kit/core';
 import {SortableContext, rectSortingStrategy} from '@dnd-kit/sortable';
 import {Briefcase, Check, ChevronDown, ChevronUp, Grid3x3, LayoutGrid, Pencil, Plus, SlidersHorizontal, Users} from 'lucide-react';
+import dynamic from 'next/dynamic';
 import {useEffect, useMemo, useState} from 'react';
 
 import {useImagePrefetch} from '@/hooks/useImagePrefetch';
@@ -21,6 +22,8 @@ import {ProfileFormModal} from '@/components/ProfileFormModal';
 import {ShareButton} from '@/components/ShareButton';
 import {SortMenu} from '@/components/SortMenu';
 import {canReorderProfiles} from '@/lib/profiles/can-reorder';
+import {finalizeProfileCreation, settleProfileCreations, type BatchCreateResult} from '@/lib/profiles/batch-create';
+import {getProfileCreateFlow, type ProfileCreateFlow} from '@/lib/profiles/create-flow';
 import {reorderWeights} from '@/lib/profiles/manual-order';
 import {historyEventDescriptions, recordHistory} from '@/lib/history/events';
 import {countOngoingByProfile, getOngoingPairs} from '@/lib/matches/summary';
@@ -40,10 +43,14 @@ import type {ProfileEventType} from '@/types/history';
 
 type ModalState =
   | {kind: 'closed'}
-  | {kind: 'create'}
+  | {kind: 'create'; flow: ProfileCreateFlow}
   | {kind: 'edit'; profile: Profile};
 
 const VIEW_MODE_STORAGE_KEY = 'kayeon_view_mode';
+const BatchProfileFormModal = dynamic(
+  () => import('@/components/BatchProfileFormModal').then(module => module.BatchProfileFormModal),
+  {ssr: false},
+);
 
 function isViewMode(value: unknown): value is ProfileCardVariant {
   return value === 'detailed' || value === 'compact';
@@ -66,6 +73,20 @@ const defaultFilters = (gender: Gender): ProfileFilters => ({
 
 type UploadedPhotoId = {tempId: string; id: string; url: string};
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+async function cleanupUploadedPhotos(profileId: string, storagePaths: string[]): Promise<void> {
+  const cleanupRes = await fetch(`/api/profiles/${profileId}/photos`, {
+    method: 'DELETE',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({storagePaths}),
+  });
+
+  if (!cleanupRes.ok) throw new Error(await cleanupRes.text());
+}
+
 async function apiUploadPhotos(profileId: string, photos: Profile['photos']): Promise<UploadedPhotoId[]> {
   const newPhotos = photos.filter(p => p.url.startsWith('data:'));
   const retainedPhotos = photos
@@ -86,13 +107,15 @@ async function apiUploadPhotos(profileId: string, photos: Profile['photos']): Pr
         }),
       }),
     });
+    if (!signRes.ok) throw new Error(`사진 업로드 준비 실패: ${await signRes.text()}`);
+
     const {signed} = (await signRes.json()) as {
       signed: {tempId: string; uploadUrl: string; storagePath: string; id: string}[];
     };
 
     // Step 2: upload each file directly to Supabase Storage.
     // PUT 실패(용량 초과·형식 거부 등)를 조용히 넘기지 않고 사유를 드러낸다.
-    await Promise.all(
+    const uploadResults = await Promise.allSettled(
       signed.map(async ({uploadUrl, tempId}) => {
         const photo = newPhotos.find(p => p.id === tempId)!;
         const base64 = photo.url.split(',')[1];
@@ -115,6 +138,18 @@ async function apiUploadPhotos(profileId: string, photos: Profile['photos']): Pr
       }),
     );
 
+    const failedUpload = uploadResults.find(result => result.status === 'rejected');
+    if (failedUpload?.status === 'rejected') {
+      try {
+        await cleanupUploadedPhotos(profileId, signed.map(photo => photo.storagePath));
+      } catch (cleanupError) {
+        throw new Error(
+          `${errorMessage(failedUpload.reason)}\n업로드된 사진 자동 정리도 실패했습니다: ${errorMessage(cleanupError)}`,
+        );
+      }
+      throw failedUpload.reason;
+    }
+
     // Step 3: register uploaded paths in DB
     const registerRes = await fetch(`/api/profiles/${profileId}/photos`, {
       method: 'PUT',
@@ -129,6 +164,11 @@ async function apiUploadPhotos(profileId: string, photos: Profile['photos']): Pr
     });
     if (!registerRes.ok) {
       const body = await registerRes.text();
+      try {
+        await cleanupUploadedPhotos(profileId, signed.map(photo => photo.storagePath));
+      } catch (cleanupError) {
+        throw new Error(`사진 저장 실패: ${body}\n업로드된 사진 자동 정리도 실패했습니다: ${errorMessage(cleanupError)}`);
+      }
       throw new Error(`사진 저장 실패: ${body}`);
     }
 
@@ -310,30 +350,53 @@ export function Dashboard({authorName}: DashboardProps) {
     });
   };
 
-  const handleCreate = async (newProfile: Profile) => {
+  const persistProfile = async (newProfile: Profile): Promise<Profile> => {
     const {photos, ...rest} = newProfile;
+    const res = await fetch('/api/profiles', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(rest),
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+
+    const {profile: created} = (await res.json()) as {profile: Profile};
+    return finalizeProfileCreation(
+      created,
+      async profile => {
+        const uploadedPhotoIds = await apiUploadPhotos(profile.id, photos);
+        return {...profile, photos: resolvePhotos(photos, uploadedPhotoIds)};
+      },
+      async profileId => {
+        const cleanupRes = await fetch(`/api/profiles/${profileId}`, {method: 'DELETE'});
+        if (!cleanupRes.ok) throw new Error(await cleanupRes.text());
+      },
+    );
+  };
+
+  const handleCreate = async (newProfile: Profile) => {
     setIsMutating(true);
     try {
-      const res = await fetch('/api/profiles', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(rest),
-      });
-
-      if (!res.ok) {
-        const message = await res.text();
-        setAlertState({kind: 'alert', title: '저장 실패', message});
-        return;
-      }
-
-      const {profile: created} = await res.json();
-      const uploadedPhotoIds = await apiUploadPhotos(created.id, photos);
-      setProfiles(current => [{...created, photos: resolvePhotos(photos, uploadedPhotoIds)}, ...current]);
+      const created = await persistProfile(newProfile);
+      setProfiles(current => [created, ...current]);
       writeHistory(created, 'profile_created');
       setModal({kind: 'closed'});
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      setAlertState({kind: 'alert', title: '저장 실패', message});
+      setAlertState({kind: 'alert', title: '저장 실패', message: errorMessage(error)});
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  const handleCreateMany = async (newProfiles: Profile[]): Promise<BatchCreateResult> => {
+    setIsMutating(true);
+    try {
+      const result = await settleProfileCreations(newProfiles, persistProfile);
+      if (result.created.length > 0) {
+        setProfiles(current => [...result.created, ...current]);
+        result.created.forEach(profile => writeHistory(profile, 'profile_created'));
+      }
+      return result;
     } finally {
       setIsMutating(false);
     }
@@ -867,16 +930,22 @@ export function Dashboard({authorName}: DashboardProps) {
       <button
         className="fixed bottom-4 right-4 z-30 inline-flex h-14 w-14 items-center justify-center gap-2 rounded-full bg-[var(--violet-950)] px-0 font-semibold text-white shadow-sm transition hover:bg-[var(--violet-900)] sm:w-auto sm:px-5"
         type="button"
-        onClick={() => setModal({kind: 'create'})}
+        onClick={() => setModal({kind: 'create', flow: getProfileCreateFlow(window.innerWidth)})}
       >
         <Plus size={20} strokeWidth={1.75} aria-hidden />
         <span className="hidden sm:inline">매물 추가</span>
       </button>
 
-      {modal.kind !== 'closed' ? (
+      {modal.kind === 'create' && modal.flow === 'batch' ? (
+        <BatchProfileFormModal
+          authorName={authorName}
+          onClose={() => setModal({kind: 'closed'})}
+          onCreateMany={handleCreateMany}
+        />
+      ) : modal.kind !== 'closed' ? (
         <ProfileFormModal
           key={modal.kind === 'edit' ? modal.profile.id : 'create'}
-          mode={modal}
+          mode={modal.kind === 'edit' ? modal : {kind: 'create'}}
           authorName={authorName}
           onClose={() => setModal({kind: 'closed'})}
           onCreate={handleCreate}

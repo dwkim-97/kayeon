@@ -1,4 +1,4 @@
-import {photoPathsWithThumbnails} from '@/lib/profiles/thumbnail-path';
+import {photoPathsWithThumbnails, validPhotoPath} from '@/lib/profiles/thumbnail-path';
 import {NextResponse} from 'next/server';
 
 import {createSupabaseAdminClient} from '@/lib/supabase/admin';
@@ -142,6 +142,28 @@ export async function PUT(request: Request, {params}: RouteParams) {
     if (insertError) {
       await supabase.storage.from(PROFILE_PHOTOS_BUCKET).remove(rows.map(r => r.storage_path));
       return NextResponse.json({message: insertError.message}, {status: 500});
+    }
+  }
+
+  return NextResponse.json({ok: true});
+}
+
+export async function DELETE(request: Request, {params}: RouteParams) {
+  const {id: profileId} = await params;
+  const {storagePaths}: {storagePaths: string[]} = await request.json();
+
+  if (storagePaths.some(path => !validPhotoPath(path) || !path.startsWith(`${profileId}/`))) {
+    return NextResponse.json({message: '삭제할 사진 경로가 올바르지 않습니다.'}, {status: 400});
+  }
+
+  if (storagePaths.length > 0) {
+    const supabase = await createSupabaseServerClient();
+    const {error} = await supabase.storage
+      .from(PROFILE_PHOTOS_BUCKET)
+      .remove(photoPathsWithThumbnails(storagePaths));
+
+    if (error) {
+      return NextResponse.json({message: error.message}, {status: 500});
     }
   }
 

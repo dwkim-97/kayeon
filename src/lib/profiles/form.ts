@@ -32,6 +32,19 @@ export type ProfileFormValues = {
   photos: ProfilePhoto[];
 };
 
+export type ProfileFormFeedback = {
+  title: string;
+  message: string;
+};
+
+export type ProfileFormAssistantState = {
+  parseText: string;
+  parseWarnings: string[];
+  showParseInput: boolean;
+  isParsing: boolean;
+  feedback: ProfileFormFeedback | null;
+};
+
 export type NormalizedProfileFormValues = Omit<ProfileFormValues, 'birthYear' | 'height'> & {
   birthYear: number;
   height: number;
@@ -89,6 +102,16 @@ export const emptyProfileFormValues: ProfileFormValues = {
   reward: '',
   photos: [],
 };
+
+export function createEmptyProfileFormAssistantState(): ProfileFormAssistantState {
+  return {
+    parseText: '',
+    parseWarnings: [],
+    showParseInput: false,
+    isParsing: false,
+    feedback: null,
+  };
+}
 
 export function profileToFormValues(profile: Profile): ProfileFormValues {
   return {
