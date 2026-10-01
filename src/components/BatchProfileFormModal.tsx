@@ -305,24 +305,21 @@ export function BatchProfileFormModal({authorName, onClose, onCreateMany}: Batch
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-[var(--violet-950)]/45 sm:p-4">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-[var(--violet-950)]/45 lg:grid lg:place-items-center lg:p-4">
       <section
-        className="grid h-dvh w-full max-w-[1440px] grid-rows-[72px_minmax(0,1fr)_72px] overflow-hidden bg-white shadow-sm sm:h-[94vh] sm:rounded-[14px]"
+        className="grid h-dvh max-h-dvh w-full min-w-0 max-w-full grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-white shadow-sm lg:h-[94vh] lg:max-h-[94vh] lg:max-w-[1440px] lg:rounded-[14px]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="batch-profile-form-title"
       >
-        <header className="flex items-center justify-between border-b border-[var(--border)] px-4 sm:px-6">
-          <div>
-            <h2 id="batch-profile-form-title" className="text-xl font-bold text-[var(--violet-950)]">
+        <header className="flex min-h-16 items-center justify-between border-b border-[var(--border)] px-3 py-2 sm:px-6 lg:min-h-[72px] lg:py-0">
+          <div className="min-w-0">
+            <h2 id="batch-profile-form-title" className="truncate text-lg font-bold text-[var(--violet-950)] sm:text-xl">
               여러 명 매물 등록
             </h2>
-            <p className="mt-1 hidden text-sm text-slate-500 sm:block">소개글을 한 명씩 붙여 넣고, 확인이 끝나면 한 번에 등록하세요.</p>
+            <p className="mt-1 hidden text-sm text-slate-500 lg:block">소개글을 한 명씩 붙여 넣고, 확인이 끝나면 한 번에 등록하세요.</p>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold text-slate-500">
-              초안 {drafts.length}명
-            </span>
+          <div className="ml-2 flex shrink-0 items-center">
             <button
               className="grid h-9 w-9 place-items-center rounded-[8px] text-slate-500 hover:bg-[var(--violet-50)]"
               type="button"
@@ -336,19 +333,23 @@ export function BatchProfileFormModal({authorName, onClose, onCreateMany}: Batch
         </header>
 
         <form className="contents" onSubmit={handleSubmit}>
-          <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] sm:grid-cols-[292px_minmax(0,1fr)] sm:grid-rows-1">
+          <div className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)] lg:grid-cols-[292px_minmax(0,1fr)] lg:grid-rows-1">
             <aside
-              className="flex min-h-0 flex-col border-b border-[var(--border)] bg-slate-50/70 sm:border-b-0 sm:border-r"
+              className="flex min-h-0 min-w-0 items-center gap-2 border-b border-[var(--border)] bg-slate-50/70 px-3 py-2 lg:flex-col lg:items-stretch lg:gap-0 lg:border-b-0 lg:border-r lg:px-0 lg:py-0"
               aria-label="등록할 사람"
             >
-              <div className="px-4 py-2 sm:pb-3 sm:pt-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-[var(--violet-950)]">등록할 사람</span>
-                  <span className="text-xs font-bold text-[var(--violet-700)]">{drafts.length}명</span>
-                </div>
+              <div className="flex shrink-0 items-center gap-1.5 lg:justify-between lg:px-4 lg:pb-3 lg:pt-5">
+                <span className="sr-only text-sm font-bold text-[var(--violet-950)] lg:not-sr-only">등록할 사람</span>
+                <span className="rounded-full bg-[var(--violet-100)] px-2 py-1 text-xs font-bold text-[var(--violet-700)] lg:bg-transparent lg:p-0">
+                  {drafts.length}명
+                </span>
               </div>
 
-              <div className="flex min-h-0 flex-1 gap-2 overflow-x-auto px-3 pb-3 sm:flex-col sm:overflow-x-visible sm:overflow-y-auto sm:px-2">
+              <div
+                className="flex min-w-0 flex-1 gap-2 overflow-x-auto overscroll-x-contain py-0.5 lg:min-h-0 lg:flex-col lg:overflow-x-visible lg:overflow-y-auto lg:px-2 lg:pb-3"
+                role="list"
+                aria-label="등록할 사람"
+              >
                 {drafts.map((draft, index) => {
                   const validation = validateProfileFormValues(draft.values);
                   const active = draft.id === activeDraftId;
@@ -361,13 +362,14 @@ export function BatchProfileFormModal({authorName, onClose, onCreateMany}: Batch
                   );
                   return (
                     <div
-                      className={`group flex w-52 shrink-0 items-center gap-2 rounded-[10px] border p-2 sm:w-auto ${
+                      className={`group relative flex h-11 w-11 shrink-0 items-center rounded-full border p-0.5 lg:h-auto lg:w-auto lg:gap-2 lg:rounded-[10px] lg:p-2 ${
                         active ? 'border-[var(--violet-200)] bg-white shadow-sm' : 'border-transparent'
                       }`}
                       key={draft.id}
+                      role="listitem"
                     >
                       <button
-                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                        className="grid h-full w-full min-w-0 place-items-center text-left lg:flex lg:h-auto lg:flex-1 lg:gap-3"
                         type="button"
                         disabled={isSubmitting}
                         onClick={() => setActiveDraftId(draft.id)}
@@ -376,7 +378,7 @@ export function BatchProfileFormModal({authorName, onClose, onCreateMany}: Batch
                       >
                         {primaryPhoto ? (
                           <Image
-                            className="h-11 w-11 shrink-0 rounded-[9px] object-cover"
+                            className="h-9 w-9 shrink-0 rounded-full object-cover lg:h-11 lg:w-11 lg:rounded-[9px]"
                             src={primaryPhoto.url}
                             alt={`${index + 1}번 대표 사진`}
                             width={44}
@@ -384,24 +386,26 @@ export function BatchProfileFormModal({authorName, onClose, onCreateMany}: Batch
                             unoptimized
                           />
                         ) : (
-                          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[9px] bg-[var(--violet-100)] text-sm font-bold text-[var(--violet-800)]">
+                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--violet-100)] text-sm font-bold text-[var(--violet-800)] lg:h-11 lg:w-11 lg:rounded-[9px]">
                             {index + 1}
                           </span>
                         )}
-                        <span className="min-w-0 flex-1">
+                        <span className="hidden min-w-0 flex-1 lg:block">
                           <span className="block truncate text-sm font-bold text-slate-800">{draftLabel(draft)}</span>
                           <span className="mt-1 block truncate text-[11px] text-slate-500">{draftDescription(draft)}</span>
                         </span>
-                        <DraftStatus
-                          index={index + 1}
-                          registrationStatus={registrationStatus}
-                          isReady={validation.success}
-                          isStarted={isProfileDraftStarted(draft)}
-                        />
+                        <span className="absolute -bottom-0.5 -right-0.5 grid h-4 w-4 place-items-center rounded-full bg-white lg:static lg:h-auto lg:w-auto lg:bg-transparent">
+                          <DraftStatus
+                            index={index + 1}
+                            registrationStatus={registrationStatus}
+                            isReady={validation.success}
+                            isStarted={isProfileDraftStarted(draft)}
+                          />
+                        </span>
                       </button>
                       {drafts.length > 1 ? (
                         <button
-                          className="grid h-8 w-8 shrink-0 place-items-center rounded-[7px] text-slate-400 opacity-100 hover:bg-rose-50 hover:text-[var(--danger)] sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
+                          className="hidden h-8 w-8 shrink-0 place-items-center rounded-[7px] text-slate-400 hover:bg-rose-50 hover:text-[var(--danger)] lg:grid lg:opacity-0 lg:group-hover:opacity-100 lg:focus:opacity-100"
                           type="button"
                           disabled={isSubmitting}
                           onClick={() => removeDraft(draft.id)}
@@ -413,27 +417,41 @@ export function BatchProfileFormModal({authorName, onClose, onCreateMany}: Batch
                     </div>
                   );
                 })}
-                <button
-                  className="inline-flex h-[62px] w-28 shrink-0 items-center justify-center gap-1.5 rounded-[8px] border border-dashed border-[var(--violet-300)] bg-[var(--violet-50)] text-sm font-bold text-[var(--violet-700)] disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 sm:mx-2 sm:mb-2 sm:h-11 sm:w-auto"
-                  type="button"
-                  disabled={isSubmitting}
-                  onClick={addDraft}
-                >
-                  <Plus size={16} aria-hidden /> 사람 추가
-                </button>
+                <div className="h-11 w-11 shrink-0 lg:mx-2 lg:mb-2 lg:w-auto" role="listitem">
+                  <button
+                    className="inline-flex h-full w-full items-center justify-center gap-1.5 rounded-full border border-dashed border-[var(--violet-300)] bg-[var(--violet-50)] text-sm font-bold text-[var(--violet-700)] disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 lg:rounded-[8px] lg:px-3"
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={addDraft}
+                    aria-label="사람 추가"
+                  >
+                    <Plus size={16} aria-hidden /> <span className="hidden lg:inline">사람 추가</span>
+                  </button>
+                </div>
               </div>
             </aside>
 
-            <div className="min-w-0 overflow-y-auto bg-slate-50/40 p-3 sm:p-5">
+            <div className="min-h-0 min-w-0 overflow-y-auto overscroll-y-contain bg-slate-50/40 p-3 lg:p-5">
               <div className="mx-auto max-w-5xl">
-                <div className="mb-4 flex items-center gap-3 rounded-[10px] border border-[var(--violet-200)] bg-[var(--violet-50)] px-4 py-3">
+                <div className="mb-3 flex items-center gap-2 rounded-[10px] border border-[var(--violet-200)] bg-[var(--violet-50)] px-3 py-2.5 lg:mb-4 lg:gap-3 lg:px-4 lg:py-3">
                   <Users className="shrink-0 text-[var(--violet-700)]" size={20} aria-hidden />
-                  <div>
-                    <p className="text-sm font-bold text-[var(--violet-950)]">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-[var(--violet-950)]">
                       {activeDraftIndex + 1}번 {draftLabel(activeDraft)}을 편집하고 있어요
                     </p>
-                    <p className="mt-0.5 text-xs text-[var(--violet-700)]">붙여넣는 소개글과 이미지는 이 사람에게만 추가됩니다.</p>
+                    <p className="mt-0.5 hidden text-xs text-[var(--violet-700)] sm:block">붙여넣는 소개글과 이미지는 이 사람에게만 추가됩니다.</p>
                   </div>
+                  {drafts.length > 1 ? (
+                    <button
+                      className="ml-auto grid h-8 w-8 shrink-0 place-items-center rounded-[7px] text-slate-400 hover:bg-rose-50 hover:text-[var(--danger)] lg:hidden"
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => removeDraft(activeDraft.id)}
+                      aria-label="현재 사람 삭제"
+                    >
+                      <X size={15} aria-hidden />
+                    </button>
+                  ) : null}
                 </div>
 
                 <ProfileFormFields
@@ -449,7 +467,7 @@ export function BatchProfileFormModal({authorName, onClose, onCreateMany}: Batch
             </div>
           </div>
 
-          <footer className="flex items-center justify-between gap-3 border-t border-[var(--border)] bg-white px-3 sm:px-5">
+          <footer className="flex min-h-16 items-center justify-between gap-3 border-t border-[var(--border)] bg-white px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:min-h-[72px] lg:px-5 lg:py-0">
             {isSubmitting && submissionState ? (
               <RegistrationProgress
                 completedCount={submissionState.completedCount}
@@ -471,7 +489,7 @@ export function BatchProfileFormModal({authorName, onClose, onCreateMany}: Batch
                 취소
               </button>
               <button
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[var(--violet-600)] px-5 font-semibold text-white hover:bg-[var(--violet-700)] disabled:bg-[var(--violet-300)]"
+                className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-[8px] bg-[var(--violet-600)] px-3 text-sm font-semibold text-white hover:bg-[var(--violet-700)] disabled:bg-[var(--violet-300)] sm:px-5 sm:text-base"
                 type="submit"
                 disabled={isSubmitting || readyDrafts.length === 0}
               >

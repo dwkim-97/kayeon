@@ -17,6 +17,46 @@ afterEach(() => {
 });
 
 describe('BatchProfileFormModal', () => {
+  it('keeps the modal within the viewport and changes the person list to a rail only on desktop', () => {
+    render(
+      <BatchProfileFormModal
+        authorName="테스트"
+        onClose={vi.fn()}
+        onCreateMany={vi.fn().mockResolvedValue({created: [], failures: []})}
+      />,
+    );
+
+    expect(screen.getByRole('dialog', {name: '여러 명 매물 등록'})).toHaveClass(
+      'h-dvh',
+      'max-h-dvh',
+      'grid-rows-[auto_minmax(0,1fr)_auto]',
+    );
+    expect(screen.getByRole('complementary', {name: '등록할 사람'})).toHaveClass('min-w-0', 'lg:border-r');
+    expect(screen.getByRole('list', {name: '등록할 사람'})).toHaveClass(
+      'overflow-x-auto',
+      'lg:flex-col',
+      'lg:overflow-y-auto',
+    );
+  });
+
+  it('removes the active person from the compact editor header', () => {
+    render(
+      <BatchProfileFormModal
+        authorName="테스트"
+        onClose={vi.fn()}
+        onCreateMany={vi.fn().mockResolvedValue({created: [], failures: []})}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', {name: '사람 추가'}));
+    expect(screen.getByText('2명')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', {name: '현재 사람 삭제'}));
+
+    expect(screen.getByText('1명')).toBeInTheDocument();
+    expect(screen.queryByRole('button', {name: '현재 사람 삭제'})).not.toBeInTheDocument();
+  });
+
   it('keeps each person form isolated while switching drafts', () => {
     render(
       <BatchProfileFormModal
