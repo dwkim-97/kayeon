@@ -11,8 +11,6 @@ export type ProfileDraft = {
   assistant: ProfileFormAssistantState;
 };
 
-export const MAX_BATCH_PROFILE_COUNT = 10;
-
 export function createProfileDraft(id: string): ProfileDraft {
   return {
     id,
@@ -22,7 +20,7 @@ export function createProfileDraft(id: string): ProfileDraft {
 }
 
 export function addProfileDraft(drafts: ProfileDraft[], draft: ProfileDraft): ProfileDraft[] {
-  return drafts.length >= MAX_BATCH_PROFILE_COUNT ? drafts : [...drafts, draft];
+  return [...drafts, draft];
 }
 
 export function updateProfileDraft(

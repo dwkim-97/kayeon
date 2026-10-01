@@ -22,8 +22,12 @@ import {ProfileFormModal} from '@/components/ProfileFormModal';
 import {ShareButton} from '@/components/ShareButton';
 import {SortMenu} from '@/components/SortMenu';
 import {canReorderProfiles} from '@/lib/profiles/can-reorder';
-import {finalizeProfileCreation, settleProfileCreations, type BatchCreateResult} from '@/lib/profiles/batch-create';
-import {getProfileCreateFlow, type ProfileCreateFlow} from '@/lib/profiles/create-flow';
+import {
+  finalizeProfileCreation,
+  settleProfileCreations,
+  type BatchCreateProgress,
+  type BatchCreateResult,
+} from '@/lib/profiles/batch-create';
 import {reorderWeights} from '@/lib/profiles/manual-order';
 import {historyEventDescriptions, recordHistory} from '@/lib/history/events';
 import {countOngoingByProfile, getOngoingPairs} from '@/lib/matches/summary';
@@ -43,7 +47,7 @@ import type {ProfileEventType} from '@/types/history';
 
 type ModalState =
   | {kind: 'closed'}
-  | {kind: 'create'; flow: ProfileCreateFlow}
+  | {kind: 'create'}
   | {kind: 'edit'; profile: Profile};
 
 const VIEW_MODE_STORAGE_KEY = 'kayeon_view_mode';
@@ -388,10 +392,13 @@ export function Dashboard({authorName}: DashboardProps) {
     }
   };
 
-  const handleCreateMany = async (newProfiles: Profile[]): Promise<BatchCreateResult> => {
+  const handleCreateMany = async (
+    newProfiles: Profile[],
+    onProgress: (progress: BatchCreateProgress) => void,
+  ): Promise<BatchCreateResult> => {
     setIsMutating(true);
     try {
-      const result = await settleProfileCreations(newProfiles, persistProfile);
+      const result = await settleProfileCreations(newProfiles, persistProfile, onProgress);
       if (result.created.length > 0) {
         setProfiles(current => [...result.created, ...current]);
         result.created.forEach(profile => writeHistory(profile, 'profile_created'));
@@ -930,22 +937,22 @@ export function Dashboard({authorName}: DashboardProps) {
       <button
         className="fixed bottom-4 right-4 z-30 inline-flex h-14 w-14 items-center justify-center gap-2 rounded-full bg-[var(--violet-950)] px-0 font-semibold text-white shadow-sm transition hover:bg-[var(--violet-900)] sm:w-auto sm:px-5"
         type="button"
-        onClick={() => setModal({kind: 'create', flow: getProfileCreateFlow(window.innerWidth)})}
+        onClick={() => setModal({kind: 'create'})}
       >
         <Plus size={20} strokeWidth={1.75} aria-hidden />
         <span className="hidden sm:inline">매물 추가</span>
       </button>
 
-      {modal.kind === 'create' && modal.flow === 'batch' ? (
+      {modal.kind === 'create' ? (
         <BatchProfileFormModal
           authorName={authorName}
           onClose={() => setModal({kind: 'closed'})}
           onCreateMany={handleCreateMany}
         />
-      ) : modal.kind !== 'closed' ? (
+      ) : modal.kind === 'edit' ? (
         <ProfileFormModal
-          key={modal.kind === 'edit' ? modal.profile.id : 'create'}
-          mode={modal.kind === 'edit' ? modal : {kind: 'create'}}
+          key={modal.profile.id}
+          mode={modal}
           authorName={authorName}
           onClose={() => setModal({kind: 'closed'})}
           onCreate={handleCreate}

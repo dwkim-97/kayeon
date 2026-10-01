@@ -102,6 +102,7 @@ export function ProfileFormModal({mode, authorName, onClose, onCreate, onUpdate}
             assistantState={assistantState}
             setAssistantState={setAssistantState}
             photoOwnerLabel=""
+            disabled={isSubmitting}
           />
 
           <div className="mt-6 flex flex-col-reverse gap-2 border-t border-[var(--border)] pt-4 sm:flex-row sm:justify-end">
