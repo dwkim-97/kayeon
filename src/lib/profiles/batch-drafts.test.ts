@@ -9,13 +9,13 @@ import {
 } from './batch-drafts';
 
 describe('batch profile drafts', () => {
-  it('keeps at most ten drafts', () => {
-    const drafts = Array.from({length: 12}, (_, index) => `draft-${index}`).reduce(
+  it('keeps every draft without a registration limit', () => {
+    const drafts = Array.from({length: 25}, (_, index) => `draft-${index}`).reduce(
       (current, id) => addProfileDraft(current, createProfileDraft(id)),
-      [createProfileDraft('first')],
+      [] as ReturnType<typeof createProfileDraft>[],
     );
 
-    expect(drafts).toHaveLength(10);
+    expect(drafts).toHaveLength(25);
   });
 
   it('updates only the selected draft', () => {

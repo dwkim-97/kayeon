@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import {GripVertical, ImagePlus, Sparkles, X} from 'lucide-react';
-import {ChangeEvent, Dispatch, DragEvent, SetStateAction, useEffect, useState} from 'react';
+import {ChangeEvent, Dispatch, DragEvent, SetStateAction, useEffect, useRef, useState} from 'react';
 
 import {closedAlertState, CustomAlert} from '@/components/CustomAlert';
 import {birthYearBounds, type ProfileFormAssistantState, type ProfileFormValues} from '@/lib/profiles/form';
@@ -34,6 +34,7 @@ type ProfileFormFieldsProps = {
   assistantState: ProfileFormAssistantState;
   setAssistantState: Dispatch<SetStateAction<ProfileFormAssistantState>>;
   photoOwnerLabel: string;
+  disabled: boolean;
 };
 
 const genderOptions: [Gender, string][] = (['female', 'male'] as Gender[]).map(value => [value, genderLabels[value]]);
@@ -62,12 +63,18 @@ export function ProfileFormFields({
   assistantState,
   setAssistantState,
   photoOwnerLabel,
+  disabled,
 }: ProfileFormFieldsProps) {
   const [draggingPhotoId, setDraggingPhotoId] = useState('');
   const [isUploadDragActive, setIsUploadDragActive] = useState(false);
+  const disabledRef = useRef(disabled);
   const alertState = assistantState.feedback
     ? {kind: 'alert' as const, ...assistantState.feedback}
     : closedAlertState;
+
+  useEffect(() => {
+    disabledRef.current = disabled;
+  }, [disabled]);
 
   const setFeedback = (title: string, message: string) => {
     setAssistantState(current => ({...current, feedback: {title, message}}));
@@ -78,7 +85,7 @@ export function ProfileFormFields({
   };
 
   const handleFiles = async (uploadedFiles: File[]) => {
-    if (uploadedFiles.length === 0) return;
+    if (disabledRef.current || uploadedFiles.length === 0) return;
 
     const remainingPhotoCount = 4 - values.photos.length;
     if (remainingPhotoCount <= 0) {
@@ -89,6 +96,8 @@ export function ProfileFormFields({
     const overflowFiles = uploadedFiles.slice(remainingPhotoCount);
     const files = uploadedFiles.slice(0, remainingPhotoCount);
     const results = await Promise.all(files.map(file => resizeImageFile(file)));
+    if (disabledRef.current) return;
+
     const failures: string[] = [];
     const nextPhotos: ProfilePhoto[] = [];
 
@@ -129,6 +138,7 @@ export function ProfileFormFields({
 
   useEffect(() => {
     const onPaste = (event: ClipboardEvent) => {
+      if (disabled) return;
       const items = event.clipboardData?.items;
       if (!items) return;
       const imageFiles = Array.from(items)
@@ -143,7 +153,7 @@ export function ProfileFormFields({
     return () => window.removeEventListener('paste', onPaste);
     // handleFiles depends on the active draft's current photos.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values.photos]);
+  }, [disabled, values.photos]);
 
   const removePhoto = (photoId: string) => {
     updateField(
@@ -153,7 +163,7 @@ export function ProfileFormFields({
   };
 
   const reorderPhoto = (targetPhotoId: string) => {
-    if (!draggingPhotoId || draggingPhotoId === targetPhotoId) return;
+    if (disabledRef.current || !draggingPhotoId || draggingPhotoId === targetPhotoId) return;
 
     const sourceIndex = values.photos.findIndex(photo => photo.id === draggingPhotoId);
     const targetIndex = values.photos.findIndex(photo => photo.id === targetPhotoId);
@@ -213,7 +223,7 @@ export function ProfileFormFields({
   };
 
   return (
-    <>
+    <fieldset className="contents" disabled={disabled}>
       <div className="mb-4 flex justify-end">
         <button
           className="inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-[var(--violet-200)] bg-[var(--violet-50)] px-3 text-sm font-semibold text-[var(--violet-700)] hover:bg-[var(--violet-100)]"
@@ -283,7 +293,9 @@ export function ProfileFormFields({
                 ? 'border-[var(--violet-600)] bg-[var(--violet-100)]'
                 : 'border-[var(--violet-300)] bg-[var(--violet-50)]'
             }`}
-            onDragEnter={() => setIsUploadDragActive(true)}
+            onDragEnter={() => {
+              if (!disabledRef.current) setIsUploadDragActive(true);
+            }}
             onDragOver={event => event.preventDefault()}
             onDragLeave={() => setIsUploadDragActive(false)}
             onDrop={handlePhotoDrop}
@@ -319,6 +331,7 @@ export function ProfileFormFields({
                 <span
                   className="absolute left-1 top-1 grid h-7 w-7 cursor-grab touch-none place-items-center rounded-full bg-white/90 text-[var(--violet-800)] active:cursor-grabbing"
                   onPointerDown={event => {
+                    if (disabledRef.current) return;
                     event.preventDefault();
                     setDraggingPhotoId(photo.id);
                   }}
@@ -508,7 +521,7 @@ export function ProfileFormFields({
         state={alertState}
         onClose={() => setAssistantState(current => ({...current, feedback: null}))}
       />
-    </>
+    </fieldset>
   );
 }
 
